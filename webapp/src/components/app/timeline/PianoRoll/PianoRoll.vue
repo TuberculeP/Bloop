@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from "vue";
+import { ref, computed, onBeforeUnmount, toRef } from "vue";
 import type { Track, MidiNote, NoteName } from "../../../../lib/utils/types";
 import { useTimelineStore } from "../../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../../stores/trackAudioStore";
 import { useTrackHistoryStore } from "../../../../stores/trackHistoryStore";
+import { useKeyboardMidi } from "../../../../composables/useKeyboardMidi";
 import {
   TOTAL_NOTES,
   NOTE_ROW_HEIGHT,
@@ -52,6 +53,9 @@ const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
 const trackHistoryStore = useTrackHistoryStore();
 
+const trackIdRef = toRef(() => props.track.id);
+const keyboardMidi = useKeyboardMidi(trackIdRef);
+
 const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
 
 const activePreviewNotes = ref<Set<NoteName>>(new Set());
@@ -71,6 +75,9 @@ const playbackActiveNotes = computed(() => {
 const allActiveNotes = computed(() => {
   const combined = new Set<NoteName>(activePreviewNotes.value);
   for (const note of playbackActiveNotes.value) {
+    combined.add(note);
+  }
+  for (const note of keyboardMidi.activeNotes.value) {
     combined.add(note);
   }
   return combined;
@@ -171,6 +178,29 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="piano-roll-wrapper">
+    <button
+      class="keyboard-midi-toggle"
+      :class="{ active: keyboardMidi.isEnabled.value }"
+      @click="keyboardMidi.toggle"
+      title="Jouer avec le clavier"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01" />
+        <path d="M8 12h8" />
+        <path d="M6 16h.01M10 16h.01M14 16h.01M18 16h.01" />
+      </svg>
+    </button>
     <div
       ref="keysContainerRef"
       class="piano-keys-container"
@@ -216,6 +246,37 @@ onBeforeUnmount(() => {
   height: 400px;
   background: #1a0e15;
   border-top: 1px solid rgba(122, 15, 62, 0.5);
+  position: relative;
+}
+
+.keyboard-midi-toggle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 6px;
+  background: rgba(26, 14, 21, 0.9);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(122, 15, 62, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &.active {
+    background: rgba(215, 38, 109, 0.3);
+    border-color: #d7266d;
+    color: #d7266d;
+  }
 }
 
 .piano-keys-container {
