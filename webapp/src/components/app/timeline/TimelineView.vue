@@ -23,6 +23,7 @@ import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import AddTrackButton from "./AddTrackButton.vue";
 import InstrumentSettings from "../instruments/InstrumentSettings.vue";
+import ConfirmModal from "../../ui/ConfirmModal.vue";
 
 const emit = defineEmits<{
   (
@@ -70,6 +71,11 @@ const showAudioLibrary = inject<Ref<boolean>>("showAudioLibrary", ref(false));
 const isEditingProjectName = ref(false);
 const editedProjectName = ref("");
 const projectNameInputRef = ref<HTMLInputElement | null>(null);
+
+const deleteModal = ref({
+  visible: false,
+  track: null as Track | null,
+});
 
 const sortedTracks = computed(() => timelineStore.sortedTracks);
 
@@ -317,9 +323,18 @@ const handleSelectTrack = (track: Track) => {
 };
 
 const handleDeleteTrack = (track: Track) => {
-  if (confirm(`Supprimer la piste "${track.name}" ?`)) {
-    timelineStore.deleteTrack(track.id);
+  deleteModal.value = { visible: true, track };
+};
+
+const confirmDeleteTrack = () => {
+  if (deleteModal.value.track) {
+    timelineStore.deleteTrack(deleteModal.value.track.id);
   }
+  deleteModal.value = { visible: false, track: null };
+};
+
+const cancelDeleteTrack = () => {
+  deleteModal.value = { visible: false, track: null };
 };
 
 const handleOpenSettings = (track: Track) => {
@@ -583,6 +598,17 @@ defineExpose({
       :track="settingsTrack"
       :visible="showSettings"
       @close="handleCloseSettings"
+    />
+
+    <ConfirmModal
+      :visible="deleteModal.visible"
+      title="Supprimer la piste"
+      :message="`Voulez-vous vraiment supprimer la piste « ${deleteModal.track?.name} » ? Cette action est irréversible.`"
+      confirm-text="Supprimer"
+      cancel-text="Annuler"
+      variant="danger"
+      @confirm="confirmDeleteTrack"
+      @cancel="cancelDeleteTrack"
     />
   </div>
 </template>

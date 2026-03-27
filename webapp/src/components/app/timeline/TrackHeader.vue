@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: "rename"): void;
   (e: "open-settings"): void;
   (e: "toggle-expand"): void;
+  (e: "delete"): void;
 }>();
 
 const headerStyle = { borderLeftColor: props.track.color };
@@ -69,6 +70,13 @@ const headerStyle = { borderLeftColor: props.track.color };
           :title="isExpanded ? 'Réduire' : 'Éditer'"
         >
           {{ isExpanded ? "▲" : "▼" }}
+        </button>
+        <button
+          class="control-btn delete-btn"
+          @click.stop="emit('delete')"
+          title="Supprimer la piste"
+        >
+          ×
         </button>
       </div>
     </div>
@@ -176,6 +184,18 @@ const headerStyle = { borderLeftColor: props.track.color };
 
     &.active {
       background: #ff3fb4;
+    }
+  }
+
+  &.delete-btn {
+    margin-left: auto;
+    opacity: 0.5;
+    font-size: 14px;
+
+    &:hover {
+      opacity: 1;
+      background: #d7266d;
+      color: #f2efe8;
     }
   }
 }

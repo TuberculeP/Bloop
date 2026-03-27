@@ -52,6 +52,7 @@ const isAudioTrack = computed(
       @rename="emit('rename-track', track)"
       @open-settings="emit('open-settings', track)"
       @toggle-expand="emit('toggle-expand', track)"
+      @delete="emit('delete-track', track)"
     />
 
     <component
