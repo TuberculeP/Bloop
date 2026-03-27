@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useMainStore } from "../../stores/mainStore";
 import { storeToRefs } from "pinia";
-import AppLayout from "../../layouts/AppLayout.vue";
 import { TimelineView } from "../../components/app/timeline";
 import AudioLibraryPanel from "../../components/app/timeline/AudioLibraryPanel.vue";
 import DawLoadingOverlay from "../../components/app/DawLoadingOverlay.vue";
@@ -93,7 +92,7 @@ defineExpose({
 </script>
 
 <template>
-  <AppLayout>
+  <div class="sequencer-layout">
     <DawLoadingOverlay />
     <div class="app-container">
       <div v-if="!isLoaded" class="loading-screen">
@@ -115,10 +114,16 @@ defineExpose({
         </div>
       </div>
     </div>
-  </AppLayout>
+  </div>
 </template>
 
 <style scoped>
+.sequencer-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .app-container {
   height: 100%;
   display: flex;

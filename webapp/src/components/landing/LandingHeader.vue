@@ -1,7 +1,7 @@
 <template>
   <header
     class="main-header"
-    :class="{ scrolled: isScrolled, 'menu-open': isMobileMenuOpen }"
+    :class="{ scrolled: isScrolled, 'menu-open': isMobileMenuOpen, 'no-animations': noAnimations }"
   >
     <div class="header-container">
       <!-- Logo avec animation -->
@@ -17,6 +17,12 @@
       <!-- Navigation principale -->
       <nav class="main-nav" :class="{ open: isMobileMenuOpen }">
         <ul class="nav-links">
+          <li v-if="isAuthenticated" class="dashboard-link">
+            <router-link to="/app" class="nav-link" @click="closeMobileMenu">
+              <span class="nav-text">Dashboard</span>
+              <span class="nav-underline"></span>
+            </router-link>
+          </li>
           <li
             v-for="(link, index) in navLinks"
             :key="link.name"
@@ -158,6 +164,10 @@ import { useAuthStore } from "../../stores/authStore";
 import apiClient from "../../lib/utils/apiClient";
 import gsap from "gsap";
 
+const props = defineProps<{
+  noAnimations?: boolean;
+}>();
+
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -254,20 +264,21 @@ onMounted(() => {
   document.addEventListener("click", handleClickOutside);
   handleScroll();
 
-  // GSAP entrance animations
-  gsap.from(".logo-wrapper", {
-    opacity: 0,
-    x: -30,
-    duration: 0.8,
-    ease: "power3.out",
-  });
+  if (!props.noAnimations) {
+    gsap.from(".logo-wrapper", {
+      opacity: 0,
+      x: -30,
+      duration: 0.8,
+      ease: "power3.out",
+    });
 
-  gsap.from(".auth-section", {
-    opacity: 0,
-    x: 30,
-    duration: 0.8,
-    ease: "power3.out",
-  });
+    gsap.from(".auth-section", {
+      opacity: 0,
+      x: 30,
+      duration: 0.8,
+      ease: "power3.out",
+    });
+  }
 });
 
 onUnmounted(() => {
@@ -393,6 +404,12 @@ onUnmounted(() => {
   animation: fadeInDown 0.6s ease forwards;
   animation-delay: var(--delay);
   opacity: 0;
+}
+
+.no-animations .nav-links li,
+.nav-links li.dashboard-link {
+  animation: none;
+  opacity: 1;
 }
 
 @keyframes fadeInDown {
