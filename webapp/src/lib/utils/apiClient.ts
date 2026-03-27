@@ -1,13 +1,32 @@
 import axios from "axios";
 import type { AxiosError } from "axios";
 
+// Callback pour notifier l'app d'une session expirée
+type AuthErrorCallback = () => void;
+let onAuthError: AuthErrorCallback | null = null;
+
+export const setAuthErrorHandler = (callback: AuthErrorCallback) => {
+  onAuthError = callback;
+};
+
 const axiosClient = axios.create({
   baseURL: "/api",
-  withCredentials: true, // Include cookies in requests
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+// Intercepteur pour détecter les 401 (session expirée)
+axiosClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      onAuthError?.();
+    }
+    return Promise.reject(error);
+  },
+);
 
 const dataMethods = ["post", "put", "patch", "delete"] as const;
 
