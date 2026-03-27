@@ -84,17 +84,24 @@ const checkpointStyle = computed(() => ({
 }));
 
 const loopEndPosition = computed(() => {
-  let lastNoteEnd = 0;
+  let lastEnd = 0;
+
   for (const track of timelineStore.getPlayableTracks()) {
+    // Notes (tracks MIDI)
     for (const note of track.notes) {
       const noteEnd = note.x + note.w;
-      if (noteEnd > lastNoteEnd) {
-        lastNoteEnd = noteEnd;
-      }
+      if (noteEnd > lastEnd) lastEnd = noteEnd;
+    }
+
+    // Clips (audio tracks)
+    for (const clip of track.clips ?? []) {
+      const clipEnd = clip.x + clip.w;
+      if (clipEnd > lastEnd) lastEnd = clipEnd;
     }
   }
-  if (lastNoteEnd === 0) return timelineStore.project.cols;
-  return Math.ceil(lastNoteEnd / 4) * 4;
+
+  if (lastEnd === 0) return timelineStore.project.cols;
+  return Math.ceil(lastEnd / 4) * 4;
 });
 
 const noteNamesDescending = [

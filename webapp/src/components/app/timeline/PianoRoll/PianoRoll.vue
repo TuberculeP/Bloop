@@ -16,6 +16,30 @@ import PianoGridCanvas from "./PianoGridCanvas.vue";
 
 const USE_CANVAS = true;
 
+const keysContainerRef = ref<HTMLElement | null>(null);
+const gridContainerRef = ref<HTMLElement | null>(null);
+let isSyncingScroll = false;
+
+const syncScrollFromGrid = () => {
+  if (isSyncingScroll || !keysContainerRef.value || !gridContainerRef.value)
+    return;
+  isSyncingScroll = true;
+  keysContainerRef.value.scrollTop = gridContainerRef.value.scrollTop;
+  requestAnimationFrame(() => {
+    isSyncingScroll = false;
+  });
+};
+
+const syncScrollFromKeys = () => {
+  if (isSyncingScroll || !keysContainerRef.value || !gridContainerRef.value)
+    return;
+  isSyncingScroll = true;
+  gridContainerRef.value.scrollTop = keysContainerRef.value.scrollTop;
+  requestAnimationFrame(() => {
+    isSyncingScroll = false;
+  });
+};
+
 const props = defineProps<{
   track: Track;
   cols: number;
@@ -147,30 +171,42 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="piano-roll-wrapper">
-    <component
-      :is="USE_CANVAS ? PianoKeysCanvas : PianoKeys"
-      :active-notes="allActiveNotes"
-      :grid-height="gridHeight"
-      @note-start="handleNoteStart"
-      @note-stop="handleNoteStop"
-      @all-notes-stop="handleAllNotesStop"
-    />
-    <component
-      :is="USE_CANVAS ? PianoGridCanvas : PianoGrid"
-      :notes="track.notes"
-      :cols="cols"
-      :col-width="colWidth"
-      :color="track.color"
-      :active-notes="allActiveNotes"
-      :track-id="track.id"
-      @add-note="handleAddNote"
-      @remove-note="handleRemoveNote"
-      @update-notes="handleUpdateNotes"
-      @delete-notes="handleDeleteNotes"
-      @paste-notes="handlePasteNotes"
-      @undo="handleUndo"
-      @redo="handleRedo"
-    />
+    <div
+      ref="keysContainerRef"
+      class="piano-keys-container"
+      @scroll="syncScrollFromKeys"
+    >
+      <component
+        :is="USE_CANVAS ? PianoKeysCanvas : PianoKeys"
+        :active-notes="allActiveNotes"
+        :grid-height="gridHeight"
+        @note-start="handleNoteStart"
+        @note-stop="handleNoteStop"
+        @all-notes-stop="handleAllNotesStop"
+      />
+    </div>
+    <div
+      ref="gridContainerRef"
+      class="piano-grid-container"
+      @scroll="syncScrollFromGrid"
+    >
+      <component
+        :is="USE_CANVAS ? PianoGridCanvas : PianoGrid"
+        :notes="track.notes"
+        :cols="cols"
+        :col-width="colWidth"
+        :color="track.color"
+        :active-notes="allActiveNotes"
+        :track-id="track.id"
+        @add-note="handleAddNote"
+        @remove-note="handleRemoveNote"
+        @update-notes="handleUpdateNotes"
+        @delete-notes="handleDeleteNotes"
+        @paste-notes="handlePasteNotes"
+        @undo="handleUndo"
+        @redo="handleRedo"
+      />
+    </div>
   </div>
 </template>
 
@@ -178,9 +214,28 @@ onBeforeUnmount(() => {
 .piano-roll-wrapper {
   display: flex;
   height: 400px;
-  overflow: auto;
   background: #1a0e15;
   border-top: 1px solid rgba(122, 15, 62, 0.5);
+}
+
+.piano-keys-container {
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #2a2a2a;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.piano-grid-container {
+  flex: 1;
+  overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(122, 15, 62, 0.5) transparent;
 }

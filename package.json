@@ -13,7 +13,7 @@
     "dockerize": "docker compose -f docker-compose.yml -f docker-compose.local.yml up --build --force-recreate -d"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.995.0",
+    "@aws-sdk/client-s3": "^3.997.0",
     "@elemaudio/core": "^4.0.1",
     "@elemaudio/web-renderer": "^4.0.3",
     "@tailwindcss/vite": "^4.1.11",

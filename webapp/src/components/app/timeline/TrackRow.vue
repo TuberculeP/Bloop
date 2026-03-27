@@ -5,6 +5,7 @@ import TrackHeader from "./TrackHeader.vue";
 import TrackTimelinePreview from "./TrackTimelinePreview.vue";
 import TrackTimelinePreviewCanvas from "./TrackTimelinePreviewCanvas.vue";
 import AudioClipPreview from "./AudioClipPreview.vue";
+import AudioClipPreviewCanvas from "./AudioClipPreviewCanvas.vue";
 import PianoRoll from "./PianoRoll/PianoRoll.vue";
 
 const USE_CANVAS = true;
@@ -64,7 +65,8 @@ const isAudioTrack = computed(
       @dblclick="emit('toggle-expand', track)"
     />
 
-    <AudioClipPreview
+    <component
+      :is="USE_CANVAS ? AudioClipPreviewCanvas : AudioClipPreview"
       v-else
       :clips="track.clips ?? []"
       :cols="cols"

@@ -157,9 +157,6 @@ onBeforeUnmount(() => {
   background: #2a2a2a;
   border-right: 2px solid #333;
   box-sizing: border-box;
-  position: sticky;
-  left: 0;
-  z-index: 5;
   cursor: pointer;
 
   canvas {
