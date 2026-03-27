@@ -96,6 +96,7 @@ export type InstrumentType =
   | "elementarySynth"
   | "smplr"
   | "undertale"
+  | "earthbound"
   | "audioTrack";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
@@ -128,6 +129,16 @@ export interface UndertaleConfig {
   release?: number;
 }
 
+export interface EarthboundConfig {
+  type: "earthbound";
+  instrument: string;
+  gain?: number;
+  attack?: number;
+  decay?: number;
+  sustain?: number;
+  release?: number;
+}
+
 export interface AudioTrackConfig {
   type: "audioTrack";
   gain?: number;
@@ -138,6 +149,7 @@ export type InstrumentConfig =
   | SmplrConfig
   | ElementarySynthConfig
   | UndertaleConfig
+  | EarthboundConfig
   | AudioTrackConfig;
 
 export interface InstrumentConfigUpdate {

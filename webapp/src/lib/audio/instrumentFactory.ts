@@ -4,6 +4,7 @@ import {
   BasicSynthEngine,
   SmplrEngine,
   UndertaleEngine,
+  EarthboundEngine,
   type InstrumentEngine,
 } from "./engines";
 
@@ -31,6 +32,9 @@ export function createInstrumentEngine(
 
     case "undertale":
       return new UndertaleEngine(audioContext, destination, config);
+
+    case "earthbound":
+      return new EarthboundEngine(audioContext, destination, config);
 
     case "audioTrack":
       return new AudioClipEngine(audioContext, destination, config);
@@ -68,6 +72,17 @@ export function getDefaultConfigForType(
     case "undertale":
       return {
         type: "undertale",
+        instrument: "",
+        gain: 1,
+        attack: 0,
+        decay: 0,
+        sustain: 1,
+        release: 0.3,
+      };
+
+    case "earthbound":
+      return {
+        type: "earthbound",
         instrument: "",
         gain: 1,
         attack: 0,

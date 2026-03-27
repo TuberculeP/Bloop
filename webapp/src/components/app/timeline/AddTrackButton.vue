@@ -40,6 +40,12 @@ const instruments = [
     icon: "💀",
     description: "Soundfont Undertale (plusieurs presets)",
   },
+  {
+    type: "earthbound" as InstrumentType,
+    name: "EarthBound",
+    icon: "🌍",
+    description: "Soundfont EarthBound (plusieurs presets)",
+  },
 ];
 
 const handleSelect = (type: InstrumentType) => {

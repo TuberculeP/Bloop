@@ -3,7 +3,11 @@ import { computed } from "vue";
 import type { Track, OscillatorType } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
-import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
+import {
+  SOUNDFONT_LIST,
+  UndertaleEngine,
+  EarthboundEngine,
+} from "../../../lib/audio/engines";
 import TrackEqualizer from "./TrackEqualizer.vue";
 
 const props = defineProps<{
@@ -86,6 +90,59 @@ const undertaleRelease = computed(() => {
   return 0.3;
 });
 
+const earthboundEngine = computed(() => {
+  if (props.track.instrument.type !== "earthbound") return null;
+  const engine = trackAudioStore.getEngine(props.track.id);
+  if (engine && engine instanceof EarthboundEngine) {
+    return engine;
+  }
+  return null;
+});
+
+const earthboundInstruments = computed(() => {
+  return earthboundEngine.value?.instrumentNames ?? [];
+});
+
+const currentEarthboundInstrument = computed(() => {
+  if (props.track.instrument.type === "earthbound") {
+    return props.track.instrument.instrument;
+  }
+  return "";
+});
+
+const earthboundEngineState = computed(() => {
+  if (props.track.instrument.type !== "earthbound") return null;
+  return trackAudioStore.getTrackEngineState(props.track.id);
+});
+
+const earthboundAttack = computed(() => {
+  if (props.track.instrument.type === "earthbound") {
+    return props.track.instrument.attack ?? 0;
+  }
+  return 0;
+});
+
+const earthboundDecay = computed(() => {
+  if (props.track.instrument.type === "earthbound") {
+    return props.track.instrument.decay ?? 0;
+  }
+  return 0;
+});
+
+const earthboundSustain = computed(() => {
+  if (props.track.instrument.type === "earthbound") {
+    return props.track.instrument.sustain ?? 1;
+  }
+  return 1;
+});
+
+const earthboundRelease = computed(() => {
+  if (props.track.instrument.type === "earthbound") {
+    return props.track.instrument.release ?? 0.3;
+  }
+  return 0.3;
+});
+
 const oscillatorTypes: OscillatorType[] = [
   "sine",
   "square",
@@ -106,6 +163,11 @@ const handleSoundfontChange = (soundfont: string) => {
 };
 
 const handleUndertaleInstrumentChange = (instrument: string) => {
+  timelineStore.updateTrackInstrument(props.track.id, { instrument });
+  trackAudioStore.updateTrackInstrument(props.track.id, { instrument });
+};
+
+const handleEarthboundInstrumentChange = (instrument: string) => {
   timelineStore.updateTrackInstrument(props.track.id, { instrument });
   trackAudioStore.updateTrackInstrument(props.track.id, { instrument });
 };
@@ -336,6 +398,119 @@ const handleClose = () => {
                     />
                     <span class="adsr-value"
                       >{{ undertaleRelease.toFixed(2) }}s</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template v-else-if="instrumentType === 'earthbound'">
+              <div class="setting-group">
+                <label class="setting-label">Preset EarthBound</label>
+                <template v-if="earthboundEngineState === 'loading'">
+                  <p class="loading-text">Chargement du soundfont...</p>
+                </template>
+                <template v-else-if="earthboundInstruments.length > 0">
+                  <select
+                    class="soundfont-select"
+                    :value="currentEarthboundInstrument"
+                    @change="
+                      handleEarthboundInstrumentChange(
+                        ($event.target as HTMLSelectElement).value,
+                      )
+                    "
+                  >
+                    <option
+                      v-for="inst in earthboundInstruments"
+                      :key="inst"
+                      :value="inst"
+                    >
+                      {{ inst }}
+                    </option>
+                  </select>
+                </template>
+                <template v-else>
+                  <p class="coming-soon">Aucun preset disponible</p>
+                </template>
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-label">Enveloppe ADSR</label>
+                <div class="adsr-controls">
+                  <div class="adsr-slider">
+                    <span class="adsr-label">A</span>
+                    <input
+                      type="range"
+                      :value="earthboundAttack"
+                      min="0"
+                      max="2"
+                      step="0.01"
+                      @input="
+                        handleADSRChange(
+                          'attack',
+                          Number(($event.target as HTMLInputElement).value),
+                        )
+                      "
+                    />
+                    <span class="adsr-value"
+                      >{{ earthboundAttack.toFixed(2) }}s</span
+                    >
+                  </div>
+                  <div class="adsr-slider">
+                    <span class="adsr-label">D</span>
+                    <input
+                      type="range"
+                      :value="earthboundDecay"
+                      min="0"
+                      max="2"
+                      step="0.01"
+                      @input="
+                        handleADSRChange(
+                          'decay',
+                          Number(($event.target as HTMLInputElement).value),
+                        )
+                      "
+                    />
+                    <span class="adsr-value"
+                      >{{ earthboundDecay.toFixed(2) }}s</span
+                    >
+                  </div>
+                  <div class="adsr-slider">
+                    <span class="adsr-label">S</span>
+                    <input
+                      type="range"
+                      :value="earthboundSustain"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      @input="
+                        handleADSRChange(
+                          'sustain',
+                          Number(($event.target as HTMLInputElement).value),
+                        )
+                      "
+                    />
+                    <span class="adsr-value"
+                      >{{ (earthboundSustain * 100).toFixed(0) }}%</span
+                    >
+                  </div>
+                  <div class="adsr-slider">
+                    <span class="adsr-label">R</span>
+                    <input
+                      type="range"
+                      :value="earthboundRelease"
+                      min="0"
+                      max="3"
+                      step="0.01"
+                      @input="
+                        handleADSRChange(
+                          'release',
+                          Number(($event.target as HTMLInputElement).value),
+                        )
+                      "
+                    />
+                    <span class="adsr-value"
+                      >{{ earthboundRelease.toFixed(2) }}s</span
                     >
                   </div>
                 </div>

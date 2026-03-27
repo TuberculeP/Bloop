@@ -138,6 +138,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       elementarySynth: "Elementary",
       smplr: "Sampler",
       undertale: "Undertale",
+      earthbound: "EarthBound",
       audioTrack: "Audio",
     };
     const baseName = baseNames[instrumentType];
