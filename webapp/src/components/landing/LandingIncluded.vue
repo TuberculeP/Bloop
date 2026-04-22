@@ -318,17 +318,21 @@ onUnmounted(() => {
 
 <style scoped>
 .included-section {
-  position: relative;
-  padding: 6rem 0;
   overflow: hidden;
+
+  perspective: 1000px;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .section-container {
   position: relative;
   z-index: 1;
-  max-width: 900px;
   margin: 0 auto;
   padding: 0 2rem;
+  max-width: 1400px;
+  width: 100%;
 }
 
 /* Background */
@@ -411,7 +415,6 @@ onUnmounted(() => {
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
-  color: var(--color-accent);
   margin-bottom: 1rem;
 }
 
