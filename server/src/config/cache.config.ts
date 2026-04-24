@@ -7,7 +7,11 @@ import sqliteStoreFactory from "express-session-sqlite";
 import { RedisStore } from "connect-redis";
 import { createClient } from "redis";
 
-const DEFAULT_TLL = 60 * 60 * 24; // 1 day in seconds
+// 1 jour en prod, 7 jours en dev (SQLite moins stable)
+const DEFAULT_TTL =
+  process.env.NODE_ENV === "production"
+    ? 60 * 60 * 24 // 1 jour
+    : 60 * 60 * 24 * 7; // 7 jours
 const DEFAULT_PREFIX = "sess:";
 
 function createStore() {
@@ -19,7 +23,7 @@ function createStore() {
     return new RedisStore({
       client: redisClient,
       prefix: DEFAULT_PREFIX,
-      ttl: DEFAULT_TLL,
+      ttl: DEFAULT_TTL,
     });
   } else {
     const SqliteStore = sqliteStoreFactory(session);
@@ -27,7 +31,7 @@ function createStore() {
     return new SqliteStore({
       driver: sqlite3.Database,
       path: "./express_session_local.db",
-      ttl: DEFAULT_TLL,
+      ttl: DEFAULT_TTL,
       prefix: DEFAULT_PREFIX,
       cleanupInterval: 300000,
     });
@@ -42,9 +46,10 @@ export default function customSession() {
     secret: "you'll never guess this (poulet froid)",
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Renouvelle le cookie à chaque requête (session active = pas d'expiration)
     cookie: {
-      secure: false,
-      maxAge: DEFAULT_TLL * 1000, // 1 jour en ms (aligné avec le TTL du store)
+      secure: process.env.NODE_ENV === "production",
+      maxAge: DEFAULT_TTL * 1000,
     },
     store,
   });

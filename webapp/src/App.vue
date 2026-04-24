@@ -4,6 +4,7 @@ import { onSocketConnected } from "./lib/utils/websocket";
 import { useAuthStore } from "./stores/authStore";
 import apiClient from "./lib/utils/apiClient";
 import type { User } from "./lib/utils/types";
+import SessionExpiredModal from "./components/ui/SessionExpiredModal.vue";
 
 const authStore = useAuthStore();
 
@@ -20,6 +21,7 @@ onSocketConnected((socket) => {
 </script>
 
 <template>
+  <SessionExpiredModal />
   <RouterView />
 </template>
 

@@ -103,5 +103,11 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     if (audioContext.state === "suspended") await audioContext.resume();
   };
 
-  return { audioContext, inputBus, isInitialized, ensureAudioContextResumed };
+  const createCaptureStream = (): MediaStream => {
+    const dest = audioContext.createMediaStreamDestination();
+    masterGain.connect(dest);
+    return dest.stream;
+  };
+
+  return { audioContext, inputBus, isInitialized, ensureAudioContextResumed, createCaptureStream };
 });
