@@ -143,11 +143,6 @@
         <span class="toggle-line"></span>
       </button>
     </div>
-
-    <!-- Progress bar -->
-    <div class="scroll-progress">
-      <div class="progress-bar" :style="{ width: scrollProgress + '%' }"></div>
-    </div>
   </header>
 </template>
 
@@ -285,6 +280,7 @@ onUnmounted(() => {
   width: 100%;
   z-index: 1000;
   padding: 1.5rem 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -727,26 +723,6 @@ onUnmounted(() => {
 
 .mobile-toggle.active .toggle-line:nth-child(3) {
   transform: translateY(-7px) rotate(-45deg);
-}
-
-/* Scroll progress */
-.scroll-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--color-accent),
-    var(--color-secondary)
-  );
-  transition: width 0.1s linear;
 }
 
 /* Responsive */

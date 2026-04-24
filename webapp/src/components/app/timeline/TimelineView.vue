@@ -539,7 +539,7 @@ defineExpose({
           @click="handleBackToProjects"
           title="Retour aux projets"
         >
-          ←
+          <i class="fas fa-arrow-left"></i>
         </button>
         <AddTrackButton @add-track="handleAddTrack" />
         <button
@@ -548,7 +548,7 @@ defineExpose({
           @click="showAudioLibrary = !showAudioLibrary"
           title="Audio Library"
         >
-          🔊
+          <i class="fas fa-volume-down"></i>
         </button>
       </div>
       <div class="header-center">
@@ -558,7 +558,7 @@ defineExpose({
             @click="setCheckpoint(0)"
             title="Retour au début"
           >
-            ⏮
+            <i class="fas fa-fast-backward"></i>
           </button>
           <button
             class="transport-btn play-btn"
@@ -566,7 +566,7 @@ defineExpose({
             @click="togglePlayback"
             :title="isPlaying ? 'Stop' : 'Play'"
           >
-            {{ isPlaying ? "⏹" : "▶" }}
+            <i :class="isPlaying ? 'fas fa-stop' : 'fas fa-play'"></i>
           </button>
         </div>
         <div class="tempo-control">
@@ -619,7 +619,8 @@ defineExpose({
             :disabled="isExporting"
             title="Exporter en audio"
           >
-            <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" alt="Exporter" />
+            Exporter
+            <i class="fas fa-download"></i>
           </button>
         </div>
         <input
@@ -712,7 +713,7 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #2d0f20;
+  background: var(--color-bg-secondary-dark);
   border-bottom: 1px solid rgba(122, 15, 62, 0.5);
 }
 
@@ -732,15 +733,15 @@ defineExpose({
   padding: 8px 16px;
   border: 1px solid rgba(122, 15, 62, 0.5);
   border-radius: 6px;
-  background: #2d0f20;
-  color: #f2efe8;
+  background: var(--color-bg-secondary-dark);
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background: #3d1528;
-    border-color: #ff3fb4;
+    background: var(--color-primary-active);
+    border-color: var(--color-accent2);
   }
 
   &:disabled {
@@ -751,15 +752,14 @@ defineExpose({
 
 .back-btn {
   padding: 8px 12px;
-  font-size: 16px;
 }
 
 .library-btn {
   padding: 8px 12px;
-  font-size: 16px;
+  font-size: 14px;
 
   &.active {
-    background: #7a0f3e;
+    background: var(--color-accent3);
     border-color: #ff3fb4;
   }
 }
@@ -787,8 +787,8 @@ defineExpose({
 }
 
 .save-btn {
-  background: #7a0f3e;
-  border-color: #7a0f3e;
+  background: var(--color-accent3);
+  border-color: var(--color-accent3);
 
   &:hover {
     background: #9b2458;
@@ -804,31 +804,13 @@ defineExpose({
 }
 
 .export-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 50%;
+  border-radius: 6px;
   background: transparent;
   border-color: var(--color-border-secondary);
   display: flex;
   align-items: center;
+  gap: 6px;
   justify-content: center;
-
-  img {
-    width: 18px;
-    height: 18px;
-    filter: invert(1) opacity(0.7);
-    transition: filter 0.2s ease;
-  }
-
-  &:hover {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-
-    img {
-      filter: invert(1) opacity(1);
-    }
-  }
 
   &:disabled {
     opacity: 0.4;
@@ -890,9 +872,9 @@ defineExpose({
   height: 40px;
   border: none;
   border-radius: 50%;
-  background: #7a0f3e;
+  background: var(--color-accent3);
   color: #f2efe8;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.15s ease;
 
@@ -928,7 +910,7 @@ defineExpose({
     padding: 6px 8px;
     border: 1px solid rgba(122, 15, 62, 0.5);
     border-radius: 4px;
-    background-color: #2d0f20;
+    background-color: var(--color-bg-secondary-dark);
     color: #f2efe8;
     font-size: 14px;
     text-align: center;
@@ -947,7 +929,7 @@ defineExpose({
   min-width: 60px;
   text-align: center;
   padding: 6px 12px;
-  background-color: #2d0f20;
+  background-color: var(--color-bg-secondary-dark);
   color: #f2efe8;
   border-radius: 4px;
 }
@@ -964,6 +946,11 @@ defineExpose({
   overflow-y: auto;
   position: relative;
   background: #1a0e15;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none; // Firefox
 }
 
 .tracks-container {

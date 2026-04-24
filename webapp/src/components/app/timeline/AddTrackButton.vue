@@ -59,8 +59,7 @@ const handleClickOutside = () => {
       @click="showMenu = !showMenu"
       title="Ajouter une piste"
     >
-      <span class="icon">+</span>
-      <span class="label">Ajouter</span>
+      <span class="label">+ Ajouter</span>
     </button>
 
     <Transition name="fade">
@@ -92,24 +91,19 @@ const handleClickOutside = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: var(--color-accent2);
-  border: none;
+  padding: 8px 12px;
+  background: var(--color-accent3);
+  border: 1px solid var(--color-accent3);
   border-radius: 6px;
-  color: #1a0e15;
+  color: var(--color-white);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background: var(--color-accent2-hover);
-    transform: translateY(-1px);
-  }
-
-  .icon {
-    font-size: 18px;
-    font-weight: 600;
+    background: var(--color-primary-active);
+    border-color: var(--color-accent2);
   }
 }
 
