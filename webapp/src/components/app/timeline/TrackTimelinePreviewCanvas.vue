@@ -124,9 +124,7 @@ onMounted(() => {
     @dblclick="emit('dblclick')"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
-  >
-    <canvas ref="canvasRef" />
-  </div>
+  ></div>
 </template>
 
 <style scoped lang="scss">
