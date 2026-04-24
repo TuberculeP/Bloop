@@ -90,7 +90,7 @@ export function getDefaultConfigForType(
       return {
         type: "vstStream",
         vstId: "surge",
-        serverUrl: "ws://localhost:8080",
+        serverUrl: "wss://vst-test.bloop-on.cloud",
         gain: 1,
       };
 

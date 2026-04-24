@@ -109,12 +109,19 @@ class CarlaBackend {
   }
 
   _startAudioCapture() {
+    // Create a ffmpeg JACK client named "vst-capture"
     const ffmpeg = spawn("ffmpeg", [
       "-nostats", "-loglevel", "error",
-      "-f", "jack", "-i", "Carla",
+      "-f", "jack", "-i", "vst-capture",
       "-f", "f32le", "-ar", String(SAMPLE_RATE), "-ac", "1",
       "pipe:1",
     ]);
+
+    // Connect Carla's output to ffmpeg's input once both are ready
+    setTimeout(() => {
+      spawn("jack_connect", ["Carla:audio-out1", "vst-capture:input_1"], { stdio: "ignore" });
+      spawn("jack_connect", ["Carla:audio-out2", "vst-capture:input_2"], { stdio: "ignore" });
+    }, 3000);
 
     let remainder = Buffer.alloc(0);
     const bytesPerChunk = CHUNK_SIZE * 4;
@@ -139,31 +146,20 @@ class CarlaBackend {
     });
   }
 
+  // Plugin slot is always 0 since we pre-load Surge XT via project file
   allocatePluginId() {
-    return this.nextPluginId++;
+    return 0;
   }
 
-  loadPlugin(pluginId, vstId) {
-    const path = VST_PATHS[vstId];
-    if (!path) {
-      console.warn(`[Carla] Unknown VST: ${vstId}`);
-      return;
-    }
-    this.osc.send({
-      address: "/Carla/load_plugin",
-      args: [
-        { type: "i", value: pluginId },
-        { type: "s", value: "VST3" },
-        { type: "s", value: path },
-      ],
-    });
+  loadPlugin(_pluginId, vstId) {
+    console.log(`[Carla] Plugin pre-loaded via project file: ${vstId}`);
   }
 
   noteOn(pluginId, note, velocity) {
     this.osc.send({
-      address: `/Carla/${pluginId}/midi`,
+      address: `/Carla/${pluginId}/note_on`,
       args: [
-        { type: "i", value: 0x90 },
+        { type: "i", value: 0 },
         { type: "i", value: note },
         { type: "i", value: velocity },
       ],
@@ -172,9 +168,9 @@ class CarlaBackend {
 
   noteOff(pluginId, note) {
     this.osc.send({
-      address: `/Carla/${pluginId}/midi`,
+      address: `/Carla/${pluginId}/note_off`,
       args: [
-        { type: "i", value: 0x80 },
+        { type: "i", value: 0 },
         { type: "i", value: note },
         { type: "i", value: 0 },
       ],

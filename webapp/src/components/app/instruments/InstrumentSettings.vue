@@ -3,7 +3,11 @@ import { computed } from "vue";
 import type { Track, OscillatorType } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
-import { SOUNDFONT_LIST, UndertaleEngine, VST_LIST } from "../../../lib/audio/engines";
+import {
+  SOUNDFONT_LIST,
+  UndertaleEngine,
+  VST_LIST,
+} from "../../../lib/audio/engines";
 import TrackEqualizer from "./TrackEqualizer.vue";
 
 const props = defineProps<{
@@ -382,7 +386,9 @@ const handleClose = () => {
                 <select
                   class="soundfont-select"
                   :value="currentVstId"
-                  @change="handleVstChange(($event.target as HTMLSelectElement).value)"
+                  @change="
+                    handleVstChange(($event.target as HTMLSelectElement).value)
+                  "
                 >
                   <option v-for="vst in VST_LIST" :key="vst.id" :value="vst.id">
                     {{ vst.name }} — {{ vst.type }}
@@ -396,17 +402,20 @@ const handleClose = () => {
                   class="server-url-input"
                   type="text"
                   :value="currentVstServerUrl"
-                  @change="handleVstServerUrlChange(($event.target as HTMLInputElement).value)"
+                  @change="
+                    handleVstServerUrlChange(
+                      ($event.target as HTMLInputElement).value,
+                    )
+                  "
                   placeholder="ws://localhost:8080"
                 />
               </div>
 
               <div class="setting-group">
                 <label class="setting-label">État connexion</label>
-                <p
-                  class="connection-state"
-                  :class="vstEngineState"
-                >{{ vstEngineState ?? "idle" }}</p>
+                <p class="connection-state" :class="vstEngineState">
+                  {{ vstEngineState ?? "idle" }}
+                </p>
               </div>
             </template>
           </div>
@@ -601,10 +610,18 @@ const handleClose = () => {
   font-weight: 500;
   text-transform: capitalize;
 
-  &.ready { color: #22c55e; }
-  &.loading { color: #eab308; }
-  &.error { color: #ef4444; }
-  &.idle { color: rgba(255, 255, 255, 0.4); }
+  &.ready {
+    color: #22c55e;
+  }
+  &.loading {
+    color: #eab308;
+  }
+  &.error {
+    color: #ef4444;
+  }
+  &.idle {
+    color: rgba(255, 255, 255, 0.4);
+  }
 }
 
 .adsr-controls {
