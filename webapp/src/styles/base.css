@@ -67,7 +67,6 @@ p {
   font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.6;
-  margin-bottom: 1rem;
   color: var(--color-white);
 }
 

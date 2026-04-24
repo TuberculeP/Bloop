@@ -168,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, h } from "vue";
+import { ref, onMounted, onUnmounted, h, inject } from "vue";
 
 const footerRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
@@ -276,7 +276,16 @@ const handleScroll = () => {
 
 // Scroll to top
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const scrollTo =
+    inject<(target: string | number | HTMLElement, options?: object) => void>(
+      "scrollTo",
+    );
+
+  if (scrollTo) {
+    scrollTo("#hero", { duration: 1.2 });
+  } else {
+    document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
+  }
 };
 
 // Newsletter subscribe
@@ -322,7 +331,7 @@ onUnmounted(() => {
 .footer {
   position: relative;
   color: var(--color-white);
-  padding: 5rem 0 2rem;
+  padding-top: 4rem;
   overflow: hidden;
 }
 
@@ -358,17 +367,20 @@ onUnmounted(() => {
 
 .footer-content {
   position: relative;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 /* Main footer grid */
 .footer-main {
+  min-height: 250px;
   display: grid;
   grid-template-columns: 1.5fr 2fr;
   gap: 4rem;
-  margin-bottom: 4rem;
   opacity: 0;
   transform: translateY(30px);
   transition: all 0.8s ease;
@@ -382,10 +394,9 @@ onUnmounted(() => {
 /* Brand section */
 .footer-brand {
   max-width: 300px;
-}
-
-.brand-logo {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .brand-logo .logo {
@@ -396,8 +407,6 @@ onUnmounted(() => {
 .brand-description {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.95rem;
-  line-height: 1.7;
-  margin-bottom: 1.5rem;
 }
 
 /* Social links */
@@ -458,6 +467,9 @@ onUnmounted(() => {
 }
 
 .links-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeInUp 0.6s ease forwards;
@@ -482,7 +494,6 @@ onUnmounted(() => {
   color: var(--color-white);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 1.25rem;
   position: relative;
   padding-bottom: 0.75rem;
 }
@@ -502,10 +513,9 @@ onUnmounted(() => {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.column-links li {
-  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .footer-link {
@@ -544,7 +554,6 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 2.5rem;
-  margin-bottom: 3rem;
   overflow: hidden;
   opacity: 0;
   transform: translateY(20px);
@@ -678,12 +687,12 @@ onUnmounted(() => {
 
 /* Footer bottom */
 .footer-bottom {
+  padding: 2rem 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
   opacity: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   transform: translateY(20px);
   transition: all 0.8s ease 0.4s;
 }
@@ -696,19 +705,6 @@ onUnmounted(() => {
 .copyright {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
-}
-
-.made-with {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
-}
-
-.heart-icon {
-  color: #ef4444;
-  animation: heartbeat 1.5s ease-in-out infinite;
 }
 
 @keyframes heartbeat {
@@ -741,37 +737,25 @@ onUnmounted(() => {
 .back-to-top {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
+  right: 1rem;
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
-  );
+  background: var(--color-accent);
   border: none;
   border-radius: 12px;
   color: var(--color-black);
   cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
   transform: translateY(20px);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   box-shadow: 0 4px 20px rgba(255, 210, 105, 0.3);
   z-index: 100;
 }
 
-.back-to-top.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
 .back-to-top:hover {
-  transform: translateY(-3px);
+  transform: translateY(-1px);
   box-shadow: 0 8px 30px rgba(255, 210, 105, 0.4);
 }
 
@@ -784,6 +768,7 @@ onUnmounted(() => {
 
   .footer-brand {
     max-width: 100%;
+    gap: 14px;
     text-align: center;
   }
 
