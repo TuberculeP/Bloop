@@ -45,6 +45,9 @@ logs
 
 *.sqlite
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 
 /public/uploads/**
 .env*
