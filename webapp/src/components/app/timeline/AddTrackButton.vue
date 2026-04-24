@@ -93,7 +93,7 @@ const handleClickOutside = () => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #ff3fb4;
+  background: var(--color-accent2);
   border: none;
   border-radius: 6px;
   color: #1a0e15;
@@ -103,7 +103,7 @@ const handleClickOutside = () => {
   transition: all 0.15s ease;
 
   &:hover {
-    background: #ff62c2;
+    background: var(--color-accent2-hover);
     transform: translateY(-1px);
   }
 

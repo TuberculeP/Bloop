@@ -52,7 +52,7 @@ const saveMessage = ref<{ type: "success" | "error"; text: string } | null>(
 );
 
 const COL_WIDTH = 20;
-const ROW_HEIGHT = 60;
+const ROW_HEIGHT = 75;
 
 const scrollLeft = ref(0);
 const scrollContainerRef = ref<HTMLElement | null>(null);
@@ -716,7 +716,7 @@ defineExpose({
   font-size: 14px;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 8px 16px;
   border-radius: 4px;
 
   &:hover {

@@ -932,7 +932,7 @@ onUnmounted(() => {
 }
 
 .track-label {
-  height: 60px;
+  height: 75px;
   display: flex;
   align-items: center;
   padding: 0 10px;
@@ -957,7 +957,7 @@ onUnmounted(() => {
 
 .grid-row {
   display: flex;
-  height: 60px;
+  height: 75px;
   border-bottom: 1px solid #2a2a2a;
 }
 
