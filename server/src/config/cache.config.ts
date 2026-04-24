@@ -27,7 +27,7 @@ function createStore() {
     return new SqliteStore({
       driver: sqlite3.Database,
       path: "./express_session_local.db",
-      ttl: DEFAULT_TLL,
+      ttl: DEFAULT_TLL * 1000, // SQLite store uses milliseconds
       prefix: DEFAULT_PREFIX,
       cleanupInterval: 300000,
     });
@@ -42,6 +42,7 @@ export default function customSession() {
     secret: "you'll never guess this (poulet froid)",
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Reset cookie expiry on each request
     cookie: {
       secure: false,
       maxAge: DEFAULT_TLL * 1000, // 1 jour en ms (aligné avec le TTL du store)

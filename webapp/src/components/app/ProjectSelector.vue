@@ -54,6 +54,7 @@ const selectProject = (projectId: string) => {
   emit("select-project", projectId);
 };
 
+
 onMounted(() => {
   loadProjects();
 });
@@ -103,7 +104,7 @@ onMounted(() => {
                 formatDate(project.updatedAt)
               }}</span>
             </div>
-            <span class="project-arrow">→</span>
+            <div class="project-actions"></div>
           </div>
         </div>
       </div>
@@ -252,6 +253,11 @@ onMounted(() => {
   transform: translateX(4px);
 }
 
+.project-card:hover .project-name,
+.project-card:hover .project-date {
+  color: var(--color-bg-primary-dark);
+}
+
 .project-info {
   display: flex;
   flex-direction: column;
@@ -269,14 +275,45 @@ onMounted(() => {
   font-size: 0.85rem;
 }
 
-.project-arrow {
-  color: var(--color-text-secondary);
-  font-size: 1.2rem;
-  transition: transform 0.2s ease;
+.project-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.project-card:hover .project-arrow {
-  transform: translateX(4px);
-  color: var(--color-primary);
+.btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.btn-download img {
+  width: 18px;
+  height: 18px;
+  filter: invert(1) opacity(0.6);
+  transition: all 0.2s ease;
+}
+
+.project-card:hover .btn-download img {
+  filter: brightness(0) opacity(0.7);
+}
+
+.btn-download:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-download:hover img {
+  filter: invert(1) opacity(1) !important;
 }
 </style>

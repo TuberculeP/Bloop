@@ -25,6 +25,10 @@ const handleNewProject = () => {
 const handleSelectProject = (projectId: string) => {
   router.push({ name: "app-sequencer", query: { projectId } });
 };
+
+const handleExportProject = (projectId: string) => {
+  router.push({ name: "app-sequencer", query: { projectId, export: "true" } });
+};
 </script>
 
 <template>
@@ -45,6 +49,7 @@ const handleSelectProject = (projectId: string) => {
       v-else
       @new-project="handleNewProject"
       @select-project="handleSelectProject"
+      @export-project="handleExportProject"
     />
   </AppLayout>
 </template>
