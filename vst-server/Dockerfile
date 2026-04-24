@@ -12,8 +12,8 @@ RUN apt-get update \
         libxcb-xinerama0 libxcb-cursor0 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget -q -O /tmp/surge.deb \
-    "https://github.com/surge-synthesizer/releases-xt/releases/download/1.3.4/surge-xt-linux-x64-1.3.4.deb" \
+RUN wget -O /tmp/surge.deb \
+    "https://github.com/surge-synthesizer/surge/releases/download/release_1.3.4/surge-xt_1.3.4_amd64.deb" \
     && dpkg -i /tmp/surge.deb || apt-get install -f -y \
     && rm /tmp/surge.deb \
     && rm -rf /var/lib/apt/lists/*

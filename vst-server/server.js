@@ -255,6 +255,10 @@ class Session {
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
 async function detectBackend() {
+  if (process.env.CARLA_STARTED !== "1") {
+    console.log("[Server] Carla not started by entrypoint, using synth fallback");
+    return new SynthBackend();
+  }
   try {
     const backend = new CarlaBackend();
     await backend.init();

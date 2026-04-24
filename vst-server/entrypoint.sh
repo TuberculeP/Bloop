@@ -16,7 +16,8 @@ echo "JACK ready"
 
 SURGE_PATH="/usr/lib/vst3/Surge XT.vst3"
 
-if [ -f "$SURGE_PATH" ]; then
+# VST3 is a directory bundle on Linux — use -d not -f
+if [ -d "$SURGE_PATH" ]; then
     DISCOVERY=$(carla-discovery-native vst3 "$SURGE_PATH" 2>/dev/null || echo "")
     SURGE_LABEL=$(echo "$DISCOVERY" | grep "::label::" | head -1 | awk -F'::' '{print $3}')
     SURGE_UID=$(echo "$DISCOVERY" | grep "::uniqueId::" | head -1 | awk -F'::' '{print $3}')
@@ -46,6 +47,7 @@ EOF
         echo "Starting Carla with Surge XT (uid=$SURGE_UID)"
         carla --no-gui /tmp/project.carxp &
         sleep 5
+        export CARLA_STARTED=1
     else
         echo "Could not discover Surge XT — synth fallback will be used"
     fi
