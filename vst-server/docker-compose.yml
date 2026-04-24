@@ -1,8 +1,6 @@
 services:
   vst-server:
     build: .
-    ports:
-      - "8080:8080"
     environment:
       - DISPLAY=:99
     cap_add:
