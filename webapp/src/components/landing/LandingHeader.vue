@@ -163,7 +163,7 @@ const authStore = useAuthStore();
 
 // Navigation links
 const navLinks = [
-  { name: "Produit", href: "#features" },
+  { name: "Application", href: "/app" },
   { name: "Galerie", href: "#gallery" },
   { name: "Blog", href: "/blog" },
   { name: "À propos", href: "#about" },

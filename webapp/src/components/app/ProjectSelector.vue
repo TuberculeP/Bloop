@@ -23,21 +23,17 @@ const error = ref<string | null>(null);
 const loadProjects = async () => {
   loading.value = true;
   error.value = null;
-
   const result = await projectStore.getProjects();
-
   if (result.success && result.data) {
     projects.value = result.data;
   } else {
-    error.value = result.error || "Erreur lors du chargement";
+    error.value = result.error || "Impossible de charger la bibliothèque";
   }
-
   loading.value = false;
 };
 
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("fr-FR", {
+  return new Date(dateString).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -46,237 +42,363 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-const createNewProject = () => {
-  emit("new-project");
-};
-
-const selectProject = (projectId: string) => {
-  emit("select-project", projectId);
-};
-
-onMounted(() => {
-  loadProjects();
-});
+onMounted(() => loadProjects());
 </script>
 
 <template>
-  <div class="project-selector">
-    <div class="selector-header">
-      <h1>Bloop Sequencer</h1>
-      <p class="subtitle">Créez et gérez vos compositions musicales</p>
-    </div>
-
-    <div class="selector-content">
-      <button class="btn-new-project" @click="createNewProject">
-        <span class="btn-icon">+</span>
-        <span class="btn-text">Nouveau projet</span>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <div class="header-content">
+        <h1 class="main-title">
+          Bloop<span class="highlight">Sequencer</span>
+        </h1>
+        <p class="tagline">Votre bibliothèque de compositions</p>
+      </div>
+      <button class="btn-create" @click="emit('new-project')">
+        <span class="icon-plus">+</span> Nouveau Projet
       </button>
+    </header>
 
-      <div class="projects-section">
-        <h2>Mes projets</h2>
-
-        <div v-if="loading" class="loading-state">
-          <span class="loader"></span>
-          Chargement des projets...
+    <main class="dashboard-content">
+      <div v-if="loading" class="state-container">
+        <div class="loader-grid">
+          <div class="skeleton-card" v-for="n in 4" :key="n"></div>
         </div>
+      </div>
 
-        <div v-else-if="error" class="error-state">
-          {{ error }}
-          <button class="btn-retry" @click="loadProjects">Réessayer</button>
+      <div v-else-if="error" class="state-container error">
+        <div class="error-box">
+          <h3>Oups, quelque chose s'est mal passé</h3>
+          <p>{{ error }}</p>
+          <button @click="loadProjects" class="btn-text-accent">
+            Réessayer le chargement
+          </button>
         </div>
+      </div>
 
-        <div v-else-if="projects.length === 0" class="empty-state">
-          <p>Aucun projet sauvegardé</p>
-          <p class="hint">Créez votre premier projet pour commencer</p>
+      <div v-else-if="projects.length === 0" class="state-container empty">
+        <div class="empty-illustration">
+          <div class="music-note">♪</div>
         </div>
+        <h3>Bibliothèque vide</h3>
+        <p>Commencez votre première composition musicale dès maintenant.</p>
+        <button @click="emit('new-project')" class="btn-outline">
+          Créer mon premier projet
+        </button>
+      </div>
 
-        <div v-else class="projects-list">
-          <div
-            v-for="project in projects"
-            :key="project.id"
-            class="project-card"
-            @click="selectProject(project.id)"
-          >
-            <div class="project-info">
-              <span class="project-name">{{ project.name }}</span>
-              <span class="project-date">{{
-                formatDate(project.updatedAt)
-              }}</span>
+      <div v-else class="projects-grid">
+        <div
+          v-for="project in projects"
+          :key="project.id"
+          class="project-card"
+          @click="emit('select-project', project.id)"
+        >
+          <div class="card-visual">
+            <div class="waveform">
+              <span
+                v-for="n in 12"
+                :key="n"
+                :style="{
+                  height: Math.random() * 100 + '%',
+                  animationDelay: n * 0.1 + 's',
+                }"
+              ></span>
             </div>
-            <span class="project-arrow">→</span>
+          </div>
+
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="badge">Projet</span>
+              <span class="date">{{ formatDate(project.updatedAt) }}</span>
+            </div>
+            <h3 class="card-title">{{ project.name }}</h3>
+            <div class="card-footer">
+              <span class="click-hint">Ouvrir →</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.project-selector {
-  max-width: 600px;
+.dashboard-container {
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 40px 24px;
+  max-width: 1200px;
+  width: 100%;
 }
 
-.selector-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.selector-header h1 {
-  font-size: 2.5rem;
-  color: var(--color-white);
-  margin-bottom: 8px;
-}
-
-.subtitle {
-  color: var(--color-text-secondary);
-  font-size: 1rem;
-}
-
-.selector-content {
+.dashboard-header {
   display: flex;
-  flex-direction: column;
-  gap: 32px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.btn-new-project {
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-white);
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.highlight {
+  color: var(--color-accent3-hover); /* Rose vif */
+  position: relative;
+  display: inline-block;
+}
+
+.tagline {
+  color: var(--color-white-light);
+  opacity: 0.7;
+  margin: 8px 0 0 0;
+  font-size: 1.1rem;
+}
+
+.btn-create {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  padding: 20px;
-  background: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  border-radius: 12px;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-accent3);
   color: var(--color-white);
-  font-size: 1.1rem;
+  border: none;
+  border-radius: 12px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
 }
 
-.btn-new-project:hover {
-  background: var(--color-primary-hover);
+.btn-create:hover {
+  background: var(--color-accent3-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(155, 36, 88, 0.6);
 }
 
-.btn-icon {
-  font-size: 1.5rem;
+.icon-plus {
+  font-size: 1.2rem;
   font-weight: 300;
 }
 
-.projects-section h2 {
-  color: var(--color-white);
-  font-size: 1.2rem;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border-secondary);
-}
-
-.loading-state,
-.error-state,
-.empty-state {
-  text-align: center;
-  padding: 32px;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-primary-dark);
-  border-radius: 8px;
-}
-
-.loader {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--color-text-secondary);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.error-state {
-  color: var(--color-error, #ef4444);
-}
-
-.btn-retry {
-  margin-top: 12px;
-  padding: 8px 16px;
-  background: transparent;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 6px;
-  color: var(--color-white);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-retry:hover {
-  background: var(--color-bg-secondary);
-}
-
-.empty-state .hint {
-  font-size: 0.9rem;
-  margin-top: 8px;
-  opacity: 0.7;
-}
-
-.projects-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 .project-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: var(--color-bg-primary-dark);
+  background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: 16px;
+  overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .project-card:hover {
-  background: var(--color-bg-secondary);
-  border-color: var(--color-primary);
-  transform: translateX(4px);
+  transform: translateY(-8px);
+  border-color: var(--color-accent3-hover);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-accent3-dark) 0%,
+    var(--color-bg-secondary-dark) 100%
+  );
 }
 
-.project-info {
+.card-visual {
+  height: 140px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.waveform span {
+  display: block;
+  width: 6px;
+  background: var(--color-accent3);
+  border-radius: 4px;
+  animation: wave 1.5s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+.project-card:hover .waveform span {
+  background: var(--color-accent);
+  opacity: 1;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.card-content {
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  flex: 1;
 }
 
-.project-name {
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.badge {
+  background: rgba(122, 15, 62, 0.3);
+  color: var(--color-accent3-hover);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.date {
+  color: var(--color-white-light);
+  opacity: 0.6;
+}
+
+.card-title {
   color: var(--color-white);
-  font-weight: 500;
-  font-size: 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
-.project-date {
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
+.card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.project-arrow {
-  color: var(--color-text-secondary);
-  font-size: 1.2rem;
-  transition: transform 0.2s ease;
+.click-hint {
+  color: var(--color-accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
 }
 
-.project-card:hover .project-arrow {
-  transform: translateX(4px);
-  color: var(--color-primary);
+.project-card:hover .click-hint {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.state-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.skeleton-card {
+  height: 280px;
+  background: var(--color-bg-secondary-dark);
+  border-radius: 16px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.empty-illustration {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  color: var(--color-accent3);
+  opacity: 0.5;
+}
+
+.state-container h3 {
+  color: var(--color-white);
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.state-container p {
+  color: var(--color-white-light);
+  margin-bottom: 24px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--color-accent3);
+  color: var(--color-accent3-hover);
+  padding: 12px 32px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background: var(--color-accent3);
+  color: var(--color-white);
+}
+
+.btn-text-accent {
+  background: none;
+  border: none;
+  color: var(--color-error-hover);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-create {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
