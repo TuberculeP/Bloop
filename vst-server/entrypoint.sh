@@ -14,6 +14,13 @@ fi
 
 echo "JACK ready"
 
+echo "--- VST3 diagnostic ---"
+echo "Contents of /usr/lib/vst3/:"
+ls -la /usr/lib/vst3/ 2>/dev/null || echo "(directory does not exist)"
+echo "Searching for Surge XT anywhere..."
+find /usr /opt -name "Surge XT.vst3" 2>/dev/null || echo "(not found)"
+echo "--- end diagnostic ---"
+
 SURGE_PATH="/usr/lib/vst3/Surge XT.vst3"
 
 # VST3 is a directory bundle on Linux — use -d not -f
