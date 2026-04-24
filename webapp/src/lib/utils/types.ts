@@ -96,7 +96,8 @@ export type InstrumentType =
   | "elementarySynth"
   | "smplr"
   | "undertale"
-  | "audioTrack";
+  | "audioTrack"
+  | "vstStream";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -133,12 +134,21 @@ export interface AudioTrackConfig {
   gain?: number;
 }
 
+export interface VSTStreamConfig {
+  type: "vstStream";
+  vstId: string;
+  serverUrl: string;
+  preset?: string;
+  gain?: number;
+}
+
 export type InstrumentConfig =
   | BasicSynthConfig
   | SmplrConfig
   | ElementarySynthConfig
   | UndertaleConfig
-  | AudioTrackConfig;
+  | AudioTrackConfig
+  | VSTStreamConfig;
 
 export interface InstrumentConfigUpdate {
   oscillatorType?: OscillatorType;
@@ -150,6 +160,8 @@ export interface InstrumentConfigUpdate {
   decay?: number;
   sustain?: number;
   release?: number;
+  vstId?: string;
+  serverUrl?: string;
 }
 
 export interface AudioClip {

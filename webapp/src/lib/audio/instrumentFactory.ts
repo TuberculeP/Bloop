@@ -4,6 +4,7 @@ import {
   BasicSynthEngine,
   SmplrEngine,
   UndertaleEngine,
+  VSTStreamEngine,
   type InstrumentEngine,
 } from "./engines";
 
@@ -34,6 +35,9 @@ export function createInstrumentEngine(
 
     case "audioTrack":
       return new AudioClipEngine(audioContext, destination, config);
+
+    case "vstStream":
+      return new VSTStreamEngine(audioContext, destination, config);
 
     default:
       throw new Error(`Unknown instrument type: ${(config as any).type}`);
@@ -79,6 +83,14 @@ export function getDefaultConfigForType(
     case "audioTrack":
       return {
         type: "audioTrack",
+        gain: 1,
+      };
+
+    case "vstStream":
+      return {
+        type: "vstStream",
+        vstId: "surge",
+        serverUrl: "ws://localhost:8080",
         gain: 1,
       };
 

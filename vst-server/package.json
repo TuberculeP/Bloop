@@ -1,0 +1,13 @@
+{
+  "name": "vst-stream-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "osc": "^2.4.4"
+  }
+}

@@ -40,6 +40,12 @@ const instruments = [
     icon: "💀",
     description: "Soundfont Undertale (plusieurs presets)",
   },
+  {
+    type: "vstStream" as InstrumentType,
+    name: "VST Cloud",
+    icon: "☁️",
+    description: "Instruments distants streamés (Surge, Vital...)",
+  },
 ];
 
 const handleSelect = (type: InstrumentType) => {

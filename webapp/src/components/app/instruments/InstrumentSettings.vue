@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { Track, OscillatorType } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
-import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
+import { SOUNDFONT_LIST, UndertaleEngine, VST_LIST } from "../../../lib/audio/engines";
 import TrackEqualizer from "./TrackEqualizer.vue";
 
 const props = defineProps<{
@@ -128,6 +128,34 @@ const handleReverbChange = (reverb: number) => {
 
 const handleEQBandUpdate = (bandId: string, gain: number) => {
   timelineStore.updateTrackEQBand(props.track.id, bandId, gain);
+};
+
+const currentVstId = computed(() => {
+  if (props.track.instrument.type === "vstStream") {
+    return props.track.instrument.vstId;
+  }
+  return "";
+});
+
+const currentVstServerUrl = computed(() => {
+  if (props.track.instrument.type === "vstStream") {
+    return props.track.instrument.serverUrl;
+  }
+  return "";
+});
+
+const vstEngineState = computed(() =>
+  trackAudioStore.getTrackEngineState(props.track.id),
+);
+
+const handleVstChange = (vstId: string) => {
+  timelineStore.updateTrackInstrument(props.track.id, { vstId });
+  trackAudioStore.updateTrackInstrument(props.track.id, { vstId });
+};
+
+const handleVstServerUrlChange = (serverUrl: string) => {
+  timelineStore.updateTrackInstrument(props.track.id, { serverUrl });
+  trackAudioStore.updateTrackInstrument(props.track.id, { serverUrl });
 };
 
 const handleClose = () => {
@@ -347,6 +375,40 @@ const handleClose = () => {
                 <p class="coming-soon">Paramètres ADSR à venir...</p>
               </div>
             </template>
+
+            <template v-else-if="instrumentType === 'vstStream'">
+              <div class="setting-group">
+                <label class="setting-label">Instrument VST</label>
+                <select
+                  class="soundfont-select"
+                  :value="currentVstId"
+                  @change="handleVstChange(($event.target as HTMLSelectElement).value)"
+                >
+                  <option v-for="vst in VST_LIST" :key="vst.id" :value="vst.id">
+                    {{ vst.name }} — {{ vst.type }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-label">Serveur</label>
+                <input
+                  class="server-url-input"
+                  type="text"
+                  :value="currentVstServerUrl"
+                  @change="handleVstServerUrlChange(($event.target as HTMLInputElement).value)"
+                  placeholder="ws://localhost:8080"
+                />
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-label">État connexion</label>
+                <p
+                  class="connection-state"
+                  :class="vstEngineState"
+                >{{ vstEngineState ?? "idle" }}</p>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -515,6 +577,34 @@ const handleClose = () => {
   font-size: 13px;
   color: #ff3fb4;
   font-style: italic;
+}
+
+.server-url-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 6px;
+  background: #1a0e15;
+  color: #f2efe8;
+  font-size: 12px;
+  font-family: monospace;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #ff3fb4;
+  }
+}
+
+.connection-state {
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: capitalize;
+
+  &.ready { color: #22c55e; }
+  &.loading { color: #eab308; }
+  &.error { color: #ef4444; }
+  &.idle { color: rgba(255, 255, 255, 0.4); }
 }
 
 .adsr-controls {

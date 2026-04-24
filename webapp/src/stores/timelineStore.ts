@@ -139,6 +139,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       smplr: "Sampler",
       undertale: "Undertale",
       audioTrack: "Audio",
+      vstStream: "VST Cloud",
     };
     const baseName = baseNames[instrumentType];
     let counter = 1;
@@ -261,7 +262,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     const track = project.value.tracks.find((t) => t.id === trackId);
     if (!track) return false;
 
-    track.instrument = { ...track.instrument, ...config };
+    track.instrument = { ...track.instrument, ...config } as InstrumentConfig;
     track.updatedAt = new Date();
     project.value.updatedAt = new Date();
     return true;
