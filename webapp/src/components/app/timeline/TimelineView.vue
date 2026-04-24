@@ -5,12 +5,15 @@ import {
   onMounted,
   onBeforeUnmount,
   inject,
+  watch,
   type Ref,
 } from "vue";
 import { useRouter } from "vue-router";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useProjectStore } from "../../../stores/projectStore";
+import { useDawLoadingStore } from "../../../stores/dawLoadingStore";
+import { useAudioBusStore } from "../../../stores/audioBusStore";
 import type {
   Track,
   InstrumentType,
@@ -41,10 +44,16 @@ const emit = defineEmits<{
   ): void;
 }>();
 
+const props = defineProps<{
+  exportMode?: boolean;
+}>();
+
 const router = useRouter();
 const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
 const projectStore = useProjectStore();
+const dawLoadingStore = useDawLoadingStore();
+const audioBusStore = useAudioBusStore();
 
 const isSaving = ref(false);
 const saveMessage = ref<{ type: "success" | "error"; text: string } | null>(
@@ -131,6 +140,75 @@ const activeNotes = ref<Map<string, { trackId: string; noteId: string }>>(
 
 const activeClips = ref<Map<string, { trackId: string; clip: AudioClip }>>(
   new Map(),
+);
+
+// Export audio
+const isExporting = ref(false);
+const exportProgress = ref(0);
+const isManualExport = ref(false);
+const mediaRecorderRef = ref<MediaRecorder | null>(null);
+const recordedChunks: Blob[] = [];
+
+const finishExport = () => {
+  stopAllActiveNotes();
+  stopAllActiveClips();
+  isPlaying.value = false;
+  if (animationFrameId.value) {
+    cancelAnimationFrame(animationFrameId.value);
+    animationFrameId.value = null;
+  }
+  currentPosition.value = 0;
+  checkpointPosition.value = 0;
+  mediaRecorderRef.value?.stop();
+};
+
+const startExport = async () => {
+  await audioBusStore.ensureAudioContextResumed();
+  isExporting.value = true;
+  isManualExport.value = true;
+  exportProgress.value = 0;
+  recordedChunks.length = 0;
+
+  const stream = audioBusStore.createCaptureStream();
+  const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+    ? "audio/webm;codecs=opus"
+    : MediaRecorder.isTypeSupported("audio/mp4")
+      ? "audio/mp4"
+      : "";
+  const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+
+  recorder.ondataavailable = (e) => {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+
+  recorder.onstop = () => {
+    const ext = recorder.mimeType.includes("mp4") ? "m4a" : "webm";
+    const blob = new Blob(recordedChunks, { type: recorder.mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${timelineStore.project.name || "projet"}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    isExporting.value = false;
+    isManualExport.value = false;
+    if (props.exportMode) router.push({ name: "app-main" });
+  };
+
+  recorder.start();
+  mediaRecorderRef.value = recorder;
+
+  checkpointPosition.value = 0;
+  startPlayback();
+};
+
+watch(
+  () => dawLoadingStore.isComplete,
+  (complete) => {
+    if (complete && props.exportMode && !isExporting.value) {
+      startExport();
+    }
+  },
 );
 
 // Playback - lit directement les notes des tracks (plus de clips)
@@ -234,6 +312,10 @@ const animate = () => {
   let newPosition = checkpointPosition.value + elapsed * stepsPerSecond;
 
   if (newPosition >= loopEndPosition.value) {
+    if (props.exportMode || isManualExport.value) {
+      finishExport();
+      return;
+    }
     stopAllActiveNotes();
     newPosition = 0;
     playbackStartTime.value =
@@ -245,6 +327,13 @@ const animate = () => {
   const newIntPosition = Math.floor(newPosition);
 
   currentPosition.value = newPosition;
+
+  if ((props.exportMode || isManualExport.value) && loopEndPosition.value > 0) {
+    exportProgress.value = Math.min(
+      100,
+      Math.round((newPosition / loopEndPosition.value) * 100),
+    );
+  }
 
   if (newIntPosition !== prevIntPosition) {
     playNotesAtPosition(newPosition);
@@ -429,6 +518,20 @@ defineExpose({
 
 <template>
   <div class="timeline-view">
+    <!-- Export overlay -->
+    <div v-if="isExporting" class="export-overlay">
+      <div class="export-card">
+        <div class="export-spinner"></div>
+        <p class="export-title">Export audio en cours…</p>
+        <div class="export-progress-bar">
+          <div
+            class="export-progress-fill"
+            :style="{ width: `${exportProgress}%` }"
+          ></div>
+        </div>
+        <p class="export-percent">{{ exportProgress }}%</p>
+      </div>
+    </div>
     <div class="timeline-header">
       <div class="header-left">
         <button
@@ -509,6 +612,14 @@ defineExpose({
             "
           >
             {{ isSaving ? "..." : "Sauvegarder" }}
+          </button>
+          <button
+            class="header-btn export-btn"
+            @click="startExport"
+            :disabled="isExporting"
+            title="Exporter en audio"
+          >
+            <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" alt="Exporter" />
           </button>
         </div>
         <input
@@ -689,6 +800,39 @@ defineExpose({
 
   &.has-changes {
     border-color: #fbbf24;
+  }
+}
+
+.export-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  border-color: var(--color-border-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 18px;
+    height: 18px;
+    filter: invert(1) opacity(0.7);
+    transition: filter 0.2s ease;
+  }
+
+  &:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+
+    img {
+      filter: invert(1) opacity(1);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 }
 
@@ -888,5 +1032,70 @@ defineExpose({
     background: #ef4444;
     clip-path: polygon(50% 100%, 0 0, 100% 0);
   }
+}
+
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.export-card {
+  background: var(--color-bg-primary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 12px;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-width: 280px;
+}
+
+.export-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border-secondary);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.export-title {
+  color: var(--color-white);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.export-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--color-bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.export-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+.export-percent {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
 }
 </style>

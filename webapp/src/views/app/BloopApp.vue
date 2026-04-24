@@ -23,6 +23,7 @@ const isNewProject = computed(() => route.query.new === "true");
 const projectIdFromUrl = computed(
   () => route.query.projectId as string | undefined,
 );
+const isExportMode = computed(() => route.query.export === "true");
 
 const loadError = ref<string | null>(null);
 const showAudioLibrary = ref(false);
@@ -111,7 +112,7 @@ defineExpose({
           <AudioLibraryPanel />
         </aside>
         <div class="content-area">
-          <TimelineView />
+          <TimelineView :export-mode="isExportMode" />
         </div>
       </div>
     </div>

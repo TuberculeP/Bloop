@@ -42,7 +42,18 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-onMounted(() => loadProjects());
+const createNewProject = () => {
+  emit("new-project");
+};
+
+const selectProject = (projectId: string) => {
+  emit("select-project", projectId);
+};
+
+
+onMounted(() => {
+  loadProjects();
+});
 </script>
 
 <template>
@@ -116,6 +127,7 @@ onMounted(() => loadProjects());
             <div class="card-footer">
               <span class="click-hint">Ouvrir →</span>
             </div>
+            <div class="project-actions"></div>
           </div>
         </div>
       </div>
@@ -262,31 +274,23 @@ onMounted(() => loadProjects());
 .card-meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  padding: 16px 20px;
+  background: var(--color-bg-primary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.badge {
-  background: rgba(122, 15, 62, 0.3);
-  color: var(--color-accent3-hover);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 700;
+.project-card:hover {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-primary);
+  transform: translateX(4px);
 }
 
-.date {
-  color: var(--color-white-light);
-  opacity: 0.6;
-}
-
-.card-title {
-  color: var(--color-white);
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.3;
+.project-card:hover .project-name,
+.project-card:hover .project-date {
+  color: var(--color-bg-primary-dark);
 }
 
 .card-footer {
@@ -360,45 +364,45 @@ onMounted(() => loadProjects());
   margin-right: auto;
 }
 
-.btn-outline {
+.project-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   background: transparent;
-  border: 2px solid var(--color-accent3);
-  color: var(--color-accent3-hover);
-  padding: 12px 32px;
-  border-radius: 50px;
-  font-weight: 600;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 50%;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
-.btn-outline:hover {
-  background: var(--color-accent3);
-  color: var(--color-white);
+.btn-download img {
+  width: 18px;
+  height: 18px;
+  filter: invert(1) opacity(0.6);
+  transition: all 0.2s ease;
 }
 
-.btn-text-accent {
-  background: none;
-  border: none;
-  color: var(--color-error-hover);
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  margin-top: 10px;
+.project-card:hover .btn-download img {
+  filter: brightness(0) opacity(0.7);
 }
 
-@media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.btn-download:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
 
-  .btn-create {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .projects-grid {
-    grid-template-columns: 1fr;
-  }
+.btn-download:hover img {
+  filter: invert(1) opacity(1) !important;
 }
 </style>
