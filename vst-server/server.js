@@ -5,8 +5,8 @@ import osc from "osc";
 
 const PORT = 8080;
 const SAMPLE_RATE = 48000;
-const CHUNK_SIZE = 512;
-const CHUNK_INTERVAL_MS = 10;
+const CHUNK_SIZE = 1920; // 48000 * 40ms/1000 — exact ratio, no overflow
+const CHUNK_INTERVAL_MS = 40;
 
 const VST_PATHS = {
   surge: "/usr/lib/vst3/Surge XT.vst3",

@@ -15,20 +15,20 @@ const WORKLET_CODE = `
   class VSTStreamProcessor extends AudioWorkletProcessor {
     constructor() {
       super();
-      this.bufferSize = 8192;
+      this.bufferSize = 16384;
       this.buffer = new Float32Array(this.bufferSize);
       this.writeIndex = 0;
       this.readIndex = 0;
       this.bufferedSamples = 0;
-      this.minBufferThreshold = 1024;
+      this.minBufferThreshold = 8192;
       this.isBuffering = true;
 
       this.port.onmessage = (event) => {
-        const samples = event.data.samples;
+        const samples = new Float32Array(event.data.buffer);
         for (let i = 0; i < samples.length; i++) {
           this.buffer[this.writeIndex] = samples[i];
           this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
-          this.bufferedSamples = Math.min(this.bufferedSamples + 1, this.bufferSize);
+          if (this.bufferedSamples < this.bufferSize) this.bufferedSamples++;
         }
         if (this.isBuffering && this.bufferedSamples >= this.minBufferThreshold) {
           this.isBuffering = false;
@@ -54,7 +54,8 @@ const WORKLET_CODE = `
         for (const channel of output) channel[i] = sample;
       }
 
-      if (this.bufferedSamples < 128) {
+      // re-buffer when < 2 chunks remain (~80ms cushion for jitter)
+      if (this.bufferedSamples < 3840) {
         this.isBuffering = true;
       }
 
@@ -193,8 +194,7 @@ export class VSTStreamEngine extends BaseEngine {
 
   private _handleAudio(data: ArrayBuffer): void {
     if (!this.isWorkletReady || !this.audioWorkletNode) return;
-    const samples = new Float32Array(data);
-    this.audioWorkletNode.port.postMessage({ samples: Array.from(samples) });
+    this.audioWorkletNode.port.postMessage({ buffer: data }, [data]);
   }
 
   private _send(msg: object): void {
