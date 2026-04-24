@@ -1,15 +1,10 @@
 <template>
   <main class="landing-main">
     <!-- ==================== HERO SECTION ==================== -->
-    <section class="hero" ref="heroRef">
+    <section class="hero" id="hero" ref="heroRef">
       <div class="hero-container">
         <!-- Hero Content -->
         <div class="hero-content" ref="heroContentRef">
-          <!-- <div class="hero-badge" ref="heroBadgeRef">
-            <span class="badge-dot"></span>
-            <span>Studio musical nouvelle generation</span>
-          </div> -->
-
           <h1 class="hero-title" ref="heroTitleRef">
             <SplitText
               text="Compose, mixe, crée - sans rien installer"
@@ -30,9 +25,9 @@
           </h1>
 
           <p class="hero-description" ref="heroDescRef">
-            BLOOP revolutionne la creation musicale. Un studio professionnel
-            dans votre navigateur, accessible partout, a tout moment. Liberez
-            votre creativite.
+            BLOOP révolutionne la création musicale. Un studio professionnel
+            dans votre navigateur, accessible partout, à tout moment. Liberez
+            votre créativité.
           </p>
 
           <div class="hero-stats" ref="heroStatsRef">
@@ -51,7 +46,6 @@
 
           <div class="hero-actions" ref="heroActionsRef">
             <router-link to="/app" class="btn-cta primary">
-              <span class="btn-shine"></span>
               <span class="btn-content">
                 <svg
                   width="20"
@@ -68,7 +62,7 @@
             </router-link>
             <button class="btn-cta secondary" @click="scrollToFeatures">
               <span class="btn-content">
-                <span>Decouvrir</span>
+                <span>Découvrir</span>
                 <svg
                   width="16"
                   height="16"
@@ -160,7 +154,7 @@
             />
           </h2>
           <p class="section-subtitle">
-            Des outils professionnels accessibles a tous les createurs
+            Des outils professionnels accessibles a tous les créateurs
           </p>
         </div>
 
@@ -198,7 +192,7 @@
         <div class="section-header">
           <h2 class="section-title">
             <SplitText
-              text="Comment ca marche ?"
+              text="Comment ça marche ?"
               animation-type="fade"
               trigger-start="top 85%"
             />
@@ -250,7 +244,6 @@
     <section class="pricing" id="about" ref="pricingRef">
       <div class="section-container">
         <div class="section-header">
-          <!-- <span class="section-tag">Tarifs</span> -->
           <h2 class="section-title">
             <SplitText
               text="Choisissez votre formule"
@@ -259,7 +252,7 @@
             />
           </h2>
           <p class="section-subtitle">
-            Commencez gratuitement, evoluez selon vos besoins
+            Commencez gratuitement, évoluez selon vos besoins
           </p>
         </div>
 
@@ -274,39 +267,42 @@
             <div v-if="plan.popular" class="popular-badge">
               <span>Plus populaire</span>
             </div>
-            <div class="plan-header">
-              <h3 class="plan-name">{{ plan.name }}</h3>
-              <div class="plan-price">
-                <span class="currency">EUR</span>
-                <span class="amount">
-                  <CountUp
-                    :target="parseFloat(plan.price)"
-                    :decimals="plan.price.includes('.') ? 2 : 0"
-                  />
-                </span>
-                <span class="period">/mois</span>
+            <div class="plan-content">
+              <div class="plan-header">
+                <h3 class="plan-name">{{ plan.name }}</h3>
+                <div class="plan-price">
+                  <span class="currency">EUR</span>
+                  <span class="amount">
+                    <CountUp
+                      :target="parseFloat(plan.price)"
+                      :decimals="plan.price.includes('.') ? 2 : 0"
+                    />
+                  </span>
+                  <span class="period">/mois</span>
+                </div>
+                <p class="plan-description">{{ plan.description }}</p>
               </div>
-              <p class="plan-description">{{ plan.description }}</p>
-            </div>
-            <ul class="plan-features">
-              <li
-                v-for="feature in plan.features"
-                :key="feature"
-                class="plan-feature"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
+              <div class="plan-separator" />
+              <ul class="plan-features">
+                <li
+                  v-for="feature in plan.features"
+                  :key="feature"
+                  class="plan-feature"
                 >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>{{ feature }}</span>
-              </li>
-            </ul>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>{{ feature }}</span>
+                </li>
+              </ul>
+            </div>
             <button class="plan-btn" :class="{ primary: plan.popular }">
               {{ plan.cta }}
             </button>
@@ -320,17 +316,6 @@
 
     <!-- ==================== CTA SECTION ==================== -->
     <section class="cta-section" id="support" ref="ctaRef">
-      <div class="cta-bg">
-        <div class="cta-gradient"></div>
-        <div class="cta-particles" ref="ctaParticlesRef">
-          <div
-            v-for="n in 20"
-            :key="n"
-            class="cta-particle"
-            :style="getParticleStyle(n)"
-          ></div>
-        </div>
-      </div>
       <div class="section-container">
         <div class="cta-content" ref="ctaContentRef">
           <h2 class="cta-title">
@@ -341,11 +326,26 @@
             />
           </h2>
           <p class="cta-description">
-            Rejoignez des milliers de createurs qui utilisent BLOOP pour donner
-            vie a leurs idees musicales.
+            Rejoignez des milliers de créateurs qui utilisent BLOOP pour donner
+            vie a leurs idées musicales.
           </p>
+          <div class="cta-trust">
+            <div class="trust-avatars">
+              <img
+                v-for="(avatar, index) in trustAvatars"
+                :key="index"
+                :src="avatar"
+                :alt="`Créateur ${index + 1}`"
+                class="trust-avatar"
+              />
+            </div>
+            <span
+              >+<CountUp :target="20000" :separator="' '" /> créateurs nous font
+              confiance</span
+            >
+          </div>
           <div class="cta-actions">
-            <router-link to="/app" class="btn-cta primary large">
+            <router-link to="/app" class="btn-cta primary medium">
               <span class="btn-shine"></span>
               <span class="btn-content">
                 <span>Lancer le studio</span>
@@ -362,21 +362,6 @@
                 </svg>
               </span>
             </router-link>
-          </div>
-          <div class="cta-trust">
-            <div class="trust-avatars">
-              <img
-                v-for="(avatar, index) in trustAvatars"
-                :key="index"
-                :src="avatar"
-                :alt="`Créateur ${index + 1}`"
-                class="trust-avatar"
-              />
-            </div>
-            <span
-              >+<CountUp :target="20000" :separator="' '" /> createurs nous font
-              confiance</span
-            >
           </div>
         </div>
       </div>
@@ -448,7 +433,7 @@ const trustAvatars = [
 ];
 
 const stats = [
-  { value: "+20k", raw: 20000, suffix: "+", label: "Createurs" },
+  { value: "+20k", raw: 20000, suffix: "+", label: "Créateurs" },
   { value: "100%", raw: 100, suffix: "%", label: "Cloud" },
   { value: "infinity", label: "Possibilites" },
 ];
@@ -661,42 +646,42 @@ const features = [
     icon: WaveformIcon,
     title: "Audio professionnel",
     description:
-      "Qualite studio avec notre moteur audio haute fidelite et nos effets professionnels.",
+      "Qualité studio avec notre moteur audio haute fidélité et nos effets professionnels.",
     color: "#ffd269",
   },
   {
     icon: CloudIcon,
     title: "100% Cloud",
     description:
-      "Vos projets sauvegardes automatiquement, accessibles depuis n'importe ou.",
+      "Vos projets sauvegardés automatiquement, accessibles depuis n'importe où.",
     color: "#91a5f9",
   },
   {
     icon: LayoutIcon,
     title: "Interface intuitive",
     description:
-      "Une experience utilisateur pensee pour la creativite, pas la complexite.",
+      "Une expérience utilisateur pensee pour la créativité, pas la complexite.",
     color: "#7cc8f5",
   },
   {
     icon: UsersIcon,
     title: "Collaboration live",
     description:
-      "Creez ensemble en temps reel, ou que vous soyez dans le monde.",
+      "Créez ensemble en temps réel, ou que vous soyez dans le monde.",
     color: "#60bd61",
   },
   {
     icon: MicIcon,
     title: "Multi-pistes",
     description:
-      "Enregistrez et mixez autant de pistes que votre creativite l'exige.",
+      "Enregistrez et mixez autant de pistes que votre créativité l'exige.",
     color: "#f59e0b",
   },
   {
     icon: InfinityIcon,
     title: "Sans limites",
     description:
-      "Pistes, presets et exports illimites pour une creation sans frontieres.",
+      "Pistes, presets et exports illimites pour une création sans frontieres.",
     color: "#ec4899",
   },
 ];
@@ -704,9 +689,9 @@ const features = [
 const steps = [
   {
     icon: UserPlusIcon,
-    title: "Creez votre compte",
+    title: "Créez votre compte",
     description:
-      "Inscription gratuite en quelques secondes. Commencez a creer immediatement.",
+      "Inscription gratuite en quelques secondes. Commencez à créer immediatement.",
   },
   {
     icon: SlidersIcon,
@@ -718,7 +703,7 @@ const steps = [
     icon: RocketIcon,
     title: "Lancez-vous !",
     description:
-      "Creez, collaborez et partagez vos creations avec le monde entier.",
+      "Créez, collaborez et partagez vos créations avec le monde entier.",
   },
 ];
 
@@ -739,7 +724,7 @@ const plans = [
   {
     name: "Medium",
     price: "11.99",
-    description: "Pour les createurs serieux",
+    description: "Pour les créateurs sérieux",
     popular: true,
     features: [
       "Accès illimité à l’espace MAO",
@@ -759,25 +744,12 @@ const plans = [
       "Accès illimité à l’espace MAO",
       "Collaboration avancée",
       "Real-time vocal tuning et + de 40 effets",
-      "Espace communautaire premiumc",
+      "Espace communautaire premium",
       "Diffusion de podcast sur Spotify",
     ],
-    cta: "Contacter les ventes",
+    cta: "Souscrire à l'offre",
   },
 ];
-
-// Helper functions
-const getParticleStyle = (_n: number) => {
-  const random = (min: number, max: number) =>
-    Math.random() * (max - min) + min;
-  return {
-    "--x": random(5, 95) + "%",
-    "--y": random(10, 90) + "%",
-    "--size": random(4, 12) + "px",
-    "--duration": random(3, 8) + "s",
-    "--delay": random(0, 5) + "s",
-  };
-};
 
 const scrollToFeatures = () => {
   if (scrollTo) {
@@ -935,10 +907,10 @@ const initStepsAnimations = () => {
 
     // Step number activation
     gsap.to(stepNumber, {
-      backgroundColor: "var(--color-accent2)",
-      color: "#060b17",
+      backgroundColor: "var(--color-secondary)",
+      color: "var(--color-black)",
       scale: 1.1,
-      boxShadow: "0 0 30px rgba(255, 210, 105, 0.5)",
+      boxShadow: "0 0 20px rgba(255, 210, 105, 0.3)",
       scrollTrigger: {
         trigger: step,
         start: "top 60%",
@@ -968,19 +940,6 @@ const initPricingAnimations = () => {
         scrub: 1,
       },
     });
-
-    // Popular card special glow
-    if (card.classList.contains("popular")) {
-      gsap.to(card, {
-        boxShadow: "0 0 60px rgba(255, 210, 105, 0.4)",
-        scrollTrigger: {
-          trigger: card,
-          start: "top 70%",
-          end: "top 40%",
-          scrub: 1,
-        },
-      });
-    }
   });
 };
 
@@ -1011,17 +970,6 @@ const initCtaAnimations = () => {
     },
   });
 
-  gsap.from(ctaContentRef.value.querySelector(".cta-actions"), {
-    scale: 0,
-    rotation: -180,
-    scrollTrigger: {
-      trigger: ctaRef.value,
-      start: "top 50%",
-      end: "top 20%",
-      scrub: 1,
-    },
-  });
-
   // Trust avatars stagger
   const avatars = ctaContentRef.value.querySelectorAll(".trust-avatar");
   gsap.from(avatars, {
@@ -1032,23 +980,6 @@ const initCtaAnimations = () => {
       trigger: ctaContentRef.value.querySelector(".cta-trust"),
       start: "top 80%",
     },
-  });
-
-  // Particles converge toward center
-  const particles = ctaParticlesRef.value.querySelectorAll(".cta-particle");
-  particles.forEach((particle) => {
-    gsap.to(particle, {
-      x: "50vw",
-      y: "50%",
-      scale: 0,
-      opacity: 0,
-      scrollTrigger: {
-        trigger: ctaRef.value,
-        start: "top 50%",
-        end: "bottom bottom",
-        scrub: 2,
-      },
-    });
   });
 };
 
@@ -1071,28 +1002,35 @@ onUnmounted(() => {
 <style scoped>
 /* Base styles */
 .landing-main {
+  padding-bottom: 2rem;
   position: relative;
   overflow-x: hidden;
   overflow-y: visible;
   color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  gap: 8rem;
+}
+
+.landing-main > section {
+  perspective: 1000px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.landing-main .hero {
+  min-height: 100vh;
 }
 
 .section-container {
-  max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
+  max-width: 1400px;
+  width: 100%;
 }
 
 /* ==================== HERO SECTION ==================== */
-.hero {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  padding: 8rem 0 4rem;
-  perspective: 1000px;
-}
-
 .hero-container {
   position: relative;
   z-index: 1;
@@ -1108,27 +1046,6 @@ onUnmounted(() => {
 /* Hero Content */
 .hero-content {
   transform-style: preserve-3d;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 210, 105, 0.1);
-  border: 1px solid rgba(255, 210, 105, 0.2);
-  border-radius: 50px;
-  font-size: 0.85rem;
-  color: var(--color-accent);
-  margin-bottom: 1.5rem;
-}
-
-.badge-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-accent);
-  border-radius: 50%;
-  animation: pulse-dot 2s ease-in-out infinite;
 }
 
 @keyframes pulse-dot {
@@ -1246,26 +1163,6 @@ onUnmounted(() => {
     var(--color-accent2) 100%
   );
   color: var(--color-black);
-  box-shadow: 0 4px 20px rgba(255, 210, 105, 0.3);
-}
-
-.btn-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transition: left 0.5s ease;
-}
-
-.btn-cta.primary:hover .btn-shine {
-  left: 100%;
 }
 
 .btn-cta.primary:hover {
@@ -1290,11 +1187,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.btn-cta.large {
-  padding: 1.25rem 2.5rem;
-  font-size: 1.1rem;
 }
 
 /* Hero Visual */
@@ -1559,17 +1451,6 @@ onUnmounted(() => {
   margin-bottom: 4rem;
 }
 
-.section-tag {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 210, 105, 0.1);
-  border: 1px solid rgba(255, 210, 105, 0.2);
-  border-radius: 50px;
-  font-size: 0.85rem;
-  color: var(--color-accent);
-  margin-bottom: 1rem;
-}
-
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
@@ -1585,11 +1466,6 @@ onUnmounted(() => {
 }
 
 /* ==================== FEATURES SECTION ==================== */
-.features {
-  padding: 8rem 0;
-  position: relative;
-}
-
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -1613,10 +1489,6 @@ onUnmounted(() => {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* .feature-card:hover .feature-glow {
-  opacity: 1;
-} */
-
 .feature-morph {
   position: absolute;
   top: 1rem;
@@ -1630,11 +1502,6 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(
-    circle at top left,
-    var(--color),
-    transparent 60%
-  );
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -1673,19 +1540,8 @@ onUnmounted(() => {
 }
 
 /* ==================== HOW IT WORKS ==================== */
-.how-it-works {
-  padding: 8rem 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(255, 210, 105, 0.02) 50%,
-    transparent 100%
-  );
-}
-
 .steps-container {
   position: relative;
-  max-width: 800px;
   margin: 0 auto;
   padding-left: 100px;
 }
@@ -1720,13 +1576,11 @@ onUnmounted(() => {
 }
 
 .step-number {
+  aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   font-size: 1.5rem;
   font-weight: 700;
@@ -1745,7 +1599,6 @@ onUnmounted(() => {
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-white);
-  margin-bottom: 0.5rem;
 }
 
 .step-description {
@@ -1771,11 +1624,6 @@ onUnmounted(() => {
 }
 
 /* ==================== PRICING SECTION ==================== */
-.pricing {
-  padding: 8rem 0;
-  perspective: 1000px;
-}
-
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -1786,7 +1634,11 @@ onUnmounted(() => {
 
 .pricing-card {
   position: relative;
-  padding: 2.5rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
@@ -1807,10 +1659,6 @@ onUnmounted(() => {
   transform: scale(1.05);
 }
 
-.pricing-card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
 .popular-badge {
   position: absolute;
   top: -12px;
@@ -1828,18 +1676,23 @@ onUnmounted(() => {
   color: var(--color-black);
 }
 
+.plan-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .plan-header {
   text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .plan-name {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-white);
-  margin-bottom: 1rem;
 }
 
 .plan-price {
@@ -1847,7 +1700,6 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: center;
   gap: 0.25rem;
-  margin-bottom: 0.5rem;
 }
 
 .currency {
@@ -1868,6 +1720,12 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.plan-separator {
+  height: 1px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .plan-description {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.5);
@@ -1875,15 +1733,15 @@ onUnmounted(() => {
 
 .plan-features {
   list-style: none;
-  padding: 0;
-  margin: 0 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .plan-feature {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 0;
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.95rem;
 }
@@ -1927,81 +1785,31 @@ onUnmounted(() => {
 }
 
 /* ==================== CTA SECTION ==================== */
-.cta-section {
-  position: relative;
-  padding: 8rem 0;
-  overflow: hidden;
-}
-
-.cta-bg {
-  position: absolute;
-  inset: 0;
-}
-
-.cta-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(255, 210, 105, 0.1) 0%,
-    transparent 60%
-  );
-}
-
-.cta-particles {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.cta-particle {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: var(--size);
-  height: var(--size);
-  background: var(--color-accent);
-  border-radius: 50%;
-  opacity: 0.3;
-  animation: particle-float var(--duration) ease-in-out infinite;
-  animation-delay: var(--delay);
-  will-change: transform;
-}
-
-@keyframes particle-float {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-20px) scale(1.2);
-  }
-}
-
 .cta-content {
-  position: relative;
-  text-align: center;
-  max-width: 600px;
-  margin: 0 auto;
+  padding: 2rem;
+  border-radius: 12px;
+  background: linear-gradient(
+    45deg,
+    rgba(145, 165, 249, 0.05) 0,
+    rgba(255, 210, 105, 0.08) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
 }
 
 .cta-title {
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
   color: var(--color-white);
-  margin-bottom: 1rem;
   will-change: transform, opacity, filter;
 }
 
 .cta-description {
   font-size: 1.125rem;
   color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 2.5rem;
-  line-height: 1.7;
-}
-
-.cta-actions {
-  margin-bottom: 3rem;
 }
 
 .cta-trust {
@@ -2015,7 +1823,6 @@ onUnmounted(() => {
 
 .trust-avatars {
   display: flex;
-  margin-right: 0.5rem;
 }
 
 .trust-avatar {
@@ -2092,7 +1899,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .hero {
-    padding: 6rem 0 3rem;
+    padding: 6rem 0 3rem 0;
   }
 
   .hero-title {
@@ -2144,11 +1951,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 480px) {
-  .hero-badge {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.75rem;
-  }
-
   .section-title {
     font-size: 1.75rem;
   }

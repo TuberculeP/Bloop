@@ -34,9 +34,9 @@ export const LANDING_CONFIG = {
 };
 
 export const LANDING_STATS: HeroStat[] = [
-  { value: "+20k", raw: 20000, suffix: "+", label: "Createurs" },
+  { value: "+20k", raw: 20000, suffix: "+", label: "Créateurs" },
   { value: "100%", raw: 100, suffix: "%", label: "Cloud" },
-  { value: "infinity", label: "Possibilites" },
+  { value: "infinity", label: "Possibilités" },
 ];
 
 export const MOCKUP_TRACKS: MockupTrack[] = [

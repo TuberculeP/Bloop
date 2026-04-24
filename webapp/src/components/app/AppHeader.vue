@@ -31,9 +31,6 @@ const router = useRouter();
 
 const menuItems = [
   { id: "home", name: "Accueil", route: "/" },
-  { id: "app", name: "Séquenceur", route: "/app" }, // Renommé pour faire plus "produit"
-  { id: "msg", name: "Messages", route: "/messages" },
-  { id: "profile", name: "Profil", route: "/profile" },
   { id: "logout", name: "Déconnexion" },
 ];
 
@@ -58,8 +55,13 @@ async function disconnect() {
 </script>
 
 <style scoped>
+p,
+span {
+  font-size: 16px;
+}
+
 .app-header {
-  padding: 12px 24px;
+  padding: 24px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -67,20 +69,18 @@ async function disconnect() {
   background: rgba(45, 15, 32, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-
-  border-bottom: 1px solid var(--color-border-secondary);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-welcome {
+  height: 50px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
 .welcome-label {
-  font-size: 0.9rem;
   color: var(--color-white-light);
   opacity: 0.7;
   font-weight: 400;
