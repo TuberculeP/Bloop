@@ -14,14 +14,14 @@ import { useAudioLibraryStore } from "./audioLibraryStore";
 import { AudioClipEngine } from "../lib/audio/engines/audio-clip";
 import { createInstrumentEngine } from "../lib/audio/instrumentFactory";
 import { createImpulseResponse, createEQFilter } from "../lib/audio/config";
+import { applyAutomationToChannel } from "../lib/audio/automation";
+import type { AutomatableParam } from "../lib/utils/types";
 
 interface TrackChannel {
   trackId: string;
   gainNode: GainNode;
-  // EQ 5 bandes
   eqFilters: Map<string, BiquadFilterNode>;
-  eqChain: BiquadFilterNode[]; // Pour le routing en série
-  // Reverb dry/wet
+  eqChain: BiquadFilterNode[];
   dryGain: GainNode;
   wetGain: GainNode;
   engine: InstrumentEngine;
@@ -322,6 +322,17 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
   };
 
+  const applyAutomation = (
+    trackId: string,
+    param: AutomatableParam,
+    normalizedValue: number,
+  ): void => {
+    const channel = trackChannels.value.get(trackId);
+    if (channel) {
+      applyAutomationToChannel(param, normalizedValue, channel, audioContext);
+    }
+  };
+
   const getTrackEngineState = (trackId: string): EngineState => {
     return trackEngineStates.value.get(trackId) ?? "idle";
   };
@@ -450,6 +461,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     updateTrackEQBand,
     updateTrackEQBands,
     updateTrackInstrument,
+    applyAutomation,
 
     getTrackEngineState,
     getEngine,

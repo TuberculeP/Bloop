@@ -186,6 +186,27 @@ export interface SamplePack {
   folders: SampleFolder[];
 }
 
+export type AutomatableParam =
+  | "volume"
+  | "reverb"
+  | "eq_sub"
+  | "eq_bass"
+  | "eq_mid"
+  | "eq_presence"
+  | "eq_brilliance";
+
+export interface AutomationPoint {
+  id: string;
+  x: number; // position en colonnes (float)
+  y: number; // valeur normalisée 0-1
+}
+
+export interface AutomationLane {
+  id: string;
+  parameter: AutomatableParam;
+  points: AutomationPoint[];
+}
+
 export interface Track {
   id: string;
   name: string;
@@ -199,6 +220,7 @@ export interface Track {
   order: number;
   notes: MidiNote[]; // Notes avec positions absolues sur la timeline (MIDI tracks)
   clips?: AudioClip[]; // Audio clips (audio tracks)
+  automationLanes: AutomationLane[];
   createdAt: Date;
   updatedAt: Date;
 }

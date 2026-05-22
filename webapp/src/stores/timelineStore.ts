@@ -10,6 +10,9 @@ import type {
   InstrumentConfig,
   InstrumentType,
   TrackColor,
+  AutomatableParam,
+  AutomationLane,
+  AutomationPoint,
 } from "../lib/utils/types";
 import { TRACK_COLORS } from "../lib/utils/types";
 import { cloneEQBands } from "../lib/audio/config";
@@ -170,6 +173,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       solo: false,
       order: getNextTrackOrder(),
       notes: [],
+      automationLanes: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -530,6 +534,97 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   };
 
   // ============================================
+  // Actions - Automation Lanes
+  // ============================================
+
+  const addAutomationLane = (
+    trackId: string,
+    parameter: AutomatableParam,
+  ): string | null => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    if (!track) return null;
+
+    if (!track.automationLanes) track.automationLanes = [];
+
+    if (track.automationLanes.some((l) => l.parameter === parameter))
+      return null;
+
+    const laneId = generateId("lane");
+    const lane: AutomationLane = { id: laneId, parameter, points: [] };
+    track.automationLanes.push(lane);
+    track.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+    return laneId;
+  };
+
+  const removeAutomationLane = (trackId: string, laneId: string): boolean => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    if (!track) return false;
+
+    const index =
+      track.automationLanes?.findIndex((l) => l.id === laneId) ?? -1;
+    if (index === -1) return false;
+
+    track.automationLanes.splice(index, 1);
+    track.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  const addAutomationPoint = (
+    trackId: string,
+    laneId: string,
+    point: Omit<AutomationPoint, "id">,
+  ): string | null => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    if (!lane) return null;
+
+    const pointId = generateId("pt");
+    lane.points.push({ ...point, id: pointId });
+    lane.points.sort((a, b) => a.x - b.x);
+    track!.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+    return pointId;
+  };
+
+  const updateAutomationPoint = (
+    trackId: string,
+    laneId: string,
+    pointId: string,
+    updates: Partial<Pick<AutomationPoint, "x" | "y">>,
+  ): boolean => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    const point = lane?.points.find((p) => p.id === pointId);
+    if (!point) return false;
+
+    Object.assign(point, updates);
+    lane!.points.sort((a, b) => a.x - b.x);
+    track!.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  const removeAutomationPoint = (
+    trackId: string,
+    laneId: string,
+    pointId: string,
+  ): boolean => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    if (!lane) return false;
+
+    const index = lane.points.findIndex((p) => p.id === pointId);
+    if (index === -1) return false;
+
+    lane.points.splice(index, 1);
+    track!.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  // ============================================
   // Persistence
   // ============================================
 
@@ -586,6 +681,9 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         if (!track.eqBands) {
           track.eqBands = cloneEQBands();
         }
+        if (!track.automationLanes) {
+          track.automationLanes = [];
+        }
       });
 
       project.value = data;
@@ -622,6 +720,9 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       }
       if (!track.eqBands) {
         track.eqBands = cloneEQBands();
+      }
+      if (!track.automationLanes) {
+        track.automationLanes = [];
       }
     });
 
@@ -775,6 +876,13 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
     // Actions - EQ
     updateEQBand,
+
+    // Actions - Automation
+    addAutomationLane,
+    removeAutomationLane,
+    addAutomationPoint,
+    updateAutomationPoint,
+    removeAutomationPoint,
 
     // Persistence
     saveToLocalStorage,
