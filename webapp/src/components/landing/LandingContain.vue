@@ -1026,7 +1026,7 @@ onUnmounted(() => {
 .section-container {
   margin: 0 auto;
   padding: 0 2rem;
-  max-width: 1400px;
+  max-width: 1200px;
   width: 100%;
 }
 
@@ -1034,7 +1034,7 @@ onUnmounted(() => {
 .hero-container {
   position: relative;
   z-index: 1;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
   display: grid;

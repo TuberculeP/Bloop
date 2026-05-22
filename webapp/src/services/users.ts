@@ -121,7 +121,7 @@ export const unfollowUser = async (userId: string): Promise<void> => {
 
 export const getUserProfile = async (userId: string): Promise<User> => {
   try {
-    // TODO: Implémenter l'appel API pour récupérer un profil utilisateur
+    // TODO: Implémenter l'appel API pour récupérer un profile utilisateur
     // const response = await axios.get(`${API_URL}/${userId}`);
     // return response.data;
 

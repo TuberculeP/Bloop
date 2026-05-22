@@ -48,7 +48,7 @@ async function adminGuard(to: any, from: any, next: any) {
 import BlogApp from "./views/blog/BlogApp.vue";
 import BlogSearchResults from "./views/blog/BlogSearchResults.vue";
 import BlogPostDetail from "./views/blog/BlogPostDetail.vue";
-import ProfileView from "./views/profil/ProfileView.vue";
+import ProfileView from "./views/profile/ProfileView.vue";
 import MessagesView from "./views/messages/MessagesView.vue";
 
 const routes = [

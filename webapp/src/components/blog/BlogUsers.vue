@@ -55,9 +55,9 @@ const toggleFollow = async (userId: string) => {
   }
 };
 
-// Voir le profil d'un utilisateur
+// Voir le profile d'un utilisateur
 const viewProfile = (userId: string) => {
-  // TODO: Naviguer vers la page de profil ou ouvrir une modal
+  // TODO: Naviguer vers la page de profile ou ouvrir une modal
   console.log(`Voir le profil de l'utilisateur ${userId}`);
   alert(
     `Fonctionnalité à implémenter : voir le profil de l'utilisateur ${userId}`,

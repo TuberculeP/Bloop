@@ -4,8 +4,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useMessages } from "../../lib/composables/useMessages";
 import ConversationSidebar from "../../components/messages/ConversationSidebar.vue";
 import MessageThread from "../../components/messages/MessageThread.vue";
-import LandingLayout from "../../layouts/LandingLayout.vue";
-import LandingHeader from "../../components/landing/LandingHeader.vue";
+import AppLayout from "../../layouts/AppLayout.vue";
 
 const authStore = useAuthStore();
 
@@ -35,71 +34,57 @@ onUnmounted(cleanup);
 </script>
 
 <template>
-  <LandingLayout>
-    <LandingHeader sticky />
-    <div class="messages-page">
-      <div class="messages-container">
-        <!-- Sidebar -->
-        <ConversationSidebar
-          :conversations="conversations"
-          :all-users="allUsers"
-          :selected-user-id="selectedUser?.id || null"
-          :loading="loading"
-          :show-new-conversation="showNewConversation"
-          :user-search="userSearch"
-          @update:show-new-conversation="showNewConversation = $event"
-          @update:user-search="userSearch = $event"
-          @select-conversation="selectConversation"
-          @start-new-conversation="startNewConversation"
+  <AppLayout>
+    <div class="messages-container">
+      <!-- Sidebar -->
+      <ConversationSidebar
+        :conversations="conversations"
+        :all-users="allUsers"
+        :selected-user-id="selectedUser?.id || null"
+        :loading="loading"
+        :show-new-conversation="showNewConversation"
+        :user-search="userSearch"
+        @update:show-new-conversation="showNewConversation = $event"
+        @update:user-search="userSearch = $event"
+        @select-conversation="selectConversation"
+        @start-new-conversation="startNewConversation"
+      />
+
+      <!-- Zone de messages -->
+      <main class="messages-area">
+        <MessageThread
+          v-if="selectedUser"
+          :user="selectedUser"
+          :messages="currentMessages"
+          :current-user-id="authStore.user?.id || ''"
+          :loading="loadingMessages"
+          :sending="sending"
+          :is-typing="isTyping"
+          :typing-user="typingUser"
+          v-model:message-text="newMessageText"
+          @send="handleSendMessage"
+          @typing="handleTyping"
         />
 
-        <!-- Zone de messages -->
-        <main class="messages-area">
-          <MessageThread
-            v-if="selectedUser"
-            :user="selectedUser"
-            :messages="currentMessages"
-            :current-user-id="authStore.user?.id || ''"
-            :loading="loadingMessages"
-            :sending="sending"
-            :is-typing="isTyping"
-            :typing-user="typingUser"
-            v-model:message-text="newMessageText"
-            @send="handleSendMessage"
-            @typing="handleTyping"
-          />
-
-          <!-- Aucune conversation sélectionnée -->
-          <div v-else class="no-selection">
-            <div class="no-selection-content">
-              <i class="fas fa-comments no-selection-icon"></i>
-              <h3>Sélectionnez une conversation</h3>
-              <p>Choisissez une conversation ou démarrez-en une nouvelle</p>
-            </div>
+        <!-- Aucune conversation sélectionnée -->
+        <div v-else class="no-selection">
+          <div class="no-selection-content">
+            <i class="fas fa-comments no-selection-icon"></i>
+            <h3>Sélectionnez une conversation</h3>
+            <p>Choisissez une conversation ou démarrez-en une nouvelle</p>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
-  </LandingLayout>
+  </AppLayout>
 </template>
 
 <style scoped>
-.messages-page {
-  min-height: calc(100vh - 80px);
-  background: var(--bg-primary);
-  padding: 2rem;
-  color: var(--color-white);
-  margin-top: 120px;
-}
-
 .messages-container {
   display: flex;
-  margin: 0 auto;
-  height: calc(100vh - 80px - 4rem);
-  background: var(--color-bg-secondary-dark);
+  height: calc(100vh - 100px);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .messages-area {

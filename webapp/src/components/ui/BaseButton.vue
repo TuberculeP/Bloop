@@ -46,7 +46,7 @@ const handleClick = (event: MouseEvent) => {
 <style scoped>
 .base-button {
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-family: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -55,6 +55,7 @@ const handleClick = (event: MouseEvent) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   text-decoration: none;
   outline: none;
   box-sizing: border-box;
@@ -81,16 +82,16 @@ const handleClick = (event: MouseEvent) => {
 
 /* Variantes */
 .base-button--primary {
-  background: var(--color-primary);
+  background: var(--color-primary-hover);
   color: var(--color-white);
-  border: 1px solid var(--color-primary);
+  border: 1px solid var(--color-primary-hover);
 }
 
 .base-button--primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-hover), 0.3);
 }
 
 .base-button--secondary {

@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import BlogContain from "../../components/blog/BlogContain.vue";
-import LandingFooter from "../../components/landing/LandingFooter.vue";
-import LandingHeader from "../../components/landing/LandingHeader.vue";
-import LandingLayout from "../../layouts/LandingLayout.vue";
+import AppLayout from "../../layouts/AppLayout.vue";
 </script>
 <template>
-  <LandingLayout>
-    <LandingHeader />
+  <AppLayout>
     <BlogContain />
-    <LandingFooter />
-  </LandingLayout>
+  </AppLayout>
 </template>

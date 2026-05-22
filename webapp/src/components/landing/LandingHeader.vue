@@ -159,7 +159,6 @@ const authStore = useAuthStore();
 // Navigation links
 const navLinks = [
   { name: "Application", href: "/app" },
-  { name: "Galerie", href: "#gallery" },
   { name: "Blog", href: "/blog" },
   { name: "À propos", href: "#about" },
   { name: "Support", href: "#support" },
@@ -279,7 +278,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   z-index: 1000;
-  padding: 1.5rem 0;
+  padding: 18px 32px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -312,7 +311,6 @@ onUnmounted(() => {
 .header-container {
   position: relative;
   margin: 0 auto;
-  padding: 0 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;

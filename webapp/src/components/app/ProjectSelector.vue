@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useProjectStore } from "../../stores/projectStore";
-import AppHeader from "./AppHeader.vue";
+import LoadingCard from "../shared/LoadingCard.vue";
+import BaseButton from "../ui/BaseButton.vue";
 
 interface Project {
   id: string;
@@ -47,8 +48,7 @@ onMounted(() => loadProjects());
 </script>
 
 <template>
-  <AppHeader />
-  <div class="dashboard-container">
+  <div class="page-container">
     <header class="dashboard-header">
       <div class="header-content">
         <h1 class="main-title">
@@ -56,16 +56,14 @@ onMounted(() => loadProjects());
         </h1>
         <p class="tagline">Votre bibliothèque de compositions</p>
       </div>
-      <button class="btn-create" @click="emit('new-project')">
-        <span class="icon-plus">+</span> Nouveau Projet
-      </button>
+      <BaseButton @click="emit('new-project')">
+        <i class="fas fa-plus" />Nouveau projet
+      </BaseButton>
     </header>
 
     <main class="dashboard-content">
       <div v-if="loading" class="state-container">
-        <div class="loader-grid">
-          <div class="skeleton-card" v-for="n in 4" :key="n"></div>
-        </div>
+        <LoadingCard />
       </div>
 
       <div v-else-if="error" class="state-container error">
@@ -127,13 +125,6 @@ onMounted(() => loadProjects());
 </template>
 
 <style scoped>
-.dashboard-container {
-  margin: 0 auto;
-  padding: 40px 24px;
-  max-width: 1200px;
-  width: 100%;
-}
-
 .dashboard-header {
   display: flex;
   justify-content: space-between;
