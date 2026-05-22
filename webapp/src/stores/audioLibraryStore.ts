@@ -168,6 +168,24 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
         throw new Error(`Failed to fetch: ${response.status}`);
       }
 
+      const contentType = response.headers.get("content-type") ?? "";
+      const SUPPORTED_CONTENT_TYPES = [
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/wav",
+        "audio/wave",
+        "audio/x-wav",
+        "audio/vnd.wave",
+        "audio/ogg",
+        "audio/flac",
+        "audio/x-flac",
+      ];
+      if (!SUPPORTED_CONTENT_TYPES.some((t) => contentType.startsWith(t))) {
+        throw new Error(
+          `Unsupported audio format: ${contentType || "unknown"}`,
+        );
+      }
+
       const arrayBuffer = await response.arrayBuffer();
 
       await cacheStore.set(sampleId, arrayBuffer);

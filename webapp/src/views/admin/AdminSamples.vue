@@ -103,7 +103,7 @@
             <input
               v-model="packForm.slug"
               required
-              pattern="[-a-z0-9]+"
+              pattern="[a-z0-9-]+"
               disabled
             />
           </div>
