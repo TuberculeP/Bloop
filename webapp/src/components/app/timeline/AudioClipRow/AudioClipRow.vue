@@ -281,30 +281,7 @@ onBeforeUnmount(() => {
 .audio-clip-row-wrapper {
   display: flex;
   background: #1a0e15;
-  border-top: 1px solid rgba(122, 15, 62, 0.5);
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(122, 15, 62, 0.5) transparent;
-}
-
-.audio-clip-header {
-  width: 180px;
-  min-width: 180px;
-  background: #2a1520;
-  border-right: 1px solid rgba(122, 15, 62, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: sticky;
-  left: 0;
-  z-index: 10;
-}
-
-.header-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  overflow: visible;
 }
 
 .audio-clip-container {
