@@ -18,8 +18,6 @@ const upload = multer({
       "audio/x-wav",
       "audio/ogg",
       "audio/flac",
-      "audio/aiff",
-      "audio/x-aiff",
     ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);

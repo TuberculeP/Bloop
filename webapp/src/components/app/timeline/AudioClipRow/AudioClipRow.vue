@@ -27,7 +27,7 @@ const containerRef = ref<HTMLElement | null>(null);
 const isContainerFocused = ref(false);
 const mouseGridCol = ref(0);
 
-const ROW_HEIGHT = 120;
+const ROW_HEIGHT = 75;
 
 onMounted(() => {
   audioLibraryStore.initialize();
@@ -219,9 +219,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="audio-clip-row-wrapper">
-    <div class="audio-clip-header">
-      <div class="header-label">Audio Clips</div>
-    </div>
     <div
       ref="containerRef"
       class="audio-clip-container"
@@ -284,30 +281,7 @@ onBeforeUnmount(() => {
 .audio-clip-row-wrapper {
   display: flex;
   background: #1a0e15;
-  border-top: 1px solid rgba(122, 15, 62, 0.5);
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(122, 15, 62, 0.5) transparent;
-}
-
-.audio-clip-header {
-  width: 180px;
-  min-width: 180px;
-  background: #2a1520;
-  border-right: 1px solid rgba(122, 15, 62, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: sticky;
-  left: 0;
-  z-index: 10;
-}
-
-.header-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  overflow: visible;
 }
 
 .audio-clip-container {

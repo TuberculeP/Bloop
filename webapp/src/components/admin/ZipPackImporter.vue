@@ -58,7 +58,7 @@
             <input
               v-model="packSlug"
               required
-              pattern="[-a-z0-9]+"
+              pattern="[a-z0-9-]+"
               placeholder="my-sample-pack"
             />
           </div>

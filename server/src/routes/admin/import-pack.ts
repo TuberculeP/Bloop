@@ -25,8 +25,6 @@ const ALLOWED_AUDIO_MIMES = [
   "audio/ogg",
   "audio/flac",
   "audio/x-flac",
-  "audio/aiff",
-  "audio/x-aiff",
 ];
 
 // Fallback MIME types based on extension (when file-type can't detect)
@@ -35,12 +33,11 @@ const EXT_TO_MIME: Record<string, string> = {
   ".mp3": "audio/mpeg",
   ".ogg": "audio/ogg",
   ".flac": "audio/flac",
-  ".aiff": "audio/aiff",
 };
 
 const ALLOWED_IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
 
-const AUDIO_EXTENSIONS = [".wav", ".mp3", ".ogg", ".flac", ".aiff"];
+const AUDIO_EXTENSIONS = [".wav", ".mp3", ".ogg", ".flac"];
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
 
 interface ParsedFile {

@@ -7,6 +7,7 @@ const props = defineProps<{
   track: Track;
   isActive?: boolean;
   isExpanded: boolean;
+  isAudioTrack?: boolean;
 }>();
 
 const trackAudioStore = useTrackAudioStore();
@@ -97,6 +98,7 @@ function handleAction(action: () => void) {
           <i class="fas fa-cog"></i>
         </button>
         <button
+          v-if="!isAudioTrack"
           class="control-btn expand-btn"
           :class="{ active: isExpanded }"
           @click.stop="emit('toggle-expand')"

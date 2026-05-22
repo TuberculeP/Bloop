@@ -6,8 +6,6 @@ import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import TrackHeader from "./TrackHeader.vue";
 import TrackTimelinePreview from "./TrackTimelinePreview.vue";
 import TrackTimelinePreviewCanvas from "./TrackTimelinePreviewCanvas.vue";
-import AudioClipPreview from "./AudioClipPreview.vue";
-import AudioClipPreviewCanvas from "./AudioClipPreviewCanvas.vue";
 import PianoRoll from "./PianoRoll/PianoRoll.vue";
 import AutomationLaneComponent from "./AutomationLane.vue";
 
@@ -87,12 +85,13 @@ onBeforeUnmount(() =>
 <template>
   <div
     class="track-row"
-    :class="{ active: isActive, muted: track.muted, expanded: isExpanded }"
+    :class="{ active: isActive, muted: track.muted, expanded: isExpanded, 'audio-track': isAudioTrack }"
   >
     <TrackHeader
       :track="track"
       :is-active="isActive"
       :is-expanded="isExpanded"
+      :is-audio-track="isAudioTrack"
       @toggle-mute="emit('toggle-mute', track)"
       @toggle-solo="emit('toggle-solo', track)"
       @select="emit('select-track', track)"
@@ -113,17 +112,6 @@ onBeforeUnmount(() =>
       @dblclick="emit('toggle-expand', track)"
     />
 
-    <component
-      :is="USE_CANVAS ? AudioClipPreviewCanvas : AudioClipPreview"
-      v-else
-      :clips="track.clips ?? []"
-      :cols="cols"
-      :col-width="colWidth"
-      :row-height="rowHeight"
-      :color="track.color"
-      @dblclick="emit('toggle-expand', track)"
-    />
-
     <PianoRoll
       v-if="isExpanded && !isAudioTrack"
       :track="track"
@@ -134,7 +122,7 @@ onBeforeUnmount(() =>
     />
 
     <AudioClipRow
-      v-else-if="isExpanded && isAudioTrack"
+      v-if="isAudioTrack"
       :track="track"
       :cols="cols"
       :col-width="colWidth"
@@ -266,6 +254,11 @@ onBeforeUnmount(() =>
 :deep(.audio-clip-row-wrapper) {
   grid-column: 1 / -1;
   grid-row: 2;
+}
+
+.track-row.audio-track :deep(.audio-clip-row-wrapper) {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 :deep(.automation-lane-wrapper) {
