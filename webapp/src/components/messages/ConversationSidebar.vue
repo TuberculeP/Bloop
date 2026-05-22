@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Conversation, MessageUser } from "../../services/messages";
-import BaseButton from "../ui/BaseButton.vue";
 import ConversationItem from "./ConversationItem.vue";
 import UserSearchList from "./UserSearchList.vue";
 
@@ -49,13 +48,15 @@ const handleStartNewConversation = (user: MessageUser) => {
 <template>
   <aside class="conversations-sidebar">
     <div class="sidebar-header">
-      <h2>Messages</h2>
-      <BaseButton variant="primary" size="small" @click="toggleNewConversation">
-        <i class="fas fa-plus"></i>
-      </BaseButton>
+      <h2 class="main-title">Messages</h2>
+      <button
+        class="btn-create btn-create--small"
+        @click="toggleNewConversation"
+      >
+        <i class="fas fa-plus" />
+      </button>
     </div>
 
-    <!-- Nouvelle conversation -->
     <UserSearchList
       v-if="showNewConversation"
       :users="filteredUsers"
@@ -64,7 +65,6 @@ const handleStartNewConversation = (user: MessageUser) => {
       @select="handleStartNewConversation"
     />
 
-    <!-- Liste des conversations -->
     <div v-if="loading" class="loading-state">
       <div class="loading-spinner"></div>
     </div>
@@ -80,6 +80,9 @@ const handleStartNewConversation = (user: MessageUser) => {
         v-if="!conversations || conversations.length === 0"
         class="no-conversations"
       >
+        <div class="empty-illustration">
+          <i class="fas fa-comments"></i>
+        </div>
         <p>Aucune conversation</p>
         <p class="hint">Cliquez sur + pour démarrer</p>
       </div>
@@ -93,6 +96,7 @@ const handleStartNewConversation = (user: MessageUser) => {
   border-right: 1px solid var(--color-border-secondary);
   display: flex;
   flex-direction: column;
+  background: var(--color-bg-secondary-dark);
 }
 
 .sidebar-header {
@@ -103,26 +107,70 @@ const handleStartNewConversation = (user: MessageUser) => {
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
-.sidebar-header h2 {
+.main-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-white);
   margin: 0;
-  font-size: 1.25rem;
+  letter-spacing: -1px;
+}
+
+.btn-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent3);
+  color: var(--color-white);
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
+}
+
+.btn-create--small {
+  width: 34px;
+  height: 34px;
+  font-size: 1rem;
+}
+
+.btn-create:hover {
+  background: var(--color-accent3-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(155, 36, 88, 0.6);
 }
 
 .conversations-list {
   flex: 1;
   overflow-y: auto;
-  background-color: var(--color-bg-secondary-dark);
-  border-radius: 8px;
 }
 
 .no-conversations {
   text-align: center;
   padding: 2rem;
+  color: var(--color-white-light);
+  opacity: 0.7;
 }
 
-.no-conversations .hint {
+.empty-illustration {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.no-conversations p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-white);
+}
+
+.hint {
   font-size: 0.875rem;
-  margin-top: 0.5rem;
+  margin-top: 0.5rem !important;
+  font-weight: 400 !important;
+  color: var(--color-white-light) !important;
+  opacity: 0.6;
 }
 
 .loading-state {
@@ -135,7 +183,7 @@ const handleStartNewConversation = (user: MessageUser) => {
   width: 32px;
   height: 32px;
   border: 3px solid var(--color-border-secondary);
-  border-top-color: var(--accent-primary);
+  border-top-color: var(--color-accent3-hover);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

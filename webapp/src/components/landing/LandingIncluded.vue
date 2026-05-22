@@ -330,8 +330,7 @@ onUnmounted(() => {
   position: relative;
   z-index: 1;
   margin: 0 auto;
-  padding: 0 2rem;
-  max-width: 1400px;
+  max-width: 1200px;
   width: 100%;
 }
 

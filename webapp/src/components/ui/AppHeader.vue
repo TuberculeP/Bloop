@@ -4,15 +4,19 @@
       <span class="welcome-label">Bonjour,</span>
       <strong class="welcome-name">{{ user?.firstName }}</strong>
     </div>
-
     <nav class="app-nav">
       <button
         v-for="item in menuItems"
         :key="item.id"
-        :class="['nav-button', { 'btn-logout': item.id === 'logout' }]"
+        :class="[
+          'nav-button',
+          { 'btn-logout': item.id === 'logout' },
+          { 'btn-active': currentPath === item.route },
+        ]"
         :title="item.name"
         @click="handleMenuClick(item)"
       >
+        <i v-if="item.icon" :class="item.icon"></i>
         <span class="nav-label">{{ item.name }}</span>
         <span class="nav-underline"></span>
       </button>
@@ -22,17 +26,30 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { computed } from "vue";
 import { useAuthStore } from "../../stores/authStore.ts";
 import apiClient from "../../lib/utils/apiClient.ts";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const { user, isAuthenticated } = storeToRefs(useAuthStore());
 const router = useRouter();
 
-const menuItems = [
-  { id: "home", name: "Accueil", route: "/" },
-  { id: "logout", name: "Déconnexion" },
-];
+const route = useRoute();
+const currentPath = route.path;
+
+const menuItems = computed(() => [
+  { id: "home", icon: "fas fa-home", name: "Accueil", route: "/" },
+  { id: "app", icon: "fas fa-th-large", name: "Application", route: "/app" },
+  { id: "blog", icon: "fas fa-newspaper", name: "Blog", route: "/blog" },
+  {
+    id: "messages",
+    icon: "fas fa-envelope",
+    name: "Messagerie",
+    route: "/messages",
+  },
+  { id: "profile", icon: "fas fa-user", name: "Profil", route: "/profile" },
+  { id: "logout", icon: "fas fa-sign-out-alt", name: "Déconnexion" },
+]);
 
 async function handleMenuClick(item: any) {
   if (item.id === "logout") {
@@ -61,7 +78,11 @@ span {
 }
 
 .app-header {
-  padding: 24px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  padding: 18px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -121,6 +142,13 @@ span {
 }
 
 .nav-button:not(.btn-logout):hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-white);
+  border-color: var(--color-border-secondary-hover);
+  transform: translateY(-1px);
+}
+
+.nav-button.btn-active {
   background: rgba(255, 255, 255, 0.05);
   color: var(--color-white);
   border-color: var(--color-border-secondary-hover);

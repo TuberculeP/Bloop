@@ -5,6 +5,30 @@
   background-color: var(--color-bg-primary-dark);
 }
 
+/* Cacher la barre de scroll */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* IE et Edge */
+body {
+  -ms-overflow-style: none;
+}
+
 /* Styles pour le corps de texte */
 body {
   font-family: var(--font-body);
@@ -252,4 +276,11 @@ input[type="submit"]:disabled {
   font-size: 0.85em;
   margin-top: 4px;
   font-family: var(--font-body);
+}
+
+.page-container {
+  margin: 0 auto;
+  padding: 40px 24px;
+  max-width: 1200px;
+  width: 100%;
 }

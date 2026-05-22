@@ -1,6 +1,7 @@
 <template>
   <div class="app-layout">
     <main class="app-main">
+      <AppHeader v-if="!isSequencerPage" />
       <slot />
 
       <div class="parallax-layer" ref="layer1">
@@ -12,7 +13,14 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import AppHeader from "../components/ui/AppHeader.vue";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+const currentPath = route.path;
+const isSequencerPage = currentPath.startsWith("/app/sequencer");
+</script>
 
 <style scoped>
 .app-layout {

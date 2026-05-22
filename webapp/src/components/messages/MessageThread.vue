@@ -47,7 +47,6 @@ defineExpose({ scrollToBottom });
 
 <template>
   <div class="message-thread">
-    <!-- Header de la conversation -->
     <div class="messages-header">
       <div class="header-user">
         <div class="header-avatar">
@@ -62,7 +61,6 @@ defineExpose({ scrollToBottom });
       </div>
     </div>
 
-    <!-- Messages -->
     <div ref="messagesContainer" class="messages-list">
       <div v-if="loading" class="loading-messages">
         <div class="loading-spinner"></div>
@@ -75,22 +73,19 @@ defineExpose({ scrollToBottom });
           :is-own="isOwnMessage(message)"
         />
         <div v-if="!messages || messages.length === 0" class="no-messages">
+          <i class="fa fa-comments empty-illustration"></i>
           <p>Aucun message</p>
           <p class="hint">Envoyez le premier message !</p>
         </div>
-        <!-- Indicateur de frappe -->
         <div v-if="isTyping" class="typing-indicator">
           <span class="typing-dots">
-            <span></span>
-            <span></span>
-            <span></span>
+            <span></span><span></span><span></span>
           </span>
           <span class="typing-text">{{ typingUser }} écrit...</span>
         </div>
       </template>
     </div>
 
-    <!-- Zone de saisie -->
     <MessageInput
       v-model="newMessageText"
       :sending="sending"
@@ -102,37 +97,39 @@ defineExpose({ scrollToBottom });
 
 <style scoped>
 .message-thread {
-  overflow: scroll;
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: var(--color-bg-secondary-dark);
 }
 
+/* ── Header ── */
 .messages-header {
-  /* padding: 1rem 1.5rem; */
-  border-bottom: 1px solid var(--color-border-secondary);
+  padding: 12px 16px;
   background: var(--color-bg-secondary-dark);
+  transition: background 0.3s ease;
 }
 
 .header-user {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-radius: 8px;
-  padding: 8px;
 }
 
 .header-avatar {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: var(--accent-primary);
-  color: white;
+  background: var(--color-accent3);
+  color: var(--color-white);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(122, 15, 62, 0.4);
 }
 
 .header-info {
@@ -141,13 +138,18 @@ defineExpose({ scrollToBottom });
 }
 
 .header-name {
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--color-white);
+  font-size: 1rem;
 }
 
 .header-email {
   font-size: 0.75rem;
+  color: var(--color-white-light);
+  opacity: 0.6;
 }
 
+/* ── Messages ── */
 .messages-list {
   flex: 1;
   padding: 1.5rem;
@@ -160,13 +162,30 @@ defineExpose({ scrollToBottom });
 .no-messages {
   text-align: center;
   margin: auto;
+  color: var(--color-white-light);
+  opacity: 0.7;
 }
 
-.no-messages .hint {
+.empty-illustration {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.no-messages p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-white);
+}
+
+.hint {
   font-size: 0.875rem;
-  margin-top: 0.5rem;
+  margin-top: 0.5rem !important;
+  font-weight: 400 !important;
+  opacity: 0.6;
 }
 
+/* ── Loading ── */
 .loading-messages {
   display: flex;
   justify-content: center;
@@ -177,7 +196,7 @@ defineExpose({ scrollToBottom });
   width: 32px;
   height: 32px;
   border: 3px solid var(--color-border-secondary);
-  border-top-color: var(--accent-primary);
+  border-top-color: var(--color-accent3-hover);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -188,12 +207,15 @@ defineExpose({ scrollToBottom });
   }
 }
 
+/* ── Typing indicator ── */
 .typing-indicator {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  color: var(--color-white-light);
+  opacity: 0.7;
 }
 
 .typing-dots {
@@ -205,17 +227,16 @@ defineExpose({ scrollToBottom });
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: var(--color-accent3-hover);
   animation: typing-bounce 1.4s infinite ease-in-out;
 }
 
 .typing-dots span:nth-child(1) {
   animation-delay: 0s;
 }
-
 .typing-dots span:nth-child(2) {
   animation-delay: 0.2s;
 }
-
 .typing-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }

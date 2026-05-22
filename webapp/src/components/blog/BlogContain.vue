@@ -79,7 +79,7 @@ onMounted(() => {
 </template>
 <style scoped>
 .blog-container {
-  padding-top: 144px;
+  padding: 40px 24px;
   margin: 0 32px;
   display: flex;
   gap: 16px;

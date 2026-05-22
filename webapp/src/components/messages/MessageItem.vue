@@ -96,28 +96,41 @@ const toggleLike = () => {
   align-self: flex-end;
 }
 
+/* ── Bulle de base ── */
 .message-content {
   padding: 0.75rem 1rem;
   border-radius: 18px;
-  background: var(--color-bg-secondary-dark);
   color: var(--color-white);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   position: relative;
+  transition: all 0.3s ease;
 }
 
-/* Bulle pour les messages reçus (queue à gauche) */
+/* ── Message reçu ── */
 .message:not(.own) .message-content {
-  background: var(--color-primary);
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
   border-bottom-left-radius: 4px;
 }
 
-/* Bulle pour les messages envoyés (queue à droite) */
-.message.own .message-content {
-  background: var(--color-secondary);
-  color: var(--color-white);
-  border-bottom-right-radius: 4px;
+.message:not(.own):hover .message-content {
+  border-color: var(--color-accent3-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* ── Message envoyé ── */
+.message.own .message-content {
+  background: var(--color-accent3);
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
+}
+
+.message.own:hover .message-content {
+  background: var(--color-accent3-hover);
+  box-shadow: 0 6px 20px rgba(155, 36, 88, 0.6);
+  transform: translateY(-1px);
+}
+
+/* ── Texte ── */
 .message-text {
   margin: 0 0 0.25rem 0;
   word-wrap: break-word;
@@ -126,11 +139,12 @@ const toggleLike = () => {
 
 .message-time {
   font-size: 0.7rem;
-  opacity: 0.7;
+  opacity: 0.6;
   display: block;
   text-align: right;
 }
 
+/* ── Actions ── */
 .message-actions {
   display: flex;
   justify-content: flex-end;
@@ -140,30 +154,34 @@ const toggleLike = () => {
 
 .like-button {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   font-size: 0.85rem;
-  opacity: 0.8;
+  opacity: 0.7;
+  color: var(--color-white-light);
 }
 
 .like-button:hover:not(:disabled) {
   opacity: 1;
-  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-accent3-hover);
+  background: rgba(122, 15, 62, 0.2);
 }
 
 .like-button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .like-button.liked {
   opacity: 1;
+  border-color: var(--color-accent3-hover);
+  background: rgba(122, 15, 62, 0.15);
 }
 
 .heart {
@@ -172,6 +190,7 @@ const toggleLike = () => {
 
 .like-count {
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 700;
+  color: var(--color-accent3-hover);
 }
 </style>
