@@ -328,6 +328,7 @@ const animate = () => {
       return;
     }
     stopAllActiveNotes();
+    stopAllActiveClips();
     newPosition = 0;
     playbackStartTime.value =
       performance.now() + (checkpointPosition.value / stepsPerSecond) * 1000;
