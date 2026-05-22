@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Track, OscillatorType } from "../../../lib/utils/types";
+import type {
+  Track,
+  OscillatorType,
+  AutomatableParam,
+} from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
@@ -130,6 +134,12 @@ const handleEQBandUpdate = (bandId: string, gain: number) => {
   timelineStore.updateTrackEQBand(props.track.id, bandId, gain);
 };
 
+const hasAutomation = (param: AutomatableParam): boolean => {
+  return (
+    props.track.automationLanes?.some((l) => l.parameter === param) ?? false
+  );
+};
+
 const handleClose = () => {
   emit("close");
 };
@@ -147,13 +157,22 @@ const handleClose = () => {
 
           <div class="panel-body">
             <div class="setting-group">
-              <label class="setting-label">Volume</label>
-              <div class="slider-control">
+              <label class="setting-label">
+                Volume
+                <span v-if="hasAutomation('volume')" class="auto-badge"
+                  >AUTO</span
+                >
+              </label>
+              <div
+                class="slider-control"
+                :class="{ automated: hasAutomation('volume') }"
+              >
                 <input
                   type="range"
                   :value="track.volume"
                   min="0"
                   max="100"
+                  :disabled="hasAutomation('volume')"
                   @input="
                     handleVolumeChange(
                       Number(($event.target as HTMLInputElement).value),
@@ -165,13 +184,22 @@ const handleClose = () => {
             </div>
 
             <div class="setting-group">
-              <label class="setting-label">Reverb</label>
-              <div class="slider-control">
+              <label class="setting-label">
+                Reverb
+                <span v-if="hasAutomation('reverb')" class="auto-badge"
+                  >AUTO</span
+                >
+              </label>
+              <div
+                class="slider-control"
+                :class="{ automated: hasAutomation('reverb') }"
+              >
                 <input
                   type="range"
                   :value="track.reverb ?? 0"
                   min="0"
                   max="100"
+                  :disabled="hasAutomation('reverb')"
                   @input="
                     handleReverbChange(
                       Number(($event.target as HTMLInputElement).value),
@@ -415,7 +443,9 @@ const handleClose = () => {
 }
 
 .setting-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -424,10 +454,26 @@ const handleClose = () => {
   margin-bottom: 8px;
 }
 
+.auto-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 63, 180, 0.2);
+  color: #ff3fb4;
+  border: 1px solid rgba(255, 63, 180, 0.4);
+  letter-spacing: 0.05em;
+}
+
 .slider-control {
   display: flex;
   align-items: center;
   gap: 12px;
+
+  &.automated {
+    opacity: 0.4;
+    pointer-events: none;
+  }
 
   input[type="range"] {
     flex: 1;

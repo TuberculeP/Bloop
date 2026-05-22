@@ -21,6 +21,7 @@ import type {
   AudioClip,
   NoteName,
 } from "../../../lib/utils/types";
+import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
@@ -304,6 +305,16 @@ const stopAllActiveClips = () => {
   activeClips.value.clear();
 };
 
+const applyAutomationAtPosition = (position: number) => {
+  for (const track of timelineStore.getPlayableTracks()) {
+    for (const lane of track.automationLanes ?? []) {
+      if (lane.points.length === 0) continue;
+      const value = getAutomationValueAt(lane.points, position);
+      trackAudioStore.applyAutomation(track.id, lane.parameter, value);
+    }
+  }
+};
+
 const animate = () => {
   if (!isPlaying.value) return;
 
@@ -339,6 +350,8 @@ const animate = () => {
     playNotesAtPosition(newPosition);
     playClipsAtPosition(newPosition);
   }
+
+  applyAutomationAtPosition(newPosition);
 
   animationFrameId.value = requestAnimationFrame(animate);
 };
@@ -668,6 +681,7 @@ defineExpose({
             :is-active="track.id === timelineStore.activeTrackId"
             :playback-position="currentPosition"
             :is-playing="isPlaying"
+            :scroll-left="scrollLeft"
             @toggle-mute="handleToggleMute"
             @toggle-solo="handleToggleSolo"
             @select-track="handleSelectTrack"
