@@ -45,7 +45,8 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // État de l'édition
   // ============================================
   const activeTrackId = ref<string | null>(null);
-  const expandedTrackId = ref<string | null>(null); // Quelle piste a le piano roll ouvert
+  const expandedTrackId = ref<string | null>(null);
+  const automationExpandedTrackId = ref<string | null>(null);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
 
   // ============================================
@@ -483,6 +484,11 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     }
   };
 
+  const toggleAutomationExpanded = (trackId: string): void => {
+    automationExpandedTrackId.value =
+      automationExpandedTrackId.value === trackId ? null : trackId;
+  };
+
   const setActiveTrack = (trackId: string | null): void => {
     activeTrackId.value = trackId;
   };
@@ -619,6 +625,21 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     if (index === -1) return false;
 
     lane.points.splice(index, 1);
+    track!.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  const setAutomationPoints = (
+    trackId: string,
+    laneId: string,
+    points: AutomationPoint[],
+  ): boolean => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    if (!lane) return false;
+
+    lane.points = [...points].sort((a, b) => a.x - b.x);
     track!.updatedAt = new Date();
     project.value.updatedAt = new Date();
     return true;
@@ -868,6 +889,8 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     collapseTrack,
     toggleTrackExpanded,
     setActiveTrack,
+    automationExpandedTrackId,
+    toggleAutomationExpanded,
 
     // Actions - Playback
     getPlayableTracks,
@@ -883,6 +906,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     addAutomationPoint,
     updateAutomationPoint,
     removeAutomationPoint,
+    setAutomationPoints,
 
     // Persistence
     saveToLocalStorage,

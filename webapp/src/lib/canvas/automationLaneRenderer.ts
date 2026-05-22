@@ -51,7 +51,7 @@ export class AutomationLaneRenderer {
   render(
     points: AutomationPoint[],
     hoveredPointId: string | null = null,
-    selectedPointId: string | null = null,
+    selectedPointIds: Set<string> = new Set(),
   ): void {
     const { ctx } = this;
     ctx.clearRect(0, 0, this.width, this.height);
@@ -66,7 +66,31 @@ export class AutomationLaneRenderer {
       this.drawFill(sorted);
     }
 
-    this.drawPoints(sorted, hoveredPointId, selectedPointId);
+    this.drawPoints(sorted, hoveredPointId, selectedPointIds);
+  }
+
+  renderMarquee(
+    rect: {
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+    } | null,
+  ): void {
+    if (!rect) return;
+    const { ctx } = this;
+    const x = Math.min(rect.startX, rect.currentX);
+    const y = Math.min(rect.startY, rect.currentY);
+    const w = Math.abs(rect.currentX - rect.startX);
+    const h = Math.abs(rect.currentY - rect.startY);
+
+    ctx.strokeStyle = "rgba(255, 63, 180, 0.8)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = "rgba(255, 63, 180, 0.08)";
+    ctx.fillRect(x, y, w, h);
+    ctx.setLineDash([]);
   }
 
   private drawBackground(): void {
@@ -167,7 +191,7 @@ export class AutomationLaneRenderer {
   private drawPoints(
     sorted: AutomationPoint[],
     hoveredPointId: string | null,
-    selectedPointId: string | null,
+    selectedPointIds: Set<string>,
   ): void {
     const { ctx, config } = this;
 
@@ -176,7 +200,7 @@ export class AutomationLaneRenderer {
       const y = (1 - point.y) * this.height;
 
       const isHovered = point.id === hoveredPointId;
-      const isSelected = point.id === selectedPointId;
+      const isSelected = selectedPointIds.has(point.id);
       const radius = isHovered ? HOVER_RADIUS : POINT_RADIUS;
 
       ctx.beginPath();
@@ -219,6 +243,21 @@ export class AutomationLaneRenderer {
       if (dist <= HOVER_RADIUS) return point;
     }
     return null;
+  }
+
+  getPointsInRect(
+    minX: number,
+    maxX: number,
+    minY: number,
+    maxY: number,
+    points: AutomationPoint[],
+  ): AutomationPoint[] {
+    const { config } = this;
+    return points.filter((point) => {
+      const px = point.x * config.colWidth;
+      const py = (1 - point.y) * this.height;
+      return px >= minX && px <= maxX && py >= minY && py <= maxY;
+    });
   }
 
   canvasToPoint(

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from "vue";
 import type { AutomationLane } from "../../../lib/utils/types";
 import { AutomationLaneRenderer } from "../../../lib/canvas/automationLaneRenderer";
 import { useAutomationLane } from "../../../composables/useAutomationLane";
@@ -18,10 +18,10 @@ const emit = defineEmits<{
   (e: "remove"): void;
 }>();
 
-const LANE_HEIGHT = 60;
+const LANE_HEIGHT = 160;
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
-const rendererRef = ref<AutomationLaneRenderer | null>(null);
+const rendererRef = shallowRef<AutomationLaneRenderer | null>(null);
 const dpr = window.devicePixelRatio || 1;
 
 const paramConfig = AUTOMATABLE_PARAMS[props.lane.parameter];
@@ -31,6 +31,7 @@ const interaction = useAutomationLane(
   props.lane,
   rendererRef,
   () => props.scrollLeft,
+  () => props.cols,
 );
 
 const renderFrame = () => {
@@ -38,8 +39,9 @@ const renderFrame = () => {
   rendererRef.value.render(
     props.lane.points,
     interaction.hoveredPointId.value,
-    interaction.selectedPointId.value,
+    interaction.selectedPointIds.value,
   );
+  rendererRef.value.renderMarquee(interaction.marqueeRect.value);
 };
 
 onMounted(() => {
@@ -75,7 +77,8 @@ watch(
   [
     () => props.lane.points,
     interaction.hoveredPointId,
-    interaction.selectedPointId,
+    interaction.selectedPointIds,
+    interaction.marqueeRect,
   ],
   renderFrame,
   { deep: true },
@@ -150,7 +153,7 @@ onBeforeUnmount(() => {
   padding: 0 8px 0 16px;
   background: #160b12;
   border-right: 1px solid rgba(122, 15, 62, 0.3);
-  height: 60px;
+  height: 160px;
 }
 
 .lane-param-label {
@@ -187,7 +190,7 @@ onBeforeUnmount(() => {
 
 .lane-canvas-area {
   overflow: hidden;
-  height: 60px;
+  height: 160px;
 }
 
 .lane-canvas {

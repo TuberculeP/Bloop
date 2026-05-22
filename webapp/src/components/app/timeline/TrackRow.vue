@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import type { Track, AutomatableParam } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
@@ -44,6 +44,10 @@ const isAudioTrack = computed(
 
 const showAddLaneMenu = ref(false);
 
+const isAutomationExpanded = computed(
+  () => timelineStore.automationExpandedTrackId === props.track.id,
+);
+
 const usedParams = computed(
   () => new Set(props.track.automationLanes?.map((l) => l.parameter) ?? []),
 );
@@ -62,6 +66,22 @@ const handleAddLane = (param: AutomatableParam) => {
 const handleRemoveLane = (laneId: string) => {
   timelineStore.removeAutomationLane(props.track.id, laneId);
 };
+
+const handleToggleAutomation = () => {
+  timelineStore.toggleAutomationExpanded(props.track.id);
+  showAddLaneMenu.value = false;
+};
+
+const closeMenuOnOutsideClick = (e: MouseEvent) => {
+  if (!(e.target as Element).closest(".add-lane-wrapper")) {
+    showAddLaneMenu.value = false;
+  }
+};
+
+onMounted(() => document.addEventListener("click", closeMenuOnOutsideClick));
+onBeforeUnmount(() =>
+  document.removeEventListener("click", closeMenuOnOutsideClick),
+);
 </script>
 
 <template>
@@ -122,28 +142,26 @@ const handleRemoveLane = (laneId: string) => {
       :is-playing="isPlaying"
     />
 
-    <!-- Automation Lanes -->
-    <AutomationLaneComponent
-      v-for="lane in track.automationLanes"
-      :key="lane.id"
-      :track-id="track.id"
-      :lane="lane"
-      :cols="cols"
-      :col-width="colWidth"
-      :track-color="track.color"
-      :scroll-left="scrollLeft"
-      @remove="handleRemoveLane(lane.id)"
-    />
-
-    <!-- Add automation lane row -->
-    <div class="automation-add-row">
-      <div class="automation-add-header">
+    <!-- Automation drawer -->
+    <div v-if="isAutomationExpanded" class="automation-drawer">
+      <AutomationLaneComponent
+        v-for="lane in track.automationLanes"
+        :key="lane.id"
+        :track-id="track.id"
+        :lane="lane"
+        :cols="cols"
+        :col-width="colWidth"
+        :track-color="track.color"
+        :scroll-left="scrollLeft"
+        @remove="handleRemoveLane(lane.id)"
+      />
+      <div class="drawer-add-bar">
         <div class="add-lane-wrapper">
           <button
             class="add-lane-btn"
             :disabled="availableParams.length === 0"
-            title="Ajouter une lane d'automation"
-            @click="showAddLaneMenu = !showAddLaneMenu"
+            title="Ajouter un paramètre"
+            @click.stop="showAddLaneMenu = !showAddLaneMenu"
           >
             +
             <svg
@@ -173,8 +191,39 @@ const handleRemoveLane = (laneId: string) => {
             </button>
           </div>
         </div>
+        <div class="drawer-add-spacer" />
       </div>
-      <div class="automation-add-spacer" />
+    </div>
+
+    <!-- Toggle automation button -->
+    <div class="automation-toggle-row">
+      <button
+        class="automation-toggle-btn"
+        :class="{ active: isAutomationExpanded }"
+        title="Automation"
+        @click="handleToggleAutomation"
+      >
+        <svg
+          width="12"
+          height="10"
+          viewBox="0 0 12 10"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0 8 C2 8 2 2 4 2 C6 2 6 6 8 5 C10 4 10 2 12 2"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            fill="none"
+          />
+        </svg>
+        <span>Auto</span>
+        <span v-if="track.automationLanes?.length" class="lane-count">{{
+          track.automationLanes.length
+        }}</span>
+      </button>
+      <div class="automation-toggle-spacer" />
     </div>
   </div>
 </template>
@@ -223,21 +272,77 @@ const handleRemoveLane = (laneId: string) => {
   grid-column: 1 / -1;
 }
 
-.automation-add-row {
+.automation-drawer {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(122, 15, 62, 0.3);
+}
+
+.drawer-add-bar {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  border-top: 1px solid rgba(122, 15, 62, 0.15);
+}
+
+.drawer-add-bar > :first-child {
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+}
+
+.drawer-add-spacer {
+  background: #1a0e15;
+}
+
+.automation-toggle-row {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 180px 1fr;
   border-top: 1px solid rgba(122, 15, 62, 0.15);
 }
 
-.automation-add-header {
-  padding: 4px 8px;
+.automation-toggle-btn {
   display: flex;
   align-items: center;
+  gap: 5px;
+  margin: 3px 8px;
+  padding: 2px 7px;
+  border: 1px solid rgba(122, 15, 62, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.1s;
+  letter-spacing: 0.03em;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 63, 180, 0.4);
+  }
+
+  &.active {
+    color: #ff3fb4;
+    border-color: rgba(255, 63, 180, 0.6);
+    background: rgba(255, 63, 180, 0.08);
+  }
 }
 
-.automation-add-spacer {
-  background: #1a0e15;
+.lane-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: rgba(255, 63, 180, 0.25);
+  color: #ff3fb4;
+  font-size: 9px;
+}
+
+.automation-toggle-spacer {
+  background: #160b12;
 }
 
 .add-lane-wrapper {
