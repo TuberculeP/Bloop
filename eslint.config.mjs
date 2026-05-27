@@ -12,6 +12,7 @@ const sharedConfig = {
     "unused-imports": eslintPluginUnusedImports,
   },
   rules: {
+    "no-console": "off",
     "no-unused-vars": "off",
     "unused-imports/no-unused-imports": "warn",
     "unused-imports/no-unused-vars": [

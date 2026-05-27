@@ -109,5 +109,11 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     return dest.stream;
   };
 
-  return { audioContext, inputBus, isInitialized, ensureAudioContextResumed, createCaptureStream };
+  return {
+    audioContext,
+    inputBus,
+    isInitialized,
+    ensureAudioContextResumed,
+    createCaptureStream,
+  };
 });

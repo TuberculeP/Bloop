@@ -8,6 +8,7 @@ import { MessageLike } from "./MessageLike";
 import { SamplePack } from "./SamplePack";
 import { SampleFolder } from "./SampleFolder";
 import { AudioSample } from "./AudioSample";
+import { OAuthToken } from "./OAuthToken";
 
 const entities = [
   User,
@@ -20,6 +21,7 @@ const entities = [
   SamplePack,
   SampleFolder,
   AudioSample,
+  OAuthToken,
 ];
 
 export default entities;

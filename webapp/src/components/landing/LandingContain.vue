@@ -314,6 +314,75 @@
     <!-- ==================== INCLUDED SECTION ==================== -->
     <LandingIncluded />
 
+    <!-- ==================== MCP SECTION ==================== -->
+    <section class="mcp-docs" id="mcp">
+      <div class="section-container">
+        <div class="section-header">
+          <div class="mcp-badge">
+            <span class="badge-dot"></span>
+            <span>Claude Code Integration</span>
+          </div>
+          <h2 class="section-title">
+            <SplitText
+              text="Composez avec Claude"
+              animation-type="rotate3d"
+              trigger-start="top 85%"
+            />
+          </h2>
+          <p class="section-subtitle">
+            Connectez Claude Code à BLOOP et demandez-lui de créer, arranger et
+            enrichir vos projets directement depuis votre éditeur.
+          </p>
+        </div>
+
+        <div class="mcp-grid">
+          <div class="mcp-steps">
+            <div v-for="(step, i) in mcpSteps" :key="i" class="mcp-step">
+              <div class="mcp-step-number">{{ String(i + 1).padStart(2, "0") }}</div>
+              <div class="mcp-step-body">
+                <h3 class="mcp-step-title">{{ step.title }}</h3>
+                <p class="mcp-step-desc">{{ step.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mcp-config-card">
+            <div class="config-header">
+              <div class="config-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="config-filename">.mcp.json</span>
+              <button
+                class="config-copy-btn"
+                :class="{ copied: configCopied }"
+                @click="copyMcpConfig"
+              >
+                <svg v-if="!configCopied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ configCopied ? "Copié !" : "Copier" }}</span>
+              </button>
+            </div>
+            <pre class="config-code"><span class="json-brace">{</span>
+  <span class="json-key">"mcpServers"</span><span class="json-colon">:</span> <span class="json-brace">{</span>
+    <span class="json-key">"bloop"</span><span class="json-colon">:</span> <span class="json-brace">{</span>
+      <span class="json-key">"type"</span><span class="json-colon">:</span> <span class="json-string">"sse"</span><span class="json-comma">,</span>
+      <span class="json-key">"url"</span><span class="json-colon">:</span> <span class="json-string">"<span class="json-origin">{{ currentOrigin }}</span>/api/mcp/sse"</span>
+    <span class="json-brace">}</span>
+  <span class="json-brace">}</span>
+<span class="json-brace">}</span></pre>
+            <div class="config-footer">
+              Ajoutez ce fichier à la racine de votre projet, puis rechargez Claude Code.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== CTA SECTION ==================== -->
     <section class="cta-section" id="support" ref="ctaRef">
       <div class="section-container">
@@ -372,6 +441,7 @@
 <script setup lang="ts">
 import {
   ref,
+  computed,
   onMounted,
   onUnmounted,
   h,
@@ -750,6 +820,55 @@ const plans = [
     cta: "Souscrire à l'offre",
   },
 ];
+
+const currentOrigin = computed(() =>
+  typeof window !== "undefined" ? window.location.origin : "https://bloop-on.cloud",
+);
+
+const configCopied = ref(false);
+
+const mcpSteps = [
+  {
+    title: "Installez Claude Code",
+    description:
+      "Téléchargez l'extension Claude Code pour VS Code ou utilisez la CLI.",
+  },
+  {
+    title: "Ajoutez la configuration",
+    description:
+      "Copiez le fichier .mcp.json ci-contre à la racine de votre projet et rechargez Claude Code.",
+  },
+  {
+    title: "Connectez-vous à BLOOP",
+    description:
+      "Claude Code ouvre votre navigateur — connectez-vous à votre compte BLOOP pour autoriser l'accès.",
+  },
+  {
+    title: "Créez de la musique",
+    description:
+      'Demandez à Claude de composer, arranger, ajouter des pistes… il agit directement sur vos projets.',
+  },
+];
+
+const copyMcpConfig = async () => {
+  const config = JSON.stringify(
+    {
+      mcpServers: {
+        bloop: {
+          type: "sse",
+          url: `${currentOrigin.value}/api/mcp/sse`,
+        },
+      },
+    },
+    null,
+    2,
+  );
+  await navigator.clipboard.writeText(config);
+  configCopied.value = true;
+  setTimeout(() => {
+    configCopied.value = false;
+  }, 2000);
+};
 
 const scrollToFeatures = () => {
   if (scrollTo) {
@@ -1843,6 +1962,173 @@ onUnmounted(() => {
   margin-left: 0;
 }
 
+/* ==================== MCP SECTION ==================== */
+.mcp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: rgba(255, 63, 180, 0.1);
+  border: 1px solid rgba(255, 63, 180, 0.3);
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-accent2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.mcp-badge .badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent2);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.mcp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+  margin-top: 3.5rem;
+}
+
+.mcp-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.mcp-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.mcp-step-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 247, 171, 0.08);
+  border: 1px solid rgba(255, 247, 171, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.mcp-step-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-white);
+  margin: 0 0 0.35rem 0;
+  padding-top: 0.7rem;
+}
+
+.mcp-step-desc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mcp-config-card {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.config-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.config-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.config-dots span:first-child { background: rgba(255, 95, 87, 0.7); }
+.config-dots span:nth-child(2) { background: rgba(255, 189, 46, 0.7); }
+.config-dots span:nth-child(3) { background: rgba(40, 201, 64, 0.7); }
+
+.config-filename {
+  flex: 1;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "Courier New", monospace;
+}
+
+.config-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.config-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.config-copy-btn.copied {
+  background: rgba(40, 201, 64, 0.12);
+  border-color: rgba(40, 201, 64, 0.3);
+  color: #28c940;
+}
+
+.config-code {
+  margin: 0;
+  padding: 1.5rem 1.75rem;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.875rem;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.json-brace { color: rgba(255, 255, 255, 0.5); }
+.json-key { color: #7dd3fc; }
+.json-colon { color: rgba(255, 255, 255, 0.4); }
+.json-string { color: #86efac; }
+.json-origin { color: var(--color-accent); }
+.json-comma { color: rgba(255, 255, 255, 0.4); }
+
+.config-footer {
+  padding: 0.875rem 1.75rem;
+  font-size: 0.775rem;
+  color: rgba(255, 255, 255, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  line-height: 1.5;
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1024px) {
   .hero-container {
@@ -1929,8 +2215,13 @@ onUnmounted(() => {
   .features,
   .how-it-works,
   .pricing,
+  .mcp-docs,
   .cta-section {
     padding: 5rem 0;
+  }
+
+  .mcp-grid {
+    grid-template-columns: 1fr;
   }
 
   .features-grid {

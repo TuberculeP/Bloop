@@ -71,7 +71,9 @@ export function useAutomationLane(
     canvas = el;
   };
 
-  const getCanvasCoords = (event: MouseEvent): { x: number; y: number } | null => {
+  const getCanvasCoords = (
+    event: MouseEvent,
+  ): { x: number; y: number } | null => {
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -145,7 +147,11 @@ export function useAutomationLane(
         selectedPointIds.value = new Set([hit.id]);
       }
 
-      const startGrid = renderer.canvasToPoint(coords.x, coords.y, scrollLeft());
+      const startGrid = renderer.canvasToPoint(
+        coords.x,
+        coords.y,
+        scrollLeft(),
+      );
       const groupInitial = new Map<string, { x: number; y: number }>();
       for (const pid of selectedPointIds.value) {
         const p = lane.points.find((pt) => pt.id === pid);
@@ -201,7 +207,11 @@ export function useAutomationLane(
     if (pendingDrag && !isDragging && coords && renderer) {
       if (!pendingDrag.isMarquee && pendingDrag.pointId === null) {
         pushSnapshot();
-        const { x, y } = renderer.canvasToPoint(coords.x, coords.y, scrollLeft());
+        const { x, y } = renderer.canvasToPoint(
+          coords.x,
+          coords.y,
+          scrollLeft(),
+        );
         const pointId = timelineStore.addAutomationPoint(trackId, lane.id, {
           x: Math.max(0, Math.round(x)),
           y,
@@ -216,7 +226,13 @@ export function useAutomationLane(
       const maxX = Math.max(rect.startX, rect.currentX);
       const minY = Math.min(rect.startY, rect.currentY);
       const maxY = Math.max(rect.startY, rect.currentY);
-      const hits = renderer.getPointsInRect(minX, maxX, minY, maxY, lane.points);
+      const hits = renderer.getPointsInRect(
+        minX,
+        maxX,
+        minY,
+        maxY,
+        lane.points,
+      );
       selectedPointIds.value = new Set(hits.map((p) => p.id));
       marqueeRect.value = null;
     }
@@ -259,7 +275,9 @@ export function useAutomationLane(
   const duplicateSelected = () => {
     if (selectedPointIds.value.size === 0) return;
     const maxCols = cols();
-    const toDuplicate = lane.points.filter((p) => selectedPointIds.value.has(p.id));
+    const toDuplicate = lane.points.filter((p) =>
+      selectedPointIds.value.has(p.id),
+    );
     if (toDuplicate.length === 0) return;
 
     pushSnapshot();
@@ -267,7 +285,10 @@ export function useAutomationLane(
     for (const p of toDuplicate) {
       const newX = p.x + DUPLICATE_OFFSET;
       if (newX >= maxCols) continue;
-      const id = timelineStore.addAutomationPoint(trackId, lane.id, { x: newX, y: p.y });
+      const id = timelineStore.addAutomationPoint(trackId, lane.id, {
+        x: newX,
+        y: p.y,
+      });
       if (id) newIds.push(id);
     }
     selectedPointIds.value = new Set(newIds);
@@ -276,7 +297,10 @@ export function useAutomationLane(
   const handleKeydown = (event: KeyboardEvent): void => {
     const isCtrl = event.ctrlKey || event.metaKey;
 
-    if ((event.key === "Delete" || event.key === "Backspace") && selectedPointIds.value.size > 0) {
+    if (
+      (event.key === "Delete" || event.key === "Backspace") &&
+      selectedPointIds.value.size > 0
+    ) {
       event.preventDefault();
       deleteSelected();
       return;
@@ -288,7 +312,10 @@ export function useAutomationLane(
       return;
     }
 
-    if (isCtrl && ((event.key === "z" && event.shiftKey) || event.key === "y")) {
+    if (
+      isCtrl &&
+      ((event.key === "z" && event.shiftKey) || event.key === "y")
+    ) {
       event.preventDefault();
       redo();
       return;

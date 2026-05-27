@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useProjectStore } from "../../stores/projectStore";
+import apiClient from "../../lib/utils/apiClient";
 import LoadingCard from "../shared/LoadingCard.vue";
 import BaseButton from "../ui/BaseButton.vue";
 
@@ -10,6 +11,7 @@ interface Project {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  mcpEnabled: boolean;
 }
 
 const emit = defineEmits<{
@@ -21,6 +23,7 @@ const projectStore = useProjectStore();
 const projects = ref<Project[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
+const togglingMcp = ref<string | null>(null);
 
 const loadProjects = async () => {
   loading.value = true;
@@ -42,6 +45,20 @@ const formatDate = (dateString: string): string => {
     hour: "2-digit",
     minute: "2-digit",
   });
+};
+
+const toggleMcp = async (project: Project, event: Event) => {
+  event.stopPropagation();
+  if (togglingMcp.value) return;
+  togglingMcp.value = project.id;
+  const { error } = await apiClient.patch<{ body: { mcpEnabled: boolean } }>(
+    `/app/projects/${project.id}/mcp`,
+    { mcpEnabled: !project.mcpEnabled },
+  );
+  if (!error) {
+    project.mcpEnabled = !project.mcpEnabled;
+  }
+  togglingMcp.value = null;
 };
 
 onMounted(() => loadProjects());
@@ -114,8 +131,22 @@ onMounted(() => loadProjects());
             </div>
             <h3 class="card-title">{{ project.name }}</h3>
             <div class="card-footer">
-              <span class="click-hint">Ouvrir</span>
-              <i class="fas fa-arrow-right click-hint"></i>
+              <button
+                class="mcp-toggle"
+                :class="{ active: project.mcpEnabled }"
+                :disabled="togglingMcp === project.id"
+                @click="toggleMcp(project, $event)"
+                :title="
+                  project.mcpEnabled ? 'MCP activé' : 'Activer le contrôle MCP'
+                "
+              >
+                <i class="fas fa-robot" />
+                <span>MCP</span>
+              </button>
+              <div class="open-hint">
+                <span class="click-hint">Ouvrir</span>
+                <i class="fas fa-arrow-right click-hint"></i>
+              </div>
             </div>
           </div>
         </div>
@@ -285,7 +316,13 @@ onMounted(() => loadProjects());
 .card-footer {
   margin-top: auto;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.open-hint {
+  display: flex;
   align-items: center;
   gap: 8px;
 }
@@ -302,6 +339,40 @@ onMounted(() => loadProjects());
 .project-card:hover .click-hint {
   opacity: 1;
   transform: translateX(0);
+}
+
+.mcp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  color: var(--color-white-light);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 1;
+    border-color: var(--color-accent3-hover);
+    color: var(--color-white);
+  }
+
+  &.active {
+    opacity: 1;
+    border-color: var(--color-accent3-hover);
+    color: var(--color-accent3-hover);
+    background: rgba(122, 15, 62, 0.2);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.3;
+  }
 }
 
 .state-container {

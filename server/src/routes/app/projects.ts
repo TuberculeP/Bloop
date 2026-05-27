@@ -4,7 +4,6 @@ import { Project } from "../../config/entities/Project";
 
 const projectsRouter = Router();
 
-// GET /api/projects - Récupérer tous les projets de l'utilisateur
 projectsRouter.get("/", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -26,7 +25,6 @@ projectsRouter.get("/", async (req, res) => {
   }
 });
 
-// GET /api/projects/:id - Récupérer un projet spécifique
 projectsRouter.get("/:id", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -51,7 +49,6 @@ projectsRouter.get("/:id", async (req, res) => {
   }
 });
 
-// POST /api/projects - Créer un nouveau projet
 projectsRouter.post("/", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -92,7 +89,6 @@ projectsRouter.post("/", async (req, res) => {
   }
 });
 
-// PUT /api/projects/:id - Mettre à jour un projet
 projectsRouter.put("/:id", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -133,7 +129,6 @@ projectsRouter.put("/:id", async (req, res) => {
   }
 });
 
-// DELETE /api/projects/:id - Supprimer un projet
 projectsRouter.delete("/:id", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -157,6 +152,41 @@ projectsRouter.delete("/:id", async (req, res) => {
     res.json({ message: "Project deleted successfully" });
   } catch (error) {
     console.error("Error deleting project:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.patch("/:id/mcp", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const { mcpEnabled } = req.body;
+    const projectRepository = pg.getRepository(Project);
+
+    const project = await projectRepository.findOne({
+      where: { id: req.params.id, user: { id: req.user.id } },
+    });
+
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+
+    project.mcpEnabled = mcpEnabled;
+    const savedProject = await projectRepository.save(project);
+
+    res.json({
+      body: {
+        id: savedProject.id,
+        name: savedProject.name,
+        mcpEnabled: savedProject.mcpEnabled,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating project MCP status:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

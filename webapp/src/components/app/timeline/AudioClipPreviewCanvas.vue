@@ -98,7 +98,15 @@ const drawClip = (ctx: CanvasRenderingContext2D, clip: AudioClip) => {
 
   const waveformData = getWaveformData(clip);
   if (waveformData.length > 0) {
-    drawWaveform(ctx, clip, waveformData, x + 1, y + 1, clipWidth - 2, clipHeight - 2);
+    drawWaveform(
+      ctx,
+      clip,
+      waveformData,
+      x + 1,
+      y + 1,
+      clipWidth - 2,
+      clipHeight - 2,
+    );
   } else {
     drawPlaceholderPattern(ctx, x + 1, y + 1, clipWidth - 2, clipHeight - 2);
   }
@@ -118,7 +126,7 @@ const drawWaveform = (
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
 ) => {
   const midY = y + height / 2;
 
@@ -150,7 +158,7 @@ const drawPlaceholderPattern = (
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
 ) => {
   ctx.save();
   ctx.beginPath();
@@ -176,7 +184,7 @@ watch([() => props.clips, () => props.color, isHovered], render, {
 });
 watch(
   [() => props.cols, () => props.colWidth, () => props.rowHeight],
-  updateCanvasSize
+  updateCanvasSize,
 );
 </script>
 

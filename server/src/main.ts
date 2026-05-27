@@ -3,6 +3,7 @@ import "dotenv/config";
 import pg from "./config/db.config";
 import path from "path";
 import express from "express";
+import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import { createServer as createHttpServer } from "http";
 import { Server as WSServer } from "socket.io";
@@ -23,11 +24,35 @@ const main = async () => {
   const app = express();
   const server = createHttpServer(app);
   app
+    .use(cors({ origin: true, credentials: true }))
     .use(express.json())
+    .use(express.urlencoded({ extended: false }))
     .use(cookieParser())
     .use(customSession())
     .use(passport.initialize())
     .use(passport.session());
+
+  // Well-known OAuth endpoints (must be at root, not under /api)
+  app.get("/.well-known/oauth-protected-resource", (req, res) => {
+    const base = `${req.protocol}://${req.get("host")}`;
+    res.json({
+      resource: `${base}/api/mcp/sse`,
+      authorization_servers: [base],
+    });
+  });
+
+  app.get("/.well-known/oauth-authorization-server", (req, res) => {
+    const base = `${req.protocol}://${req.get("host")}`;
+    res.json({
+      issuer: base,
+      authorization_endpoint: `${base}/api/mcp/oauth/authorize`,
+      token_endpoint: `${base}/api/mcp/oauth/token`,
+      registration_endpoint: `${base}/api/mcp/oauth/register`,
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code", "refresh_token"],
+      code_challenge_methods_supported: ["S256"],
+    });
+  });
 
   app.use("/api", router);
 
@@ -60,6 +85,14 @@ const main = async () => {
   server.listen(3000, () => {
     console.log("> Ready on http://localhost:3000");
   });
+
+  const shutdown = () => {
+    wss.close();
+    server.closeAllConnections?.();
+    server.close(() => process.exit(0));
+  };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
 };
 
 // start typeorm migration and server

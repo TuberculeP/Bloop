@@ -4,33 +4,29 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
-  UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 
 @Entity()
-export class Project {
+export class OAuthToken {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
-  name: string;
+  accessTokenHash: string;
 
   @Column({ nullable: true })
-  description?: string;
+  refreshTokenHash: string;
 
-  @Column("simple-json")
-  data: any;
+  @Column({ nullable: true })
+  expiresAt: Date;
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
   user: User;
 
-  @Column({ default: false })
-  mcpEnabled: boolean;
+  @Column()
+  userId: string;
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
