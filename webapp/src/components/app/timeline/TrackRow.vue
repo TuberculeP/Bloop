@@ -85,7 +85,12 @@ onBeforeUnmount(() =>
 <template>
   <div
     class="track-row"
-    :class="{ active: isActive, muted: track.muted, expanded: isExpanded, 'audio-track': isAudioTrack }"
+    :class="{
+      active: isActive,
+      muted: track.muted,
+      expanded: isExpanded,
+      'audio-track': isAudioTrack,
+    }"
   >
     <TrackHeader
       :track="track"

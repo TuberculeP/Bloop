@@ -8,6 +8,9 @@ import messagesRouter from "./network/messages";
 import appRouter from "./app";
 import samplesRouter from "./samples";
 import adminRouter from "./admin";
+import mcpProjectsRouter from "./mcp/projects";
+import mcpOauthRouter from "./mcp/oauth";
+import mcpSseRouter from "./mcp/sse";
 
 const router = Router();
 
@@ -31,5 +34,8 @@ router.use("/messages", messagesRouter);
 router.use("/app", appRouter);
 router.use("/samples", samplesRouter);
 router.use("/admin", adminRouter);
+router.use("/mcp/projects", mcpProjectsRouter);
+router.use("/mcp/oauth", mcpOauthRouter);
+router.use("/mcp/sse", mcpSseRouter);
 
 export default router;

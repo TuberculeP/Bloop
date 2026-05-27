@@ -146,7 +146,7 @@
             :style="{ width: uploadProgress + '%' }"
           ></div>
         </div>
-        <p class="upload-hint">{{ currentFile || 'Starting...' }}</p>
+        <p class="upload-hint">{{ currentFile || "Starting..." }}</p>
       </div>
     </div>
 
