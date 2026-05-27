@@ -22,6 +22,7 @@ const main = async () => {
   initializePassport();
 
   const app = express();
+  app.set("trust proxy", 1);
   const server = createHttpServer(app);
   app
     .use(cors({ origin: true, credentials: true }))
