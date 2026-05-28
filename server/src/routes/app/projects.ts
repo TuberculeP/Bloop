@@ -1,6 +1,7 @@
 import { Router } from "express";
 import pg from "../../config/db.config";
 import { Project } from "../../config/entities/Project";
+import { ProjectFavorite } from "../../config/entities/ProjectFavorite";
 
 const projectsRouter = Router();
 
@@ -14,13 +15,91 @@ projectsRouter.get("/", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
     const projects = await projectRepository.find({
       where: { user: { id: req.user.id } },
-      select: ["id", "name", "description", "createdAt", "updatedAt"],
+      select: ["id", "name", "description", "createdAt", "updatedAt", "mcpEnabled", "isPublic"],
       order: { updatedAt: "DESC" },
     });
 
     res.json({ body: projects });
   } catch (error) {
     console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NOTE: /public et /favorites doivent être avant /:id pour éviter le conflit de route Express
+projectsRouter.get("/public", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const projectRepository = pg.getRepository(Project);
+    const projects = await projectRepository.find({
+      where: { isPublic: true },
+      relations: ["user"],
+      order: { updatedAt: "DESC" },
+    });
+
+    const body = projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      isPublic: p.isPublic,
+      owner: {
+        id: p.user.id,
+        firstName: p.user.firstName,
+        lastName: p.user.lastName,
+      },
+    }));
+
+    res.json({ body });
+  } catch (error) {
+    console.error("Error fetching public projects:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.get("/favorites", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const favoriteRepository = pg.getRepository(ProjectFavorite);
+    const favorites = await favoriteRepository.find({
+      where: { user: { id: req.user.id } },
+      relations: ["project", "project.user"],
+      order: { createdAt: "DESC" },
+    });
+
+    const body = favorites
+      .filter(
+        (f) =>
+          f.project.isPublic || f.project.user.id === req.user.id,
+      )
+      .map((f) => ({
+        favoriteId: f.id,
+        favoritedAt: f.createdAt,
+        id: f.project.id,
+        name: f.project.name,
+        description: f.project.description,
+        createdAt: f.project.createdAt,
+        updatedAt: f.project.updatedAt,
+        isPublic: f.project.isPublic,
+        owner: {
+          id: f.project.user.id,
+          firstName: f.project.user.firstName,
+          lastName: f.project.user.lastName,
+        },
+      }));
+
+    res.json({ body });
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -33,16 +112,37 @@ projectsRouter.get("/:id", async (req, res) => {
     }
 
     const projectRepository = pg.getRepository(Project);
-    const project = await projectRepository.findOne({
+
+    const ownProject = await projectRepository.findOne({
       where: { id: req.params.id, user: { id: req.user.id } },
     });
 
-    if (!project) {
-      res.status(404).json({ error: "Project not found" });
+    if (ownProject) {
+      res.json({ body: { ...ownProject, isOwned: true } });
       return;
     }
 
-    res.json({ body: project });
+    const publicProject = await projectRepository.findOne({
+      where: { id: req.params.id, isPublic: true },
+      relations: ["user"],
+    });
+
+    if (publicProject) {
+      res.json({
+        body: {
+          ...publicProject,
+          isOwned: false,
+          owner: {
+            id: publicProject.user.id,
+            firstName: publicProject.user.firstName,
+            lastName: publicProject.user.lastName,
+          },
+        },
+      });
+      return;
+    }
+
+    res.status(404).json({ error: "Project not found" });
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -187,6 +287,154 @@ projectsRouter.patch("/:id/mcp", async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating project MCP status:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.patch("/:id/visibility", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const { isPublic } = req.body;
+    const projectRepository = pg.getRepository(Project);
+
+    const project = await projectRepository.findOne({
+      where: { id: req.params.id, user: { id: req.user.id } },
+    });
+
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+
+    project.isPublic = isPublic;
+    const savedProject = await projectRepository.save(project);
+
+    res.json({
+      body: {
+        id: savedProject.id,
+        name: savedProject.name,
+        isPublic: savedProject.isPublic,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating project visibility:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.post("/:id/clone", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const projectRepository = pg.getRepository(Project);
+
+    const source = await projectRepository.findOne({
+      where: { id: req.params.id },
+      relations: ["user"],
+    });
+
+    if (!source || (!source.isPublic && source.user.id !== req.user.id)) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+
+    const clone = projectRepository.create({
+      name: `Copie de ${source.name}`,
+      description: source.description,
+      data: source.data,
+      user: req.user,
+      isPublic: false,
+      mcpEnabled: false,
+    });
+
+    const saved = await projectRepository.save(clone);
+
+    res.status(201).json({
+      body: {
+        id: saved.id,
+        name: saved.name,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error cloning project:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.post("/:id/favorite", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const projectRepository = pg.getRepository(Project);
+    const favoriteRepository = pg.getRepository(ProjectFavorite);
+
+    const project = await projectRepository.findOne({
+      where: { id: req.params.id },
+      relations: ["user"],
+    });
+
+    if (!project || (!project.isPublic && project.user.id !== req.user.id)) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+
+    const existing = await favoriteRepository.findOne({
+      where: { user: { id: req.user.id }, project: { id: project.id } },
+    });
+
+    if (existing) {
+      res.json({ body: { favoriteId: existing.id } });
+      return;
+    }
+
+    const favorite = favoriteRepository.create({
+      user: req.user,
+      project,
+    });
+    const saved = await favoriteRepository.save(favorite);
+
+    res.status(201).json({ body: { favoriteId: saved.id } });
+  } catch (error) {
+    console.error("Error adding favorite:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.delete("/:id/favorite", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const favoriteRepository = pg.getRepository(ProjectFavorite);
+
+    const favorite = await favoriteRepository.findOne({
+      where: { user: { id: req.user.id }, project: { id: req.params.id } },
+    });
+
+    if (!favorite) {
+      res.status(404).json({ error: "Favorite not found" });
+      return;
+    }
+
+    await favoriteRepository.remove(favorite);
+
+    res.json({ message: "Favorite removed" });
+  } catch (error) {
+    console.error("Error removing favorite:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -28,6 +28,9 @@ export class Project {
   @Column({ default: false })
   mcpEnabled: boolean;
 
+  @Column({ default: false })
+  isPublic: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

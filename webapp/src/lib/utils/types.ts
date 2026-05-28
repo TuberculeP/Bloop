@@ -311,3 +311,28 @@ export interface CreatePostData {
   comment_of_post_id?: string | null;
   is_highlight?: boolean;
 }
+
+export interface ProjectListItem {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  mcpEnabled: boolean;
+  isPublic: boolean;
+}
+
+export interface PublicProjectListItem {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  isPublic: boolean;
+  owner: { id: string; firstName: string; lastName: string };
+}
+
+export type FavoriteProjectListItem = PublicProjectListItem & {
+  favoriteId: string;
+  favoritedAt: string;
+};

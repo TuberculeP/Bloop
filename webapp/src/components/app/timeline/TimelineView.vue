@@ -8,6 +8,7 @@ import {
   watch,
   type Ref,
 } from "vue";
+import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
@@ -56,6 +57,9 @@ const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
 
+const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
+
+const isCloning = ref(false);
 const isSaving = ref(false);
 const saveMessage = ref<{ type: "success" | "error"; text: string } | null>(
   null,
@@ -499,6 +503,25 @@ const handleBackToProjects = () => {
   router.push({ name: "app-main" });
 };
 
+const handleResetReadOnly = async () => {
+  if (!projectStore.currentProjectId) return;
+  await projectStore.loadProjectToTimeline(
+    projectStore.currentProjectId,
+    timelineStore,
+  );
+  await dawLoadingStore.preloadProject(timelineStore.project);
+};
+
+const handleCloneProject = async () => {
+  if (!projectStore.currentProjectId || isCloning.value) return;
+  isCloning.value = true;
+  const result = await projectStore.cloneProject(projectStore.currentProjectId);
+  isCloning.value = false;
+  if (result.success && result.projectId) {
+    router.replace({ name: "app-sequencer", query: { projectId: result.projectId } });
+  }
+};
+
 const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement;
   scrollLeft.value = target.scrollLeft;
@@ -618,11 +641,13 @@ defineExpose({
               'has-changes': projectStore.hasUnsavedChanges,
             }"
             @click="handleSaveProject"
-            :disabled="isSaving"
+            :disabled="isSaving || isReadOnly"
             :title="
-              projectStore.hasUnsavedChanges
-                ? 'Sauvegarder les changements'
-                : 'Projet sauvegardé'
+              isReadOnly
+                ? 'Projet en lecture seule'
+                : projectStore.hasUnsavedChanges
+                  ? 'Sauvegarder les changements'
+                  : 'Projet sauvegardé'
             "
           >
             {{ isSaving ? "..." : "Sauvegarder" }}
@@ -654,6 +679,21 @@ defineExpose({
         >
           {{ timelineStore.project.name }}
         </span>
+      </div>
+    </div>
+
+    <div v-if="isReadOnly" class="readonly-banner">
+      <div class="readonly-banner-info">
+        <i class="fas fa-eye"></i>
+        <span>Projet de <strong>{{ currentProjectOwner ? `${currentProjectOwner.firstName} ${currentProjectOwner.lastName}` : '…' }}</strong> — Mode lecture seule</span>
+      </div>
+      <div class="readonly-banner-actions">
+        <button class="banner-btn" @click="handleResetReadOnly" title="Revenir à l'état original">
+          <i class="fas fa-undo"></i> Réinitialiser
+        </button>
+        <button class="banner-btn banner-btn-primary" @click="handleCloneProject" :disabled="isCloning">
+          <i class="fas fa-copy"></i> {{ isCloning ? 'Clonage…' : 'Cloner dans mes projets' }}
+        </button>
       </div>
     </div>
 
@@ -1033,6 +1073,75 @@ defineExpose({
     height: 12px;
     background: #ef4444;
     clip-path: polygon(50% 100%, 0 0, 100% 0);
+  }
+}
+
+.readonly-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(0, 100, 160, 0.15);
+  border-bottom: 1px solid rgba(0, 140, 220, 0.3);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.readonly-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+
+  i {
+    color: #60a5fa;
+  }
+
+  strong {
+    color: #93c5fd;
+  }
+}
+
+.readonly-banner-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.banner-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.banner-btn-primary {
+  background: rgba(0, 120, 200, 0.3);
+  border-color: rgba(0, 160, 255, 0.5);
+  color: #93c5fd;
+
+  &:hover {
+    background: rgba(0, 140, 220, 0.4);
+    border-color: #60a5fa;
+    color: #bfdbfe;
   }
 }
 

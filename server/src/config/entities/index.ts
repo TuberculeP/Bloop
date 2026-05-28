@@ -9,6 +9,7 @@ import { SamplePack } from "./SamplePack";
 import { SampleFolder } from "./SampleFolder";
 import { AudioSample } from "./AudioSample";
 import { OAuthToken } from "./OAuthToken";
+import { ProjectFavorite } from "./ProjectFavorite";
 
 const entities = [
   User,
@@ -22,6 +23,7 @@ const entities = [
   SampleFolder,
   AudioSample,
   OAuthToken,
+  ProjectFavorite,
 ];
 
 export default entities;

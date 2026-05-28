@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../lib/utils/apiClient";
-import type { TimelineProject } from "../lib/utils/types";
+import type { TimelineProject, PublicProjectListItem, FavoriteProjectListItem } from "../lib/utils/types";
 import type { useTimelineStore } from "./timelineStore";
 
 const stripTimestamps = (obj: any): any => {
@@ -18,10 +18,16 @@ export const useProjectStore = defineStore("project", () => {
   const currentProjectId = ref<string | null>(null);
   const hasUnsavedChanges = ref(false);
   const lastSavedState = ref<string | null>(null);
+  const isReadOnly = ref(false);
+  const currentProjectOwner = ref<{ id: string; firstName: string; lastName: string } | null>(null);
 
   const saveProjectOnline = async (
     project: TimelineProject,
   ): Promise<{ success: boolean; error?: string; projectId?: string }> => {
+    if (isReadOnly.value) {
+      return { success: false, error: "Projet en lecture seule" };
+    }
+
     if (isSaving.value) {
       return { success: false, error: "Sauvegarde déjà en cours" };
     }
@@ -122,6 +128,91 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
+  const getPublicProjects = async (): Promise<{ success: boolean; data?: PublicProjectListItem[]; error?: string }> => {
+    try {
+      const { data, error } = await apiClient.get<{ body: PublicProjectListItem[] }>(
+        "/app/projects/public",
+      );
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true, data: data?.body || [] };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des projets publics.",
+      };
+    }
+  };
+
+  const getFavoriteProjects = async (): Promise<{ success: boolean; data?: FavoriteProjectListItem[]; error?: string }> => {
+    try {
+      const { data, error } = await apiClient.get<{ body: FavoriteProjectListItem[] }>(
+        "/app/projects/favorites",
+      );
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true, data: data?.body || [] };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des favoris.",
+      };
+    }
+  };
+
+  const cloneProject = async (sourceId: string): Promise<{ success: boolean; projectId?: string; error?: string }> => {
+    try {
+      const { data, error } = await apiClient.post<{ body: { id: string; name: string } }>(
+        `/app/projects/${sourceId}/clone`,
+      );
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true, projectId: data?.body?.id };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors du clonage du projet.",
+      };
+    }
+  };
+
+  const addFavorite = async (projectId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await apiClient.post(`/app/projects/${projectId}/favorite`);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true };
+    } catch {
+      return { success: false, error: "Erreur lors de l'ajout aux favoris." };
+    }
+  };
+
+  const removeFavorite = async (projectId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await apiClient.delete(`/app/projects/${projectId}/favorite`);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true };
+    } catch {
+      return { success: false, error: "Erreur lors de la suppression du favori." };
+    }
+  };
+
   const loadProjectToTimeline = async (
     projectId: string,
     timelineStore: ReturnType<typeof useTimelineStore>,
@@ -139,6 +230,10 @@ export const useProjectStore = defineStore("project", () => {
           currentProjectId.value = projectId;
           hasUnsavedChanges.value = false;
           lastSavedState.value = JSON.stringify(stripTimestamps(timelineData));
+
+          isReadOnly.value = result.data.isOwned === false;
+          currentProjectOwner.value = result.data.owner ?? null;
+
           isLoading.value = false;
           return { success: true };
         }
@@ -168,6 +263,8 @@ export const useProjectStore = defineStore("project", () => {
     currentProjectId.value = null;
     hasUnsavedChanges.value = false;
     lastSavedState.value = null;
+    isReadOnly.value = false;
+    currentProjectOwner.value = null;
   };
 
   const markAsChanged = () => {
@@ -188,9 +285,16 @@ export const useProjectStore = defineStore("project", () => {
     isLoading,
     currentProjectId,
     hasUnsavedChanges,
+    isReadOnly,
+    currentProjectOwner,
     saveProjectOnline,
     getProjects,
     getProject,
+    getPublicProjects,
+    getFavoriteProjects,
+    cloneProject,
+    addFavorite,
+    removeFavorite,
     loadProjectToTimeline,
     resetProject,
     markAsChanged,

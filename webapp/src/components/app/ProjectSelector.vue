@@ -1,29 +1,37 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { useProjectStore } from "../../stores/projectStore";
 import apiClient from "../../lib/utils/apiClient";
 import LoadingCard from "../shared/LoadingCard.vue";
 import BaseButton from "../ui/BaseButton.vue";
+import type { ProjectListItem, PublicProjectListItem, FavoriteProjectListItem } from "../../lib/utils/types";
 
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  mcpEnabled: boolean;
-}
+type Tab = "mine" | "favorites" | "discover";
 
 const emit = defineEmits<{
   (e: "new-project"): void;
   (e: "select-project", projectId: string): void;
+  (e: "select-public-project", projectId: string): void;
 }>();
 
 const projectStore = useProjectStore();
-const projects = ref<Project[]>([]);
+
+const activeTab = ref<Tab>("mine");
+
+const projects = ref<ProjectListItem[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const togglingMcp = ref<string | null>(null);
+const togglingVisibility = ref<string | null>(null);
+
+const publicProjects = ref<PublicProjectListItem[]>([]);
+const publicLoading = ref(false);
+const publicError = ref<string | null>(null);
+
+const favoriteProjects = ref<FavoriteProjectListItem[]>([]);
+const favoritesLoading = ref(false);
+const favoritesError = ref<string | null>(null);
+const togglingFavorite = ref<string | null>(null);
 
 const loadProjects = async () => {
   loading.value = true;
@@ -37,6 +45,39 @@ const loadProjects = async () => {
   loading.value = false;
 };
 
+const loadPublicProjects = async () => {
+  publicLoading.value = true;
+  publicError.value = null;
+  const result = await projectStore.getPublicProjects();
+  if (result.success && result.data) {
+    publicProjects.value = result.data;
+  } else {
+    publicError.value = result.error || "Impossible de charger les projets publics";
+  }
+  publicLoading.value = false;
+};
+
+const loadFavorites = async () => {
+  favoritesLoading.value = true;
+  favoritesError.value = null;
+  const result = await projectStore.getFavoriteProjects();
+  if (result.success && result.data) {
+    favoriteProjects.value = result.data;
+  } else {
+    favoritesError.value = result.error || "Impossible de charger les favoris";
+  }
+  favoritesLoading.value = false;
+};
+
+watch(activeTab, (tab) => {
+  if (tab === "discover" && publicProjects.value.length === 0) {
+    loadPublicProjects();
+  }
+  if (tab === "favorites" && favoriteProjects.value.length === 0) {
+    loadFavorites();
+  }
+});
+
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -47,7 +88,7 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-const toggleMcp = async (project: Project, event: Event) => {
+const toggleMcp = async (project: ProjectListItem, event: Event) => {
   event.stopPropagation();
   if (togglingMcp.value) return;
   togglingMcp.value = project.id;
@@ -59,6 +100,55 @@ const toggleMcp = async (project: Project, event: Event) => {
     project.mcpEnabled = !project.mcpEnabled;
   }
   togglingMcp.value = null;
+};
+
+const toggleVisibility = async (project: ProjectListItem, event: Event) => {
+  event.stopPropagation();
+  if (togglingVisibility.value) return;
+  togglingVisibility.value = project.id;
+  const { error } = await apiClient.patch<{ body: { isPublic: boolean } }>(
+    `/app/projects/${project.id}/visibility`,
+    { isPublic: !project.isPublic },
+  );
+  if (!error) {
+    project.isPublic = !project.isPublic;
+  }
+  togglingVisibility.value = null;
+};
+
+const isFavoritedMap = ref<Record<string, boolean>>({});
+
+const toggleFavorite = async (projectId: string, event: Event) => {
+  event.stopPropagation();
+  if (togglingFavorite.value) return;
+  togglingFavorite.value = projectId;
+
+  const isFavorited = favoriteProjects.value.some((f) => f.id === projectId)
+    || isFavoritedMap.value[projectId];
+
+  let result;
+  if (isFavorited) {
+    result = await projectStore.removeFavorite(projectId);
+    if (result.success) {
+      favoriteProjects.value = favoriteProjects.value.filter((f) => f.id !== projectId);
+      isFavoritedMap.value[projectId] = false;
+    }
+  } else {
+    result = await projectStore.addFavorite(projectId);
+    if (result.success) {
+      isFavoritedMap.value[projectId] = true;
+      if (activeTab.value === "favorites") {
+        await loadFavorites();
+      }
+    }
+  }
+
+  togglingFavorite.value = null;
+};
+
+const isProjectFavorited = (projectId: string) => {
+  return favoriteProjects.value.some((f) => f.id === projectId)
+    || !!isFavoritedMap.value[projectId];
 };
 
 onMounted(() => loadProjects());
@@ -78,79 +168,257 @@ onMounted(() => loadProjects());
       </BaseButton>
     </header>
 
-    <main class="dashboard-content">
-      <div v-if="loading" class="state-container">
-        <LoadingCard />
-      </div>
+    <div class="tab-bar">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'mine' }"
+        @click="activeTab = 'mine'"
+      >
+        <i class="fas fa-folder" />
+        Mes projets
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'favorites' }"
+        @click="activeTab = 'favorites'"
+      >
+        <i class="fas fa-heart" />
+        Favoris
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'discover' }"
+        @click="activeTab = 'discover'"
+      >
+        <i class="fas fa-globe" />
+        Découvrir
+      </button>
+    </div>
 
-      <div v-else-if="error" class="state-container error">
-        <div class="error-box">
-          <h3>Oups, quelque chose s'est mal passé</h3>
-          <p>{{ error }}</p>
-          <button @click="loadProjects" class="btn-text-accent">
-            Réessayer le chargement
+    <main class="dashboard-content">
+      <!-- Onglet Mes projets -->
+      <template v-if="activeTab === 'mine'">
+        <div v-if="loading" class="state-container">
+          <LoadingCard />
+        </div>
+
+        <div v-else-if="error" class="state-container error">
+          <div class="error-box">
+            <h3>Oups, quelque chose s'est mal passé</h3>
+            <p>{{ error }}</p>
+            <button @click="loadProjects" class="btn-text-accent">
+              Réessayer le chargement
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="projects.length === 0" class="state-container empty">
+          <div class="music-note">♪</div>
+          <h3>Bibliothèque vide</h3>
+          <p>Commencez votre première composition musicale dès maintenant.</p>
+          <button @click="emit('new-project')" class="btn-outline">
+            Créer mon premier projet
           </button>
         </div>
-      </div>
 
-      <div v-else-if="projects.length === 0" class="state-container empty">
-        <div class="empty-illustration">
-          <div class="music-note">♪</div>
-        </div>
-        <h3>Bibliothèque vide</h3>
-        <p>Commencez votre première composition musicale dès maintenant.</p>
-        <button @click="emit('new-project')" class="btn-outline">
-          Créer mon premier projet
-        </button>
-      </div>
-
-      <div v-else class="projects-grid">
-        <div
-          v-for="project in projects"
-          :key="project.id"
-          class="project-card"
-          @click="emit('select-project', project.id)"
-        >
-          <div class="card-visual">
-            <div class="waveform">
-              <span
-                v-for="n in 12"
-                :key="n"
-                :style="{
-                  height: Math.random() * 100 + '%',
-                  animationDelay: n * 0.1 + 's',
-                }"
-              ></span>
+        <div v-else class="projects-grid">
+          <div
+            v-for="project in projects"
+            :key="project.id"
+            class="project-card"
+            @click="emit('select-project', project.id)"
+          >
+            <div class="card-visual">
+              <div class="waveform">
+                <span
+                  v-for="n in 12"
+                  :key="n"
+                  :style="{
+                    height: Math.random() * 100 + '%',
+                    animationDelay: n * 0.1 + 's',
+                  }"
+                ></span>
+              </div>
             </div>
-          </div>
 
-          <div class="card-content">
-            <div class="card-meta">
-              <span class="badge">Projet</span>
-              <span class="date">{{ formatDate(project.updatedAt) }}</span>
-            </div>
-            <h3 class="card-title">{{ project.name }}</h3>
-            <div class="card-footer">
-              <button
-                class="mcp-toggle"
-                :class="{ active: project.mcpEnabled }"
-                :disabled="togglingMcp === project.id"
-                @click="toggleMcp(project, $event)"
-                :title="
-                  project.mcpEnabled ? 'MCP activé' : 'Activer le contrôle MCP'
-                "
-              >
-                <i class="fas fa-robot" />
-                <span>MCP</span>
-              </button>
-              <div class="open-hint">
-                <span class="click-hint">Ouvrir</span>
-                <i class="fas fa-arrow-right click-hint"></i>
+            <div class="card-content">
+              <div class="card-meta">
+                <span class="badge">Projet</span>
+                <span class="date">{{ formatDate(project.updatedAt) }}</span>
+              </div>
+              <h3 class="card-title">{{ project.name }}</h3>
+              <div class="card-footer">
+                <div class="card-toggles">
+                  <button
+                    class="icon-toggle"
+                    :class="{ active: project.mcpEnabled }"
+                    :disabled="togglingMcp === project.id"
+                    @click="toggleMcp(project, $event)"
+                    title="Contrôle MCP"
+                  >
+                    <i class="fas fa-robot" />
+                  </button>
+                  <button
+                    class="icon-toggle"
+                    :class="{ active: project.isPublic }"
+                    :disabled="togglingVisibility === project.id"
+                    @click="toggleVisibility(project, $event)"
+                    :title="project.isPublic ? 'Projet public' : 'Rendre public'"
+                  >
+                    <i class="fas fa-globe" />
+                  </button>
+                </div>
+                <div class="open-hint">
+                  <span class="click-hint">Ouvrir</span>
+                  <i class="fas fa-arrow-right click-hint"></i>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
+
+      <!-- Onglet Favoris -->
+      <template v-else-if="activeTab === 'favorites'">
+        <div v-if="favoritesLoading" class="state-container">
+          <LoadingCard />
+        </div>
+
+        <div v-else-if="favoritesError" class="state-container error">
+          <div class="error-box">
+            <h3>Oups, quelque chose s'est mal passé</h3>
+            <p>{{ favoritesError }}</p>
+            <button @click="loadFavorites" class="btn-text-accent">
+              Réessayer
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="favoriteProjects.length === 0" class="state-container empty">
+          <div class="music-note">♡</div>
+          <h3>Aucun favori</h3>
+          <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
+          <button @click="activeTab = 'discover'" class="btn-outline">
+            Explorer les projets
+          </button>
+        </div>
+
+        <div v-else class="projects-grid">
+          <div
+            v-for="project in favoriteProjects"
+            :key="project.id"
+            class="project-card public-card"
+            @click="emit('select-public-project', project.id)"
+          >
+            <div class="card-visual">
+              <div class="waveform">
+                <span
+                  v-for="n in 12"
+                  :key="n"
+                  :style="{
+                    height: Math.random() * 100 + '%',
+                    animationDelay: n * 0.1 + 's',
+                  }"
+                ></span>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <div class="card-meta">
+                <span class="badge owner-badge">
+                  {{ project.owner.firstName }} {{ project.owner.lastName }}
+                </span>
+                <span class="date">{{ formatDate(project.updatedAt) }}</span>
+              </div>
+              <h3 class="card-title">{{ project.name }}</h3>
+              <div class="card-footer">
+                <button
+                  class="icon-toggle active favorite-btn"
+                  :disabled="togglingFavorite === project.id"
+                  @click="toggleFavorite(project.id, $event)"
+                  title="Retirer des favoris"
+                >
+                  <i class="fas fa-heart" />
+                </button>
+                <div class="open-hint">
+                  <span class="click-hint">Ouvrir</span>
+                  <i class="fas fa-arrow-right click-hint"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Onglet Découvrir -->
+      <template v-else-if="activeTab === 'discover'">
+        <div v-if="publicLoading" class="state-container">
+          <LoadingCard />
+        </div>
+
+        <div v-else-if="publicError" class="state-container error">
+          <div class="error-box">
+            <h3>Oups, quelque chose s'est mal passé</h3>
+            <p>{{ publicError }}</p>
+            <button @click="loadPublicProjects" class="btn-text-accent">
+              Réessayer
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="publicProjects.length === 0" class="state-container empty">
+          <div class="music-note">🌐</div>
+          <h3>Aucun projet public</h3>
+          <p>Soyez le premier à partager un projet ! Rendez l'un de vos projets public depuis "Mes projets".</p>
+        </div>
+
+        <div v-else class="projects-grid">
+          <div
+            v-for="project in publicProjects"
+            :key="project.id"
+            class="project-card public-card"
+            @click="emit('select-public-project', project.id)"
+          >
+            <div class="card-visual">
+              <div class="waveform">
+                <span
+                  v-for="n in 12"
+                  :key="n"
+                  :style="{
+                    height: Math.random() * 100 + '%',
+                    animationDelay: n * 0.1 + 's',
+                  }"
+                ></span>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <div class="card-meta">
+                <span class="badge owner-badge">
+                  {{ project.owner.firstName }} {{ project.owner.lastName }}
+                </span>
+                <span class="date">{{ formatDate(project.updatedAt) }}</span>
+              </div>
+              <h3 class="card-title">{{ project.name }}</h3>
+              <div class="card-footer">
+                <button
+                  class="icon-toggle favorite-btn"
+                  :class="{ active: isProjectFavorited(project.id) }"
+                  :disabled="togglingFavorite === project.id"
+                  @click="toggleFavorite(project.id, $event)"
+                  :title="isProjectFavorited(project.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+                >
+                  <i :class="isProjectFavorited(project.id) ? 'fas fa-heart' : 'far fa-heart'" />
+                </button>
+                <div class="open-hint">
+                  <span class="click-hint">Ouvrir</span>
+                  <i class="fas fa-arrow-right click-hint"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </main>
   </div>
 </template>
@@ -160,7 +428,7 @@ onMounted(() => loadProjects());
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 48px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 20px;
 }
@@ -174,7 +442,7 @@ onMounted(() => loadProjects());
 }
 
 .highlight {
-  color: var(--color-accent3-hover); /* Rose vif */
+  color: var(--color-accent3-hover);
   position: relative;
   display: inline-block;
 }
@@ -186,31 +454,40 @@ onMounted(() => loadProjects());
   font-size: 1.1rem;
 }
 
-.btn-create {
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--color-border-secondary);
+  padding-bottom: 0;
+}
+
+.tab-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
-  background: var(--color-accent3);
-  color: var(--color-white);
+  padding: 10px 20px;
+  background: transparent;
   border: none;
-  border-radius: 12px;
+  border-bottom: 2px solid transparent;
+  color: var(--color-white-light);
+  font-size: 0.9rem;
   font-weight: 600;
-  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
-}
+  transition: all 0.2s ease;
+  margin-bottom: -1px;
+  opacity: 0.6;
 
-.btn-create:hover {
-  background: var(--color-accent3-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(155, 36, 88, 0.6);
-}
+  &:hover {
+    opacity: 1;
+    color: var(--color-white);
+  }
 
-.icon-plus {
-  font-size: 1.2rem;
-  font-weight: 300;
+  &.active {
+    opacity: 1;
+    color: var(--color-accent3-hover);
+    border-bottom-color: var(--color-accent3-hover);
+  }
 }
 
 .projects-grid {
@@ -242,6 +519,15 @@ onMounted(() => loadProjects());
   );
 }
 
+.public-card:hover {
+  border-color: var(--color-accent);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 120, 180, 0.1) 0%,
+    var(--color-bg-secondary-dark) 100%
+  );
+}
+
 .card-visual {
   height: 140px;
   background: rgba(0, 0, 0, 0.2);
@@ -262,8 +548,11 @@ onMounted(() => loadProjects());
   opacity: 0.6;
 }
 
-.project-card:hover .waveform span {
+.public-card .waveform span {
   background: var(--color-accent);
+}
+
+.project-card:hover .waveform span {
   opacity: 1;
 }
 
@@ -302,6 +591,14 @@ onMounted(() => loadProjects());
   font-weight: 700;
 }
 
+.owner-badge {
+  background: rgba(0, 100, 160, 0.2);
+  color: var(--color-accent);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+}
+
 .date {
   color: var(--color-white-light);
   opacity: 0.6;
@@ -319,6 +616,11 @@ onMounted(() => loadProjects());
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+}
+
+.card-toggles {
+  display: flex;
+  gap: 4px;
 }
 
 .open-hint {
@@ -341,17 +643,17 @@ onMounted(() => loadProjects());
   transform: translateX(0);
 }
 
-.mcp-toggle {
+.icon-toggle {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   background: transparent;
   border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   color: var(--color-white-light);
   font-size: 0.75rem;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   opacity: 0.5;
@@ -375,37 +677,23 @@ onMounted(() => loadProjects());
   }
 }
 
+.favorite-btn.active {
+  border-color: #e25555;
+  color: #e25555;
+  background: rgba(226, 85, 85, 0.15);
+}
+
+.favorite-btn:hover {
+  border-color: #e25555 !important;
+  color: #e25555 !important;
+}
+
 .state-container {
   text-align: center;
   padding: 60px 20px;
 }
 
-.loader-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-}
-
-.skeleton-card {
-  height: 280px;
-  background: var(--color-bg-secondary-dark);
-  border-radius: 16px;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.6;
-  }
-}
-
-.empty-illustration {
+.music-note {
   font-size: 4rem;
   margin-bottom: 20px;
   color: var(--color-accent3);
@@ -452,19 +740,29 @@ onMounted(() => loadProjects());
   margin-top: 10px;
 }
 
+.error-box {
+  h3 {
+    color: var(--color-white);
+    margin-bottom: 8px;
+  }
+  p {
+    color: var(--color-white-light);
+    opacity: 0.7;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .btn-create {
-    width: 100%;
-    justify-content: center;
-  }
-
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tab-bar {
+    overflow-x: auto;
   }
 }
 </style>
