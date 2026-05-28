@@ -5,7 +5,8 @@ import AppLayout from "../../layouts/AppLayout.vue";
 import { TimelineView } from "../../components/app/timeline";
 import AudioLibraryPanel from "../../components/app/timeline/AudioLibraryPanel.vue";
 import DawLoadingOverlay from "../../components/app/DawLoadingOverlay.vue";
-import { computed, onMounted, ref, provide } from "vue";
+import ProjectWelcomeGate from "../../components/app/ProjectWelcomeGate.vue";
+import { computed, onMounted, ref, provide, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useTimelineStore } from "../../stores/timelineStore";
 import { useTrackAudioStore } from "../../stores/trackAudioStore";
@@ -28,18 +29,17 @@ const isExportMode = computed(() => route.query.export === "true");
 const loadError = ref<string | null>(null);
 const showAudioLibrary = ref(false);
 
-// Provide sidebar state to children
+const showWelcomeGate = ref(false);
+const gateProjectName = ref("");
+const gateOwnerName = ref<string | undefined>(undefined);
+const gateLoading = ref(false);
+
 provide("showAudioLibrary", showAudioLibrary);
 
 const mainStore = useMainStore();
 const { isLoaded, loadPercentage } = storeToRefs(mainStore);
 
-onMounted(async () => {
-  if (!isLoaded.value) {
-    router.replace({ name: "app-main" });
-    return;
-  }
-
+const initProject = async () => {
   loadError.value = null;
   dawLoadingStore.reset();
 
@@ -62,10 +62,49 @@ onMounted(async () => {
   }
 
   trackAudioStore.initialize();
-
-  // Précharger les ressources du projet
   await dawLoadingStore.preloadProject(timelineStore.project);
+};
+
+// Déclenché quand l'audio finit de charger (après clic sur le gate ou accès direct sans projet)
+watch(isLoaded, async (loaded) => {
+  if (loaded) {
+    showWelcomeGate.value = false;
+    await initProject();
+  }
+}, { once: true });
+
+onMounted(async () => {
+  // Flux normal : audio déjà chargé (navigation depuis le sélecteur)
+  if (isLoaded.value) {
+    initProject();
+    return;
+  }
+
+  // Accès direct par lien avec un projectId : afficher le gate
+  if (projectIdFromUrl.value) {
+    const result = await projectStore.getProject(projectIdFromUrl.value);
+    if (result.success && result.data) {
+      gateProjectName.value = result.data.name ?? "Projet";
+      const owner = result.data.owner;
+      if (owner && result.data.isOwned === false) {
+        gateOwnerName.value = `${owner.firstName} ${owner.lastName}`;
+      }
+    } else {
+      gateProjectName.value = "Projet";
+    }
+    showWelcomeGate.value = true;
+    return;
+  }
+
+  // Accès direct sans projectId : lancer le chargement direct
+  mainStore.loadAll();
 });
+
+const handleGateLoad = () => {
+  gateLoading.value = true;
+  mainStore.loadAll();
+  // Le watcher sur isLoaded masquera le gate et appelera initProject() une fois prêt
+};
 
 const handleSave = async () => {
   const result = await projectStore.saveProjectOnline(timelineStore.project);
@@ -95,9 +134,17 @@ defineExpose({
 
 <template>
   <AppLayout>
-    <DawLoadingOverlay />
+    <ProjectWelcomeGate
+      v-if="showWelcomeGate"
+      :project-name="gateProjectName"
+      :owner-name="gateOwnerName"
+      :loading="gateLoading"
+      @load="handleGateLoad"
+    />
+
+    <DawLoadingOverlay v-if="!showWelcomeGate" />
     <div class="app-container">
-      <div v-if="!isLoaded" class="loading-screen">
+      <div v-if="!isLoaded && !showWelcomeGate" class="loading-screen">
         <p>Chargement de l'application... {{ loadPercentage }}%</p>
         <div class="progress-bar">
           <div
@@ -107,7 +154,7 @@ defineExpose({
         </div>
       </div>
 
-      <div v-else class="main-layout">
+      <div v-else-if="isLoaded" class="main-layout">
         <aside v-if="showAudioLibrary" class="sidebar-left">
           <AudioLibraryPanel />
         </aside>
