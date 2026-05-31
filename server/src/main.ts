@@ -15,6 +15,7 @@ import initializePassport from "./config/passport.config";
 
 import customSession from "./config/cache.config";
 import { seedDefaultAdmin } from "./scripts/seedAdmin";
+import { syncFromR2 } from "./services/sync-from-r2.service";
 
 const main = async () => {
   const dev = process.env.NODE_ENV !== "production";
@@ -102,4 +103,10 @@ const main = async () => {
   await pg.runMigrations();
   await seedDefaultAdmin();
   await main();
+
+  if (process.env.SYNC_ON_STARTUP !== "false") {
+    syncFromR2().catch((err) =>
+      console.error("[R2Sync] Unhandled error:", err),
+    );
+  }
 })();
