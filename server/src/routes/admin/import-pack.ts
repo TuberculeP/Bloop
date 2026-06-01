@@ -7,7 +7,9 @@ import {
   uploadToR2,
   deleteFromR2,
   isR2Configured,
+  uploadJsonToR2,
 } from "../../services/r2.service";
+import { sanitizeFilename } from "../../utils/sanitize";
 import pg from "../../config/db.config";
 import { SamplePack } from "../../config/entities/SamplePack";
 import { SampleFolder } from "../../config/entities/SampleFolder";
@@ -79,19 +81,61 @@ function isPathSafe(entryPath: string): boolean {
   return true;
 }
 
-function sanitizeFilename(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .toLowerCase();
+interface PackMeta {
+  name: string;
+  author?: string;
+  cover?: string;
+  featured: boolean;
+  isActive: boolean;
+}
+
+interface FolderMeta {
+  name: string;
+  order: number;
+}
+
+interface SampleMeta {
+  name: string;
 }
 
 async function parseZipStructure(zipBuffer: Buffer): Promise<ParsedStructure> {
   const zip = new AdmZip(zipBuffer);
   const entries = zip.getEntries();
+
+  // Detect wrapper folder: if all audio files share a single top-level directory,
+  // strip it so the structure is Pack > subfolders > files (not Pack > wrapper > files).
+  const audioEntryPaths = entries
+    .filter(
+      (e) =>
+        !e.isDirectory &&
+        AUDIO_EXTENSIONS.includes(path.extname(e.entryName).toLowerCase()),
+    )
+    .map((e) => e.entryName.split("/").filter(Boolean));
+
+  let stripDepth = 0;
+  if (audioEntryPaths.length > 0) {
+    const firstSegments = new Set(audioEntryPaths.map((p) => p[0]));
+    const allHaveSubfolder = audioEntryPaths.every((p) => p.length >= 2);
+    if (firstSegments.size === 1 && allHaveSubfolder) {
+      // Single wrapper folder detected — check if stripping it still leaves subfolders
+      const secondSegments = new Set(audioEntryPaths.map((p) => p[1]));
+      const allHaveSecondSubfolder = audioEntryPaths.every(
+        (p) => p.length >= 3,
+      );
+      if (secondSegments.size >= 1 && allHaveSecondSubfolder) {
+        stripDepth = 1;
+      } else {
+        // Files are directly inside the wrapper — invalid structure
+        throw new Error(
+          "Audio files must be organized in subfolders. Found files directly inside the top-level folder.",
+        );
+      }
+    } else if (!allHaveSubfolder) {
+      throw new Error(
+        "Audio files must be organized in subfolders. Found files at the root of the ZIP.",
+      );
+    }
+  }
 
   const folders = new Map<string, ParsedFile[]>();
   let cover: ParsedFile | null = null;
@@ -117,7 +161,8 @@ async function parseZipStructure(zipBuffer: Buffer): Promise<ParsedStructure> {
 
     const ext = path.extname(entryPath).toLowerCase();
     const baseName = path.basename(entryPath, ext);
-    const pathParts = entryPath.split("/").filter(Boolean);
+    const rawParts = entryPath.split("/").filter(Boolean);
+    const pathParts = rawParts.slice(stripDepth);
 
     if (baseName.startsWith(".") || baseName.startsWith("__MACOSX")) {
       continue;
@@ -159,19 +204,13 @@ async function parseZipStructure(zipBuffer: Buffer): Promise<ParsedStructure> {
     if (fileType && ALLOWED_AUDIO_MIMES.includes(fileType.mime)) {
       mimeType = fileType.mime;
     } else if (EXT_TO_MIME[ext]) {
-      // Fallback: trust extension for known audio formats
       mimeType = EXT_TO_MIME[ext];
     } else {
       warnings.push(`Invalid audio file (bad MIME): ${entryPath}`);
       continue;
     }
 
-    let folderName: string;
-    if (pathParts.length > 1) {
-      folderName = pathParts[0];
-    } else {
-      folderName = "featured";
-    }
+    const folderName = pathParts[0];
 
     const parsedFile: ParsedFile = {
       path: entryPath,
@@ -265,6 +304,16 @@ importPackRouter.post("/", upload.single("zipFile"), async (req, res) => {
       });
       const savedPack = await queryRunner.manager.save(pack);
 
+      const packMetaKey = `samples/${slug}/meta.json`;
+      const packMeta: PackMeta = {
+        name,
+        author: author || undefined,
+        featured: false,
+        isActive: true,
+      };
+      await uploadJsonToR2(packMeta, packMetaKey);
+      uploadedR2Keys.push(packMetaKey);
+
       let foldersCount = 0;
       let samplesCount = 0;
       let processedFiles = 0;
@@ -283,6 +332,11 @@ importPackRouter.post("/", upload.single("zipFile"), async (req, res) => {
         const savedFolder = await queryRunner.manager.save(folder);
         foldersCount++;
 
+        const folderMetaKey = `samples/${slug}/${sanitizeFilename(folderName)}/meta.json`;
+        const folderMeta: FolderMeta = { name: folderName, order: i };
+        await uploadJsonToR2(folderMeta, folderMetaKey);
+        uploadedR2Keys.push(folderMetaKey);
+
         for (const file of files) {
           const timestamp = Date.now();
           const safeFilename = sanitizeFilename(file.fileName);
@@ -300,6 +354,11 @@ importPackRouter.post("/", upload.single("zipFile"), async (req, res) => {
 
           const r2Result = await uploadToR2(file.buffer, r2Key, file.mimeType);
           uploadedR2Keys.push(r2Key);
+
+          const sampleJsonKey = r2Key.replace(/\.[^.]+$/, ".json");
+          const sampleMeta: SampleMeta = { name: file.fileName };
+          await uploadJsonToR2(sampleMeta, sampleJsonKey);
+          uploadedR2Keys.push(sampleJsonKey);
 
           const sample = queryRunner.manager.create(AudioSample, {
             name: file.fileName,
@@ -330,6 +389,11 @@ importPackRouter.post("/", upload.single("zipFile"), async (req, res) => {
 
         savedPack.cover = `cover${path.extname(structure.cover.path)}`;
         await queryRunner.manager.save(savedPack);
+
+        await uploadJsonToR2(
+          { ...packMeta, cover: savedPack.cover },
+          packMetaKey,
+        );
       }
 
       await queryRunner.commitTransaction();

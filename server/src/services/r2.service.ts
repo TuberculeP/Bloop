@@ -2,6 +2,8 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -66,4 +68,64 @@ export function isR2Configured(): boolean {
     R2_BUCKET_NAME &&
     CDN_BASE_URL
   );
+}
+
+export async function uploadJsonToR2(data: object, key: string): Promise<void> {
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      Body: JSON.stringify(data),
+      ContentType: "application/json",
+      Metadata: {
+        environment: ENVIRONMENT,
+        "uploaded-at": new Date().toISOString(),
+      },
+    }),
+  );
+}
+
+export async function listR2ObjectKeys(prefix: string): Promise<string[]> {
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const response = await s3Client.send(
+      new ListObjectsV2Command({
+        Bucket: R2_BUCKET_NAME,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
+    );
+
+    for (const obj of response.Contents ?? []) {
+      if (obj.Key) keys.push(obj.Key);
+    }
+
+    continuationToken = response.IsTruncated
+      ? response.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+
+  return keys;
+}
+
+export async function getR2Json<T>(key: string): Promise<T | null> {
+  try {
+    const response = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+      }),
+    );
+    const body = await response.Body?.transformToString("utf-8");
+    if (!body) return null;
+    return JSON.parse(body) as T;
+  } catch (err: unknown) {
+    const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e?.name === "NoSuchKey" || e?.$metadata?.httpStatusCode === 404) {
+      return null;
+    }
+    throw err;
+  }
 }

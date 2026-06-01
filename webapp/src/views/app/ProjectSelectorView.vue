@@ -27,7 +27,10 @@ const handleSelectProject = (projectId: string) => {
 };
 
 const handleSelectPublicProject = (projectId: string) => {
-  router.push({ name: "app-sequencer", query: { projectId, readOnly: "true" } });
+  router.push({
+    name: "app-sequencer",
+    query: { projectId, readOnly: "true" },
+  });
 };
 </script>
 

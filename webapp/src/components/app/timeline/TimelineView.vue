@@ -15,6 +15,7 @@ import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useProjectStore } from "../../../stores/projectStore";
 import { useDawLoadingStore } from "../../../stores/dawLoadingStore";
 import { useAudioBusStore } from "../../../stores/audioBusStore";
+import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
 import type {
   Track,
   InstrumentType,
@@ -56,6 +57,7 @@ const trackAudioStore = useTrackAudioStore();
 const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
+const audioLibraryStore = useAudioLibraryStore();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
@@ -363,6 +365,7 @@ const animate = () => {
 
 const startPlayback = () => {
   if (isPlaying.value) return;
+  audioLibraryStore.stopPreview();
 
   currentPosition.value = checkpointPosition.value;
   isPlaying.value = true;
@@ -518,7 +521,10 @@ const handleCloneProject = async () => {
   const result = await projectStore.cloneProject(projectStore.currentProjectId);
   isCloning.value = false;
   if (result.success && result.projectId) {
-    router.replace({ name: "app-sequencer", query: { projectId: result.projectId } });
+    router.replace({
+      name: "app-sequencer",
+      query: { projectId: result.projectId },
+    });
   }
 };
 
@@ -685,14 +691,31 @@ defineExpose({
     <div v-if="isReadOnly" class="readonly-banner">
       <div class="readonly-banner-info">
         <i class="fas fa-eye"></i>
-        <span>Projet de <strong>{{ currentProjectOwner ? `${currentProjectOwner.firstName} ${currentProjectOwner.lastName}` : '…' }}</strong> — Mode lecture seule</span>
+        <span
+          >Projet de
+          <strong>{{
+            currentProjectOwner
+              ? `${currentProjectOwner.firstName} ${currentProjectOwner.lastName}`
+              : "…"
+          }}</strong>
+          — Mode lecture seule</span
+        >
       </div>
       <div class="readonly-banner-actions">
-        <button class="banner-btn" @click="handleResetReadOnly" title="Revenir à l'état original">
+        <button
+          class="banner-btn"
+          @click="handleResetReadOnly"
+          title="Revenir à l'état original"
+        >
           <i class="fas fa-undo"></i> Réinitialiser
         </button>
-        <button class="banner-btn banner-btn-primary" @click="handleCloneProject" :disabled="isCloning">
-          <i class="fas fa-copy"></i> {{ isCloning ? 'Clonage…' : 'Cloner dans mes projets' }}
+        <button
+          class="banner-btn banner-btn-primary"
+          @click="handleCloneProject"
+          :disabled="isCloning"
+        >
+          <i class="fas fa-copy"></i>
+          {{ isCloning ? "Clonage…" : "Cloner dans mes projets" }}
         </button>
       </div>
     </div>

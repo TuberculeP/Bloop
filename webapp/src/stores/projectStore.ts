@@ -1,7 +1,11 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../lib/utils/apiClient";
-import type { TimelineProject, PublicProjectListItem, FavoriteProjectListItem } from "../lib/utils/types";
+import type {
+  TimelineProject,
+  PublicProjectListItem,
+  FavoriteProjectListItem,
+} from "../lib/utils/types";
 import type { useTimelineStore } from "./timelineStore";
 
 const stripTimestamps = (obj: any): any => {
@@ -19,7 +23,11 @@ export const useProjectStore = defineStore("project", () => {
   const hasUnsavedChanges = ref(false);
   const lastSavedState = ref<string | null>(null);
   const isReadOnly = ref(false);
-  const currentProjectOwner = ref<{ id: string; firstName: string; lastName: string } | null>(null);
+  const currentProjectOwner = ref<{
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null>(null);
 
   const saveProjectOnline = async (
     project: TimelineProject,
@@ -128,11 +136,15 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
-  const getPublicProjects = async (): Promise<{ success: boolean; data?: PublicProjectListItem[]; error?: string }> => {
+  const getPublicProjects = async (): Promise<{
+    success: boolean;
+    data?: PublicProjectListItem[];
+    error?: string;
+  }> => {
     try {
-      const { data, error } = await apiClient.get<{ body: PublicProjectListItem[] }>(
-        "/app/projects/public",
-      );
+      const { data, error } = await apiClient.get<{
+        body: PublicProjectListItem[];
+      }>("/app/projects/public");
 
       if (error) {
         throw new Error(error);
@@ -147,11 +159,15 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
-  const getFavoriteProjects = async (): Promise<{ success: boolean; data?: FavoriteProjectListItem[]; error?: string }> => {
+  const getFavoriteProjects = async (): Promise<{
+    success: boolean;
+    data?: FavoriteProjectListItem[];
+    error?: string;
+  }> => {
     try {
-      const { data, error } = await apiClient.get<{ body: FavoriteProjectListItem[] }>(
-        "/app/projects/favorites",
-      );
+      const { data, error } = await apiClient.get<{
+        body: FavoriteProjectListItem[];
+      }>("/app/projects/favorites");
 
       if (error) {
         throw new Error(error);
@@ -166,11 +182,13 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
-  const cloneProject = async (sourceId: string): Promise<{ success: boolean; projectId?: string; error?: string }> => {
+  const cloneProject = async (
+    sourceId: string,
+  ): Promise<{ success: boolean; projectId?: string; error?: string }> => {
     try {
-      const { data, error } = await apiClient.post<{ body: { id: string; name: string } }>(
-        `/app/projects/${sourceId}/clone`,
-      );
+      const { data, error } = await apiClient.post<{
+        body: { id: string; name: string };
+      }>(`/app/projects/${sourceId}/clone`);
 
       if (error) {
         throw new Error(error);
@@ -185,9 +203,13 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
-  const addFavorite = async (projectId: string): Promise<{ success: boolean; error?: string }> => {
+  const addFavorite = async (
+    projectId: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await apiClient.post(`/app/projects/${projectId}/favorite`);
+      const { error } = await apiClient.post(
+        `/app/projects/${projectId}/favorite`,
+      );
 
       if (error) {
         throw new Error(error);
@@ -199,9 +221,13 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
-  const removeFavorite = async (projectId: string): Promise<{ success: boolean; error?: string }> => {
+  const removeFavorite = async (
+    projectId: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await apiClient.delete(`/app/projects/${projectId}/favorite`);
+      const { error } = await apiClient.delete(
+        `/app/projects/${projectId}/favorite`,
+      );
 
       if (error) {
         throw new Error(error);
@@ -209,7 +235,10 @@ export const useProjectStore = defineStore("project", () => {
 
       return { success: true };
     } catch {
-      return { success: false, error: "Erreur lors de la suppression du favori." };
+      return {
+        success: false,
+        error: "Erreur lors de la suppression du favori.",
+      };
     }
   };
 

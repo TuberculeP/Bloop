@@ -66,12 +66,16 @@ const initProject = async () => {
 };
 
 // Déclenché quand l'audio finit de charger (après clic sur le gate ou accès direct sans projet)
-watch(isLoaded, async (loaded) => {
-  if (loaded) {
-    showWelcomeGate.value = false;
-    await initProject();
-  }
-}, { once: true });
+watch(
+  isLoaded,
+  async (loaded) => {
+    if (loaded) {
+      showWelcomeGate.value = false;
+      await initProject();
+    }
+  },
+  { once: true },
+);
 
 onMounted(async () => {
   // Flux normal : audio déjà chargé (navigation depuis le sélecteur)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
-import { useAudioBusStore } from "../../../stores/audioBusStore";
 import type {
   SamplePack,
   SampleFolder,
@@ -9,15 +9,13 @@ import type {
 } from "../../../lib/utils/types";
 
 const audioLibraryStore = useAudioLibraryStore();
-const audioBusStore = useAudioBusStore();
+const { previewingId } = storeToRefs(audioLibraryStore);
 
 type NavigationLevel = "packs" | "folders" | "samples";
 
 const currentLevel = ref<NavigationLevel>("packs");
 const selectedPack = ref<SamplePack | null>(null);
 const selectedFolder = ref<SampleFolder | null>(null);
-const previewingId = ref<string | null>(null);
-const previewSource = ref<AudioBufferSourceNode | null>(null);
 const isLoading = ref(false);
 
 onMounted(async () => {
@@ -104,40 +102,11 @@ const handleDragStart = (event: DragEvent, sampleId: string): void => {
   }
 };
 
-const handlePreview = async (sample: AudioSample): Promise<void> => {
-  stopPreview();
-
-  const buffer = await audioLibraryStore.loadSample(sample.id);
-  if (!buffer) return;
-
-  await audioBusStore.ensureAudioContextResumed();
-
-  const source = audioBusStore.audioContext.createBufferSource();
-  source.buffer = buffer;
-  source.connect(audioBusStore.inputBus);
-
-  source.onended = () => {
-    if (previewingId.value === sample.id) {
-      previewingId.value = null;
-      previewSource.value = null;
-    }
-  };
-
-  source.start();
-  previewingId.value = sample.id;
-  previewSource.value = source;
-};
-
-const stopPreview = (): void => {
-  if (previewSource.value) {
-    try {
-      previewSource.value.stop();
-      previewSource.value.disconnect();
-    } catch {
-      // Ignore if already stopped
-    }
-    previewSource.value = null;
-    previewingId.value = null;
+const handlePreview = (sample: AudioSample): void => {
+  if (previewingId.value === sample.id) {
+    audioLibraryStore.stopPreview();
+  } else {
+    audioLibraryStore.startPreview(sample);
   }
 };
 
@@ -259,7 +228,9 @@ const getSampleCount = (pack: SamplePack): number => {
         >
           <div class="sample-icon">
             <span v-if="getLoadingState(sample.id) === 'loading'">⏳</span>
-            <span v-else-if="previewingId === sample.id">▶</span>
+            <span v-else-if="previewingId === sample.id" class="stop-icon"
+              >■</span
+            >
             <span v-else>🔊</span>
           </div>
           <div class="sample-info">
@@ -551,6 +522,11 @@ const getSampleCount = (pack: SamplePack): number => {
   background: rgba(122, 15, 62, 0.3);
   border-radius: 4px;
   font-size: 16px;
+
+  .stop-icon {
+    color: #ff3fb4;
+    font-size: 14px;
+  }
 }
 
 .sample-info {
