@@ -15,7 +15,15 @@ projectsRouter.get("/", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
     const projects = await projectRepository.find({
       where: { user: { id: req.user.id } },
-      select: ["id", "name", "description", "createdAt", "updatedAt", "mcpEnabled", "isPublic"],
+      select: [
+        "id",
+        "name",
+        "description",
+        "createdAt",
+        "updatedAt",
+        "mcpEnabled",
+        "isPublic",
+      ],
       order: { updatedAt: "DESC" },
     });
 
@@ -77,10 +85,7 @@ projectsRouter.get("/favorites", async (req, res) => {
     });
 
     const body = favorites
-      .filter(
-        (f) =>
-          f.project.isPublic || f.project.user.id === req.user.id,
-      )
+      .filter((f) => f.project.isPublic || f.project.user.id === req.user.id)
       .map((f) => ({
         favoriteId: f.id,
         favoritedAt: f.createdAt,

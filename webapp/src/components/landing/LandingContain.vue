@@ -338,7 +338,9 @@
         <div class="mcp-grid">
           <div class="mcp-steps">
             <div v-for="(step, i) in mcpSteps" :key="i" class="mcp-step">
-              <div class="mcp-step-number">{{ String(i + 1).padStart(2, "0") }}</div>
+              <div class="mcp-step-number">
+                {{ String(i + 1).padStart(2, "0") }}
+              </div>
               <div class="mcp-step-body">
                 <h3 class="mcp-step-title">{{ step.title }}</h3>
                 <p class="mcp-step-desc">{{ step.description }}</p>
@@ -357,11 +359,29 @@
                 :class="{ copied: configCopied }"
                 @click="copyMcpConfig"
               >
-                <svg v-if="!configCopied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg
+                  v-if="!configCopied"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  <path
+                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                  ></path>
                 </svg>
-                <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg
+                  v-else
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 <span>{{ configCopied ? "Copié !" : "Copier" }}</span>
@@ -376,7 +396,8 @@
   <span class="json-brace">}</span>
 <span class="json-brace">}</span></pre>
             <div class="config-footer">
-              Ajoutez ce fichier à la racine de votre projet, puis rechargez Claude Code.
+              Ajoutez ce fichier à la racine de votre projet, puis rechargez
+              Claude Code.
             </div>
           </div>
         </div>
@@ -822,7 +843,9 @@ const plans = [
 ];
 
 const currentOrigin = computed(() =>
-  typeof window !== "undefined" ? window.location.origin : "https://bloop-on.cloud",
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "https://bloop-on.cloud",
 );
 
 const configCopied = ref(false);
@@ -846,7 +869,7 @@ const mcpSteps = [
   {
     title: "Créez de la musique",
     description:
-      'Demandez à Claude de composer, arranger, ajouter des pistes… il agit directement sur vos projets.',
+      "Demandez à Claude de composer, arranger, ajouter des pistes… il agit directement sur vos projets.",
   },
 ];
 
@@ -2067,9 +2090,15 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.config-dots span:first-child { background: rgba(255, 95, 87, 0.7); }
-.config-dots span:nth-child(2) { background: rgba(255, 189, 46, 0.7); }
-.config-dots span:nth-child(3) { background: rgba(40, 201, 64, 0.7); }
+.config-dots span:first-child {
+  background: rgba(255, 95, 87, 0.7);
+}
+.config-dots span:nth-child(2) {
+  background: rgba(255, 189, 46, 0.7);
+}
+.config-dots span:nth-child(3) {
+  background: rgba(40, 201, 64, 0.7);
+}
 
 .config-filename {
   flex: 1;
@@ -2114,12 +2143,24 @@ onUnmounted(() => {
   overflow-x: auto;
 }
 
-.json-brace { color: rgba(255, 255, 255, 0.5); }
-.json-key { color: #7dd3fc; }
-.json-colon { color: rgba(255, 255, 255, 0.4); }
-.json-string { color: #86efac; }
-.json-origin { color: var(--color-accent); }
-.json-comma { color: rgba(255, 255, 255, 0.4); }
+.json-brace {
+  color: rgba(255, 255, 255, 0.5);
+}
+.json-key {
+  color: #7dd3fc;
+}
+.json-colon {
+  color: rgba(255, 255, 255, 0.4);
+}
+.json-string {
+  color: #86efac;
+}
+.json-origin {
+  color: var(--color-accent);
+}
+.json-comma {
+  color: rgba(255, 255, 255, 0.4);
+}
 
 .config-footer {
   padding: 0.875rem 1.75rem;

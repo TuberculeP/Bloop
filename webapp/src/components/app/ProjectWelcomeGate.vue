@@ -14,7 +14,11 @@ defineEmits<{
   <div class="welcome-gate">
     <div class="gate-card">
       <div class="waveform-anim">
-        <span v-for="n in 16" :key="n" :style="{ animationDelay: `${n * 0.08}s` }" />
+        <span
+          v-for="n in 16"
+          :key="n"
+          :style="{ animationDelay: `${n * 0.08}s` }"
+        />
       </div>
 
       <div class="gate-meta" v-if="ownerName">
@@ -25,7 +29,8 @@ defineEmits<{
       <h1 class="gate-title">{{ projectName }}</h1>
 
       <p class="gate-hint" v-if="ownerName">
-        Vous pouvez explorer ce projet en lecture seule, le réinitialiser ou le cloner dans votre espace.
+        Vous pouvez explorer ce projet en lecture seule, le réinitialiser ou le
+        cloner dans votre espace.
       </p>
 
       <button class="gate-btn" :disabled="loading" @click="$emit('load')">
@@ -87,8 +92,13 @@ defineEmits<{
 }
 
 @keyframes wave {
-  0%, 100% { transform: scaleY(0.25); }
-  50% { transform: scaleY(1); }
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 .gate-meta {

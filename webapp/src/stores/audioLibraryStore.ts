@@ -356,6 +356,41 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     }
   };
 
+  const previewingId = ref<string | null>(null);
+  let previewSource: AudioBufferSourceNode | null = null;
+
+  const stopPreview = (): void => {
+    if (previewSource) {
+      try {
+        previewSource.stop();
+        previewSource.disconnect();
+      } catch {
+        // already stopped
+      }
+      previewSource = null;
+      previewingId.value = null;
+    }
+  };
+
+  const startPreview = async (sample: AudioSample): Promise<void> => {
+    stopPreview();
+    const buffer = await loadSample(sample.id);
+    if (!buffer) return;
+    await audioBusStore.ensureAudioContextResumed();
+    const source = audioBusStore.audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioBusStore.inputBus);
+    source.onended = () => {
+      if (previewingId.value === sample.id) {
+        previewingId.value = null;
+        previewSource = null;
+      }
+    };
+    source.start();
+    previewingId.value = sample.id;
+    previewSource = source;
+  };
+
   return {
     packs,
     samples,
@@ -363,6 +398,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     pagination,
     currentPackSlug,
     currentFolderId,
+    previewingId,
 
     getSample,
     getSampleBuffer,
@@ -376,6 +412,8 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     preloadPack,
     preloadAllSamples,
     initialize,
+    startPreview,
+    stopPreview,
 
     fetchPacksFromApi,
     fetchPackDetails,

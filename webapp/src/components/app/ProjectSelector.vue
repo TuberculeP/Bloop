@@ -4,7 +4,11 @@ import { useProjectStore } from "../../stores/projectStore";
 import apiClient from "../../lib/utils/apiClient";
 import LoadingCard from "../shared/LoadingCard.vue";
 import BaseButton from "../ui/BaseButton.vue";
-import type { ProjectListItem, PublicProjectListItem, FavoriteProjectListItem } from "../../lib/utils/types";
+import type {
+  ProjectListItem,
+  PublicProjectListItem,
+  FavoriteProjectListItem,
+} from "../../lib/utils/types";
 
 type Tab = "mine" | "favorites" | "discover";
 
@@ -52,7 +56,8 @@ const loadPublicProjects = async () => {
   if (result.success && result.data) {
     publicProjects.value = result.data;
   } else {
-    publicError.value = result.error || "Impossible de charger les projets publics";
+    publicError.value =
+      result.error || "Impossible de charger les projets publics";
   }
   publicLoading.value = false;
 };
@@ -123,14 +128,17 @@ const toggleFavorite = async (projectId: string, event: Event) => {
   if (togglingFavorite.value) return;
   togglingFavorite.value = projectId;
 
-  const isFavorited = favoriteProjects.value.some((f) => f.id === projectId)
-    || isFavoritedMap.value[projectId];
+  const isFavorited =
+    favoriteProjects.value.some((f) => f.id === projectId) ||
+    isFavoritedMap.value[projectId];
 
   let result;
   if (isFavorited) {
     result = await projectStore.removeFavorite(projectId);
     if (result.success) {
-      favoriteProjects.value = favoriteProjects.value.filter((f) => f.id !== projectId);
+      favoriteProjects.value = favoriteProjects.value.filter(
+        (f) => f.id !== projectId,
+      );
       isFavoritedMap.value[projectId] = false;
     }
   } else {
@@ -147,8 +155,10 @@ const toggleFavorite = async (projectId: string, event: Event) => {
 };
 
 const isProjectFavorited = (projectId: string) => {
-  return favoriteProjects.value.some((f) => f.id === projectId)
-    || !!isFavoritedMap.value[projectId];
+  return (
+    favoriteProjects.value.some((f) => f.id === projectId) ||
+    !!isFavoritedMap.value[projectId]
+  );
 };
 
 onMounted(() => loadProjects());
@@ -263,7 +273,9 @@ onMounted(() => loadProjects());
                     :class="{ active: project.isPublic }"
                     :disabled="togglingVisibility === project.id"
                     @click="toggleVisibility(project, $event)"
-                    :title="project.isPublic ? 'Projet public' : 'Rendre public'"
+                    :title="
+                      project.isPublic ? 'Projet public' : 'Rendre public'
+                    "
                   >
                     <i class="fas fa-globe" />
                   </button>
@@ -294,7 +306,10 @@ onMounted(() => loadProjects());
           </div>
         </div>
 
-        <div v-else-if="favoriteProjects.length === 0" class="state-container empty">
+        <div
+          v-else-if="favoriteProjects.length === 0"
+          class="state-container empty"
+        >
           <div class="music-note">♡</div>
           <h3>Aucun favori</h3>
           <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
@@ -366,10 +381,16 @@ onMounted(() => loadProjects());
           </div>
         </div>
 
-        <div v-else-if="publicProjects.length === 0" class="state-container empty">
+        <div
+          v-else-if="publicProjects.length === 0"
+          class="state-container empty"
+        >
           <div class="music-note">🌐</div>
           <h3>Aucun projet public</h3>
-          <p>Soyez le premier à partager un projet ! Rendez l'un de vos projets public depuis "Mes projets".</p>
+          <p>
+            Soyez le premier à partager un projet ! Rendez l'un de vos projets
+            public depuis "Mes projets".
+          </p>
         </div>
 
         <div v-else class="projects-grid">
@@ -406,9 +427,19 @@ onMounted(() => loadProjects());
                   :class="{ active: isProjectFavorited(project.id) }"
                   :disabled="togglingFavorite === project.id"
                   @click="toggleFavorite(project.id, $event)"
-                  :title="isProjectFavorited(project.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+                  :title="
+                    isProjectFavorited(project.id)
+                      ? 'Retirer des favoris'
+                      : 'Ajouter aux favoris'
+                  "
                 >
-                  <i :class="isProjectFavorited(project.id) ? 'fas fa-heart' : 'far fa-heart'" />
+                  <i
+                    :class="
+                      isProjectFavorited(project.id)
+                        ? 'fas fa-heart'
+                        : 'far fa-heart'
+                    "
+                  />
                 </button>
                 <div class="open-hint">
                   <span class="click-hint">Ouvrir</span>
