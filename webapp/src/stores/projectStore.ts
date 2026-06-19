@@ -5,6 +5,7 @@ import type {
   TimelineProject,
   PublicProjectListItem,
   FavoriteProjectListItem,
+  TrashedProjectListItem,
 } from "../lib/utils/types";
 import type { useTimelineStore } from "./timelineStore";
 
@@ -242,6 +243,69 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
+  const deleteProject = async (
+    id: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await apiClient.delete(`/app/projects/${id}`);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      if (currentProjectId.value === id) resetProject();
+
+      return { success: true };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors de la suppression du projet.",
+      };
+    }
+  };
+
+  const getTrashedProjects = async (): Promise<{
+    success: boolean;
+    data?: TrashedProjectListItem[];
+    error?: string;
+  }> => {
+    try {
+      const { data, error } = await apiClient.get<{
+        body: TrashedProjectListItem[];
+      }>("/app/projects/trash");
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true, data: data?.body || [] };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors de la récupération de la corbeille.",
+      };
+    }
+  };
+
+  const restoreProject = async (
+    id: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await apiClient.patch(`/app/projects/${id}/restore`);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      return { success: true };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors de la restauration du projet.",
+      };
+    }
+  };
+
   const loadProjectToTimeline = async (
     projectId: string,
     timelineStore: ReturnType<typeof useTimelineStore>,
@@ -324,6 +388,9 @@ export const useProjectStore = defineStore("project", () => {
     cloneProject,
     addFavorite,
     removeFavorite,
+    deleteProject,
+    getTrashedProjects,
+    restoreProject,
     loadProjectToTimeline,
     resetProject,
     markAsChanged,

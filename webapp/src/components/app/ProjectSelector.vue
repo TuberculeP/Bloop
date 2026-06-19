@@ -8,9 +8,10 @@ import type {
   ProjectListItem,
   PublicProjectListItem,
   FavoriteProjectListItem,
+  TrashedProjectListItem,
 } from "../../lib/utils/types";
 
-type Tab = "mine" | "favorites" | "discover";
+type Tab = "mine" | "favorites" | "discover" | "trash";
 
 const emit = defineEmits<{
   (e: "new-project"): void;
@@ -36,6 +37,13 @@ const favoriteProjects = ref<FavoriteProjectListItem[]>([]);
 const favoritesLoading = ref(false);
 const favoritesError = ref<string | null>(null);
 const togglingFavorite = ref<string | null>(null);
+
+const trashProjects = ref<TrashedProjectListItem[]>([]);
+const trashLoading = ref(false);
+const trashError = ref<string | null>(null);
+const restoringProject = ref<string | null>(null);
+const pendingDeleteId = ref<string | null>(null);
+const isDeleting = ref(false);
 
 const loadProjects = async () => {
   loading.value = true;
@@ -74,13 +82,66 @@ const loadFavorites = async () => {
   favoritesLoading.value = false;
 };
 
+const loadTrash = async () => {
+  trashLoading.value = true;
+  trashError.value = null;
+  const result = await projectStore.getTrashedProjects();
+  if (result.success && result.data) {
+    trashProjects.value = result.data;
+  } else {
+    trashError.value = result.error || "Impossible de charger la corbeille";
+  }
+  trashLoading.value = false;
+};
+
+const daysRemaining = (deletedAt: string): number => {
+  const expiry = new Date(
+    new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000,
+  );
+  return Math.max(
+    0,
+    Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+  );
+};
+
+const handleDeleteClick = (projectId: string, event: Event) => {
+  event.stopPropagation();
+  pendingDeleteId.value = projectId;
+};
+
+const cancelDelete = () => {
+  pendingDeleteId.value = null;
+};
+
+const executeDelete = async () => {
+  if (!pendingDeleteId.value || isDeleting.value) return;
+  isDeleting.value = true;
+  const result = await projectStore.deleteProject(pendingDeleteId.value);
+  if (result.success) {
+    projects.value = projects.value.filter(
+      (p) => p.id !== pendingDeleteId.value,
+    );
+    pendingDeleteId.value = null;
+  }
+  isDeleting.value = false;
+};
+
+const handleRestore = async (projectId: string, event: Event) => {
+  event.stopPropagation();
+  if (restoringProject.value) return;
+  restoringProject.value = projectId;
+  const result = await projectStore.restoreProject(projectId);
+  if (result.success) {
+    trashProjects.value = trashProjects.value.filter((p) => p.id !== projectId);
+  }
+  restoringProject.value = null;
+};
+
 watch(activeTab, (tab) => {
-  if (tab === "discover" && publicProjects.value.length === 0) {
-    loadPublicProjects();
-  }
-  if (tab === "favorites" && favoriteProjects.value.length === 0) {
-    loadFavorites();
-  }
+  if (tab === "mine") loadProjects();
+  if (tab === "discover") loadPublicProjects();
+  if (tab === "favorites") loadFavorites();
+  if (tab === "trash") loadTrash();
 });
 
 const formatDate = (dateString: string): string => {
@@ -203,6 +264,14 @@ onMounted(() => loadProjects());
         <i class="fas fa-globe" />
         Découvrir
       </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'trash' }"
+        @click="activeTab = 'trash'"
+      >
+        <i class="fas fa-trash" />
+        Corbeille
+      </button>
     </div>
 
     <main class="dashboard-content">
@@ -278,6 +347,13 @@ onMounted(() => loadProjects());
                     "
                   >
                     <i class="fas fa-globe" />
+                  </button>
+                  <button
+                    class="icon-toggle delete-btn"
+                    @click="handleDeleteClick(project.id, $event)"
+                    title="Supprimer"
+                  >
+                    <i class="fas fa-trash" />
                   </button>
                 </div>
                 <div class="open-hint">
@@ -450,8 +526,104 @@ onMounted(() => loadProjects());
           </div>
         </div>
       </template>
+
+      <!-- Onglet Corbeille -->
+      <template v-else-if="activeTab === 'trash'">
+        <div v-if="trashLoading" class="state-container">
+          <LoadingCard />
+        </div>
+
+        <div v-else-if="trashError" class="state-container error">
+          <div class="error-box">
+            <h3>Oups, quelque chose s'est mal passé</h3>
+            <p>{{ trashError }}</p>
+            <button @click="loadTrash" class="btn-text-accent">
+              Réessayer
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-else-if="trashProjects.length === 0"
+          class="state-container empty"
+        >
+          <div class="music-note">🗑</div>
+          <h3>Corbeille vide</h3>
+          <p>Les projets supprimés apparaissent ici pendant 30 jours.</p>
+        </div>
+
+        <div v-else class="projects-grid">
+          <div
+            v-for="project in trashProjects"
+            :key="project.id"
+            class="project-card trash-card"
+          >
+            <div class="card-visual">
+              <div class="waveform">
+                <span
+                  v-for="n in 12"
+                  :key="n"
+                  :style="{
+                    height: Math.random() * 100 + '%',
+                    animationDelay: n * 0.1 + 's',
+                  }"
+                ></span>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <div class="card-meta">
+                <span class="badge days-badge"
+                  >J-{{ daysRemaining(project.deletedAt) }}</span
+                >
+                <span class="date">{{ formatDate(project.updatedAt) }}</span>
+              </div>
+              <h3 class="card-title">{{ project.name }}</h3>
+              <div class="card-footer">
+                <BaseButton
+                  variant="secondary"
+                  size="small"
+                  :loading="restoringProject === project.id"
+                  :disabled="!!restoringProject"
+                  @click="handleRestore(project.id, $event)"
+                >
+                  <i class="fas fa-undo" /> Restaurer
+                </BaseButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </main>
   </div>
+
+  <Teleport to="body">
+    <div v-if="pendingDeleteId" class="modal-overlay" @click="cancelDelete">
+      <div class="modal" @click.stop>
+        <h3>Supprimer le projet ?</h3>
+        <p>
+          Il sera dans la corbeille pendant 30 jours, puis supprimé
+          définitivement.
+        </p>
+        <div class="modal-actions">
+          <BaseButton
+            variant="secondary"
+            :disabled="isDeleting"
+            @click="cancelDelete"
+          >
+            Annuler
+          </BaseButton>
+          <BaseButton
+            variant="error"
+            :loading="isDeleting"
+            @click="executeDelete"
+          >
+            Supprimer
+          </BaseButton>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -780,6 +952,73 @@ onMounted(() => loadProjects());
     color: var(--color-white-light);
     opacity: 0.7;
   }
+}
+
+.delete-btn:hover {
+  border-color: #e25555 !important;
+  color: #e25555 !important;
+}
+
+.trash-card {
+  cursor: default;
+  opacity: 0.75;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-border-secondary);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    background: var(--color-bg-secondary-dark);
+  }
+
+  .waveform span {
+    background: var(--color-white-light);
+    opacity: 0.3;
+    animation: none;
+  }
+}
+
+.days-badge {
+  background: rgba(226, 85, 85, 0.2);
+  color: #e25555;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+
+  h3 {
+    color: var(--color-white);
+    font-size: 1.25rem;
+    margin: 0 0 12px;
+  }
+
+  p {
+    color: var(--color-white-light);
+    opacity: 0.75;
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 @media (max-width: 768px) {
