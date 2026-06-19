@@ -90,6 +90,21 @@ const projectNameInputRef = ref<HTMLInputElement | null>(null);
 const sortedTracks = computed(() => timelineStore.sortedTracks);
 
 const TRACK_HEADER_WIDTH = 180;
+const TRAILING_COLS = 16;
+
+const displayCols = computed(() => {
+  let lastEnd = 0;
+  for (const track of timelineStore.tracks) {
+    for (const note of track.notes) {
+      lastEnd = Math.max(lastEnd, note.x + note.w);
+    }
+    for (const clip of track.clips ?? []) {
+      lastEnd = Math.max(lastEnd, clip.x + clip.w);
+    }
+  }
+  const minCols = Math.ceil(lastEnd / 4) * 4 + TRAILING_COLS;
+  return Math.max(timelineStore.project.cols, minCols);
+});
 
 const cursorStyle = computed(() => ({
   transform: `translateX(${currentPosition.value * COL_WIDTH + TRACK_HEADER_WIDTH}px)`,
@@ -727,7 +742,7 @@ defineExpose({
         @scroll="handleScroll"
       >
         <TimelineRuler
-          :cols="timelineStore.project.cols"
+          :cols="displayCols"
           :col-width="COL_WIDTH"
           :scroll-left="scrollLeft"
           @seek="setCheckpoint"
@@ -738,7 +753,7 @@ defineExpose({
             v-for="track in sortedTracks"
             :key="track.id"
             :track="track"
-            :cols="timelineStore.project.cols"
+            :cols="displayCols"
             :col-width="COL_WIDTH"
             :row-height="ROW_HEIGHT"
             :is-expanded="track.id === timelineStore.expandedTrackId"
