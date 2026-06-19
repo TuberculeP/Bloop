@@ -8,6 +8,9 @@ import {
   type Conversation,
   type DirectMessage,
   type MessageUser,
+  unlikeMessage,
+  likeMessage,
+  deleteMessage,
 } from "../../services/messages";
 import {
   onSocketConnected,
@@ -43,6 +46,7 @@ export function useMessages() {
   let unsubscribeLiked: (() => void) | null = null;
   let unsubscribeUnliked: (() => void) | null = null;
   let typingTimeout: ReturnType<typeof setTimeout> | null = null;
+  let unsubscribeDeleted: (() => void) | null = null;
 
   // Charger les conversations
   const loadConversations = async () => {
@@ -73,8 +77,22 @@ export function useMessages() {
     showNewConversation.value = false;
     loadingMessages.value = true;
 
+    // Retirer immédiatement le badge non lu
+    const conversation = conversations.value.find((c) => c.user.id === user.id);
+    if (conversation) {
+      conversation.unreadCount = 0;
+    }
+
     try {
       currentMessages.value = await getConversationMessages(user.id);
+
+      // Notifier le serveur que les messages sont lus
+      if (socket.connected && authStore.user?.id) {
+        socket.emit("messages:markRead", {
+          conversationUserId: user.id,
+          currentUserId: authStore.user.id,
+        });
+      }
     } catch (error) {
       console.error("Erreur chargement messages:", error);
     } finally {
@@ -139,7 +157,7 @@ export function useMessages() {
     }
   };
 
-  // Gérer l'indicateur de frappe
+  // Gérer les likes d'un message
   const handleTyping = () => {
     if (!selectedUser.value || !socket.connected) return;
 
@@ -156,6 +174,60 @@ export function useMessages() {
     typingTimeout = setTimeout(stopTyping, 2000);
   };
 
+  // Toggle like/unlike sur un message
+  const handleToggleLike = async (message: DirectMessage) => {
+    if (!authStore.user) return;
+
+    const existingLike = message.likes?.find(
+      (like) => like.user.id === authStore.user!.id,
+    );
+
+    if (existingLike) {
+      const likes = message.likes!;
+      const index = likes.indexOf(existingLike);
+      likes.splice(index, 1);
+
+      const success = await unlikeMessage(message.id);
+      if (!success) {
+        likes.splice(index, 0, existingLike);
+      }
+    } else {
+      const optimisticLike = {
+        id: `temp-${Date.now()}`,
+        user: { id: authStore.user.id },
+      } as any;
+
+      message.likes = message.likes || [];
+      message.likes.push(optimisticLike);
+
+      const success = await likeMessage(message.id);
+      if (!success) {
+        // rollback si échec
+        const idx = message.likes.indexOf(optimisticLike);
+        if (idx !== -1) message.likes.splice(idx, 1);
+      }
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    const index = currentMessages.value.findIndex((m) => m.id === messageId);
+    if (index === -1) return;
+
+    // Suppression optimiste : on retire immédiatement du tableau
+    const [removed] = currentMessages.value.splice(index, 1);
+
+    const success = await deleteMessage(messageId);
+
+    if (!success) {
+      // rollback si échec : on remet le message à sa place
+      currentMessages.value.splice(index, 0, removed);
+      console.error("Erreur lors de la suppression du message");
+    } else {
+      // on rafraîchit la sidebar si le message supprimé était le dernier de la conversation
+      await loadConversations();
+    }
+  };
+
   // Initialiser les WebSockets
   const initWebSocket = () => {
     onSocketConnected(() => {
@@ -167,11 +239,16 @@ export function useMessages() {
     unsubscribeNewMessage = onSocketEvent(
       "messages:new",
       (message: DirectMessage) => {
-        if (
-          selectedUser.value?.id === message.sender.id &&
-          currentMessages.value
-        ) {
+        if (selectedUser.value?.id === message.sender.id) {
           currentMessages.value.push(message);
+
+          // marquer comme lu immédiatement
+          if (socket.connected && authStore.user?.id) {
+            socket.emit("messages:markRead", {
+              conversationUserId: message.sender.id,
+              currentUserId: authStore.user.id,
+            });
+          }
         }
         loadConversations();
       },
@@ -190,6 +267,18 @@ export function useMessages() {
       },
     );
 
+    unsubscribeDeleted = onSocketEvent(
+      "messages:deleted",
+      (data: { messageId: string }) => {
+        const index = currentMessages.value.findIndex(
+          (m) => m.id === data.messageId,
+        );
+        if (index !== -1) {
+          currentMessages.value.splice(index, 1);
+        }
+        loadConversations();
+      },
+    );
     unsubscribeTyping = onSocketEvent(
       "messages:typing",
       (data: { senderId: string; isTyping: boolean }) => {
@@ -273,6 +362,7 @@ export function useMessages() {
     if (unsubscribeTyping) unsubscribeTyping();
     if (unsubscribeLiked) unsubscribeLiked();
     if (unsubscribeUnliked) unsubscribeUnliked();
+    if (unsubscribeDeleted) unsubscribeDeleted();
 
     if (socket.connected && authStore.user?.id) {
       socket.emit("messages:unregister", { userId: authStore.user.id });
@@ -310,6 +400,8 @@ export function useMessages() {
     startNewConversation,
     handleSendMessage,
     handleTyping,
+    handleToggleLike,
+    handleDeleteMessage,
     init,
     cleanup,
   };

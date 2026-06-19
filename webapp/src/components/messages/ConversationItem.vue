@@ -48,11 +48,9 @@ defineEmits<{
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  margin: 0.5rem;
+  padding: 1rem;
   cursor: pointer;
   transition: background 0.2s;
-  background: var(--color-primary);
   border-radius: 8px;
 }
 
@@ -61,14 +59,15 @@ defineEmits<{
 }
 
 .conversation-item.active {
-  background: var(--color-primary-active);
+  background: var(--color-primary-hover);
 }
 
 .conversation-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--accent-primary);
+  background: var(--color-primary-hover);
+  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
   color: white;
   display: flex;
   align-items: center;

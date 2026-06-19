@@ -43,7 +43,6 @@ defineEmits<{
   display: flex;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid var(--color-border-secondary);
   background: var(--color-bg-secondary-dark);
 }
 

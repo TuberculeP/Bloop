@@ -74,9 +74,60 @@ export const sendMessage = async (
 };
 
 // Supprimer un message
-export const deleteMessage = async (id: string): Promise<boolean> => {
-  const { error } = await apiClient.delete(`/messages/${id}`);
-  return !error;
+export const deleteMessage = async (messageId: string): Promise<boolean> => {
+  try {
+    const socket = getSocket();
+    const authStore = useAuthStore();
+
+    if (!socket.connected || !authStore.user?.id) {
+      // Fallback REST si le socket n'est pas connecté
+      const { error } = await apiClient.delete(`/messages/${messageId}`);
+      return !error;
+    }
+
+    return new Promise((resolve) => {
+      let resolved = false;
+
+      const handleError = (error: any) => {
+        if (!resolved) {
+          resolved = true;
+          socket.off("messages:error", handleError);
+          socket.off("messages:deleted", handleDeleted);
+          console.log("Delete error:", error);
+          resolve(false);
+        }
+      };
+
+      const handleDeleted = (data: { messageId: string }) => {
+        if (!resolved && data.messageId === messageId) {
+          resolved = true;
+          socket.off("messages:error", handleError);
+          socket.off("messages:deleted", handleDeleted);
+          resolve(true);
+        }
+      };
+
+      socket.on("messages:error", handleError);
+      socket.on("messages:deleted", handleDeleted);
+
+      socket.emit("messages:delete", {
+        messageId,
+        userId: authStore.user?.id,
+      });
+
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          socket.off("messages:error", handleError);
+          socket.off("messages:deleted", handleDeleted);
+          resolve(false);
+        }
+      }, 5000);
+    });
+  } catch (error) {
+    console.error("Error deleting message:", error);
+    return false;
+  }
 };
 
 // Récupérer tous les utilisateurs

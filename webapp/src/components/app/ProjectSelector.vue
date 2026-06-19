@@ -310,7 +310,9 @@ onMounted(() => loadProjects());
           v-else-if="favoriteProjects.length === 0"
           class="state-container empty"
         >
-          <div class="music-note">♡</div>
+          <div class="music-note">
+            <i class="far fa-heart"></i>
+          </div>
           <h3>Aucun favori</h3>
           <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
           <button @click="activeTab = 'discover'" class="btn-outline">
@@ -385,7 +387,9 @@ onMounted(() => loadProjects());
           v-else-if="publicProjects.length === 0"
           class="state-container empty"
         >
-          <div class="music-note">🌐</div>
+          <div class="music-note">
+            <i class="fas fa-globe"></i>
+          </div>
           <h3>Aucun projet public</h3>
           <p>
             Soyez le premier à partager un projet ! Rendez l'un de vos projets
@@ -602,13 +606,13 @@ onMounted(() => loadProjects());
   display: flex;
   flex-direction: column;
   flex: 1;
+  gap: 12px;
 }
 
 .card-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -651,7 +655,7 @@ onMounted(() => loadProjects());
 
 .card-toggles {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .open-hint {
