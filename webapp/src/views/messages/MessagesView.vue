@@ -25,6 +25,8 @@ const {
   startNewConversation,
   handleSendMessage,
   handleTyping,
+  handleToggleLike,
+  handleDeleteMessage,
   init,
   cleanup,
 } = useMessages();
@@ -64,6 +66,8 @@ onUnmounted(cleanup);
           v-model:message-text="newMessageText"
           @send="handleSendMessage"
           @typing="handleTyping"
+          @toggle-like="handleToggleLike"
+          @delete="handleDeleteMessage"
         />
 
         <!-- Aucune conversation sélectionnée -->
@@ -82,7 +86,7 @@ onUnmounted(cleanup);
 <style scoped>
 .messages-container {
   display: flex;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 89px);
   border-radius: 12px;
   overflow: hidden;
 }

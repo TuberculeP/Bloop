@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import type { DirectMessage } from "../../services/messages";
 import { formatRelativeDate } from "../../lib/utils/dateFormatter";
-import { likeMessage, unlikeMessage } from "../../services/messages";
 import { useAuthStore } from "../../stores/authStore";
 
 const props = defineProps<{
@@ -11,12 +10,18 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  messageLiked: [messageId: string];
-  messageUnliked: [messageId: string];
+  toggleLike: [message: DirectMessage];
+  delete: [messageId: string];
 }>();
 
 const authStore = useAuthStore();
-const isLiking = ref(false);
+
+const isMessageLiked = computed(() => {
+  if (!props.message.likes || !authStore.user) return false;
+  return props.message.likes.some(
+    (like) => like.user.id === props.message?.receiver?.id,
+  );
+});
 
 const currentUserLike = computed(() => {
   if (!props.message.likes || !authStore.user) return null;
@@ -25,131 +30,112 @@ const currentUserLike = computed(() => {
   );
 });
 
-const likeCount = computed(() => {
-  return props.message.likes?.length ?? 0;
-});
-
-const handleLike = async () => {
-  if (isLiking.value || currentUserLike.value) return;
-
-  isLiking.value = true;
-  const success = await likeMessage(props.message.id);
-  isLiking.value = false;
-
-  if (success && props.message.likes) {
-    emit("messageLiked", props.message.id);
-  }
-};
-
-const handleUnlike = async () => {
-  if (isLiking.value || !currentUserLike.value) return;
-
-  isLiking.value = true;
-  const success = await unlikeMessage(props.message.id);
-  isLiking.value = false;
-
-  if (success) {
-    emit("messageUnliked", props.message.id);
-  }
-};
-
 const toggleLike = () => {
-  if (currentUserLike.value) {
-    handleUnlike();
-  } else {
-    handleLike();
-  }
+  emit("toggleLike", props.message);
+};
+
+const handleDelete = () => {
+  emit("delete", props.message.id);
 };
 </script>
 
 <template>
   <div class="message" :class="{ own: isOwn }">
-    <div class="message-content">
-      <p class="message-text">{{ message.body }}</p>
-      <span class="message-time">{{
-        formatRelativeDate(message.createdAt)
-      }}</span>
-      <div class="message-actions">
-        <button
-          v-if="!isOwn"
-          class="like-button"
-          :class="{ liked: currentUserLike }"
-          @click="toggleLike"
-          :disabled="isLiking"
-          :title="currentUserLike ? 'Unlike' : 'Like'"
-        >
-          <span class="heart">{{ currentUserLike ? "❤️" : "Like" }}</span>
-          <span v-if="likeCount > 0" class="like-count">{{ likeCount }}</span>
-        </button>
+    <div class="message-wrapper">
+      <button
+        v-if="isOwn"
+        class="delete-button"
+        @click="handleDelete"
+        title="Supprimer le message"
+      >
+        <i class="fas fa-trash"></i>
+      </button>
+      <div class="message-content">
+        <p class="message-text">{{ message.body }}</p>
       </div>
+    </div>
+
+    <span class="message-time">{{
+      formatRelativeDate(message.createdAt)
+    }}</span>
+
+    <div class="message-actions">
+      <i
+        v-if="isOwn && isMessageLiked"
+        class="fas fa-heart liked-indicator"
+      ></i>
+
+      <button
+        v-else-if="!isOwn"
+        class="like-button"
+        :class="{ liked: currentUserLike }"
+        @click="toggleLike"
+        :title="currentUserLike ? 'Unlike' : 'Like'"
+      >
+        <i :class="currentUserLike ? 'fas fa-heart' : 'far fa-heart'"></i>
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .message {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  gap: 4px;
   max-width: 70%;
+  width: fit-content;
 }
 
 .message.own {
   align-self: flex-end;
 }
 
-/* ── Bulle de base ── */
+.message-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message.own .message-wrapper {
+  flex-direction: row-reverse;
+}
+
 .message-content {
   padding: 0.75rem 1rem;
   border-radius: 18px;
   color: var(--color-white);
-  position: relative;
   transition: all 0.3s ease;
+  background: var(--color-border-secondary);
 }
 
-/* ── Message reçu ── */
-.message:not(.own) .message-content {
+.message-actions {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 50px;
   background: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-bottom-left-radius: 4px;
 }
 
-.message:not(.own):hover .message-content {
-  border-color: var(--color-accent3-hover);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* ── Message envoyé ── */
-.message.own .message-content {
-  background: var(--color-accent3);
-  border-bottom-right-radius: 4px;
-  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
-}
-
-.message.own:hover .message-content {
-  background: var(--color-accent3-hover);
-  box-shadow: 0 6px 20px rgba(155, 36, 88, 0.6);
-  transform: translateY(-1px);
-}
-
-/* ── Texte ── */
-.message-text {
-  margin: 0 0 0.25rem 0;
-  word-wrap: break-word;
-  line-height: 1.4;
+.message.own .message-actions {
+  right: auto;
+  left: 0;
 }
 
 .message-time {
   font-size: 0.7rem;
   opacity: 0.6;
   display: block;
-  text-align: right;
+  text-align: left;
 }
 
-/* ── Actions ── */
-.message-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-  gap: 0.5rem;
+.message.own .message-time {
+  text-align: right;
 }
 
 .like-button {
@@ -167,12 +153,6 @@ const toggleLike = () => {
   color: var(--color-white-light);
 }
 
-.like-button:hover:not(:disabled) {
-  opacity: 1;
-  border-color: var(--color-accent3-hover);
-  background: rgba(122, 15, 62, 0.2);
-}
-
 .like-button:disabled {
   cursor: not-allowed;
   opacity: 0.4;
@@ -180,17 +160,50 @@ const toggleLike = () => {
 
 .like-button.liked {
   opacity: 1;
-  border-color: var(--color-accent3-hover);
-  background: rgba(122, 15, 62, 0.15);
-}
-
-.heart {
-  font-size: 0.9rem;
-}
-
-.like-count {
-  font-size: 0.75rem;
-  font-weight: 700;
   color: var(--color-accent3-hover);
+}
+
+.liked-indicator {
+  font-size: 0.85rem;
+  color: var(--color-accent3-hover);
+  padding: 0.25rem 0.5rem;
+}
+
+/* ── Delete button ── */
+.delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--color-white-light);
+  font-size: 0.8rem;
+  opacity: 0;
+  transform: scale(0.85);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.message:hover .delete-button {
+  opacity: 0.6;
+  transform: scale(1);
+}
+
+.delete-button:hover {
+  opacity: 1;
+  background: rgba(224, 68, 92, 0.12);
+  color: var(--color-error);
+}
+
+.delete-button:active {
+  transform: scale(0.92);
 }
 </style>

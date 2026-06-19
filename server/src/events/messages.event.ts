@@ -144,7 +144,7 @@ const messagesEvents: EventGroup = {
       const user = await userRepository.findOneBy({ id: data.userId });
       const message = await messageRepository.findOne({
         where: { id: data.messageId },
-        relations: ["likes", "likes.user"],
+        relations: ["likes", "likes.user", "sender", "receiver"],
       });
 
       if (!user || !message) {
@@ -270,6 +270,60 @@ const messagesEvents: EventGroup = {
     } catch (error) {
       console.error("Error unliking message:", error);
       ws.emit("messages:error", { message: "Failed to unlike message" });
+    }
+  },
+
+  // Supprimer un message
+  delete: async ({ ws, data }) => {
+    if (!ws || !data?.messageId || !data?.userId) {
+      ws?.emit("messages:error", { message: "Missing data" });
+      return;
+    }
+
+    try {
+      const messageRepository = pg.getRepository(DirectMessage);
+      const likeRepository = pg.getRepository(MessageLike);
+
+      const message = await messageRepository.findOne({
+        where: { id: data.messageId },
+        relations: ["sender", "receiver", "likes"],
+      });
+
+      if (!message) {
+        ws.emit("messages:error", { message: "Message not found" });
+        return;
+      }
+
+      if (message.sender.id !== data.userId) {
+        ws.emit("messages:error", { message: "Not authorized" });
+        return;
+      }
+
+      // On capture tout ce dont on a besoin AVANT le remove()
+      const senderId = message.sender.id;
+      const receiverId = message.receiver.id;
+      const messageId = data.messageId;
+
+      // Supprimer d'abord les likes associés pour éviter le conflit de FK
+      if (message.likes && message.likes.length > 0) {
+        await likeRepository.remove(message.likes);
+      }
+
+      await messageRepository.remove(message);
+
+      // Confirmer à l'auteur de la suppression
+      ws.emit("messages:deleted", { messageId });
+
+      // Notifier l'autre participant en temps réel
+      const otherUserId = senderId === data.userId ? receiverId : senderId;
+
+      const otherSocketId = connectedUsers.get(otherUserId);
+      if (otherSocketId) {
+        ws.to(otherSocketId).emit("messages:deleted", { messageId });
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      ws.emit("messages:error", { message: "Failed to delete message" });
     }
   },
 };

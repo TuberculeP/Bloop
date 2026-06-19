@@ -19,6 +19,8 @@ const newMessageText = defineModel<string>("messageText", { default: "" });
 defineEmits<{
   send: [];
   typing: [];
+  toggleLike: [message: DirectMessage];
+  delete: [messageId: string];
 }>();
 
 const messagesContainer = ref<HTMLElement | null>(null);
@@ -56,7 +58,6 @@ defineExpose({ scrollToBottom });
           <span class="header-name"
             >{{ user.firstName }} {{ user.lastName }}</span
           >
-          <span class="header-email">{{ user.email }}</span>
         </div>
       </div>
     </div>
@@ -71,6 +72,8 @@ defineExpose({ scrollToBottom });
           :key="message.id"
           :message="message"
           :is-own="isOwnMessage(message)"
+          @toggle-like="$emit('toggleLike', $event)"
+          @delete="$emit('delete', $event)"
         />
         <div v-if="!messages || messages.length === 0" class="no-messages">
           <i class="fa fa-comments empty-illustration"></i>
@@ -107,8 +110,8 @@ defineExpose({ scrollToBottom });
 /* ── Header ── */
 .messages-header {
   padding: 12px 16px;
-  background: var(--color-bg-secondary-dark);
   transition: background 0.3s ease;
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .header-user {

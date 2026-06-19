@@ -24,7 +24,7 @@ function handleSuccess() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
+  height: 100vh;
   padding: 20px;
 }
 

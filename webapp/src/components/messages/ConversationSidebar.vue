@@ -103,8 +103,7 @@ const handleStartNewConversation = (user: MessageUser) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--color-border-secondary);
+  padding: 12px 16px 24px 16px;
 }
 
 .main-title {
@@ -142,8 +141,12 @@ const handleStartNewConversation = (user: MessageUser) => {
 }
 
 .conversations-list {
+  padding: 12px;
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .no-conversations {
