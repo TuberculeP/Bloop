@@ -139,7 +139,7 @@ projectsRouter.get("/trash", async (req, res) => {
     });
 
     const body = deleted.filter(
-      (p) => p.deletedAt !== null && new Date(p.deletedAt) >= thirtyDaysAgo,
+      (p) => p.deletedAt !== null && new Date(p.deletedAt!) >= thirtyDaysAgo,
     );
 
     res.json({ body });
