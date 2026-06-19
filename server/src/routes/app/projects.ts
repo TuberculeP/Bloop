@@ -1,5 +1,6 @@
 import { Router } from "express";
 import pg from "../../config/db.config";
+import { IsNull, Not } from "typeorm";
 import { Project } from "../../config/entities/Project";
 import { ProjectFavorite } from "../../config/entities/ProjectFavorite";
 
@@ -14,7 +15,7 @@ projectsRouter.get("/", async (req, res) => {
 
     const projectRepository = pg.getRepository(Project);
     const projects = await projectRepository.find({
-      where: { user: { id: req.user.id } },
+      where: { user: { id: req.user.id }, deletedAt: IsNull() },
       select: [
         "id",
         "name",
@@ -44,7 +45,7 @@ projectsRouter.get("/public", async (req, res) => {
 
     const projectRepository = pg.getRepository(Project);
     const projects = await projectRepository.find({
-      where: { isPublic: true },
+      where: { isPublic: true, deletedAt: IsNull() },
       relations: ["user"],
       order: { updatedAt: "DESC" },
     });
@@ -85,7 +86,11 @@ projectsRouter.get("/favorites", async (req, res) => {
     });
 
     const body = favorites
-      .filter((f) => f.project.isPublic || f.project.user.id === req.user.id)
+      .filter(
+        (f) =>
+          f.project.deletedAt === null &&
+          (f.project.isPublic || f.project.user.id === req.user.id),
+      )
       .map((f) => ({
         favoriteId: f.id,
         favoritedAt: f.createdAt,
@@ -109,6 +114,41 @@ projectsRouter.get("/favorites", async (req, res) => {
   }
 });
 
+projectsRouter.get("/trash", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const projectRepository = pg.getRepository(Project);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const deleted = await projectRepository.find({
+      where: { user: { id: req.user.id }, deletedAt: Not(IsNull()) },
+      select: [
+        "id",
+        "name",
+        "description",
+        "createdAt",
+        "updatedAt",
+        "deletedAt",
+      ],
+      order: { deletedAt: "DESC" },
+    });
+
+    const body = deleted.filter(
+      (p) => p.deletedAt !== null && new Date(p.deletedAt!) >= thirtyDaysAgo,
+    );
+
+    res.json({ body });
+  } catch (error) {
+    console.error("Error fetching trash:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 projectsRouter.get("/:id", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -119,7 +159,11 @@ projectsRouter.get("/:id", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const ownProject = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: req.user.id } },
+      where: {
+        id: req.params.id,
+        user: { id: req.user.id },
+        deletedAt: IsNull(),
+      },
     });
 
     if (ownProject) {
@@ -128,7 +172,7 @@ projectsRouter.get("/:id", async (req, res) => {
     }
 
     const publicProject = await projectRepository.findOne({
-      where: { id: req.params.id, isPublic: true },
+      where: { id: req.params.id, isPublic: true, deletedAt: IsNull() },
       relations: ["user"],
     });
 
@@ -205,7 +249,11 @@ projectsRouter.put("/:id", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: req.user.id } },
+      where: {
+        id: req.params.id,
+        user: { id: req.user.id },
+        deletedAt: IsNull(),
+      },
     });
 
     if (!project) {
@@ -244,7 +292,11 @@ projectsRouter.delete("/:id", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: req.user.id } },
+      where: {
+        id: req.params.id,
+        user: { id: req.user.id },
+        deletedAt: IsNull(),
+      },
     });
 
     if (!project) {
@@ -252,7 +304,8 @@ projectsRouter.delete("/:id", async (req, res) => {
       return;
     }
 
-    await projectRepository.remove(project);
+    project.deletedAt = new Date();
+    await projectRepository.save(project);
 
     res.json({ message: "Project deleted successfully" });
   } catch (error) {
@@ -272,7 +325,11 @@ projectsRouter.patch("/:id/mcp", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: req.user.id } },
+      where: {
+        id: req.params.id,
+        user: { id: req.user.id },
+        deletedAt: IsNull(),
+      },
     });
 
     if (!project) {
@@ -307,7 +364,11 @@ projectsRouter.patch("/:id/visibility", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: req.user.id } },
+      where: {
+        id: req.params.id,
+        user: { id: req.user.id },
+        deletedAt: IsNull(),
+      },
     });
 
     if (!project) {
@@ -341,7 +402,7 @@ projectsRouter.post("/:id/clone", async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const source = await projectRepository.findOne({
-      where: { id: req.params.id },
+      where: { id: req.params.id, deletedAt: IsNull() },
       relations: ["user"],
     });
 
@@ -440,6 +501,38 @@ projectsRouter.delete("/:id/favorite", async (req, res) => {
     res.json({ message: "Favorite removed" });
   } catch (error) {
     console.error("Error removing favorite:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+projectsRouter.patch("/:id/restore", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const projectRepository = pg.getRepository(Project);
+
+    const project = await projectRepository.findOne({
+      where: {
+        id: req.params.id,
+        user: { id: req.user.id },
+        deletedAt: Not(IsNull()),
+      },
+    });
+
+    if (!project) {
+      res.status(404).json({ error: "Project not found in trash" });
+      return;
+    }
+
+    project.deletedAt = null;
+    await projectRepository.save(project);
+
+    res.json({ message: "Project restored successfully" });
+  } catch (error) {
+    console.error("Error restoring project:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

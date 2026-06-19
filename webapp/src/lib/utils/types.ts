@@ -320,7 +320,10 @@ export interface ProjectListItem {
   updatedAt: string;
   mcpEnabled: boolean;
   isPublic: boolean;
+  deletedAt?: string;
 }
+
+export type TrashedProjectListItem = ProjectListItem & { deletedAt: string };
 
 export interface PublicProjectListItem {
   id: string;

@@ -36,4 +36,7 @@ export class Project {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ type: "date", nullable: true })
+  deletedAt?: Date | null;
 }
