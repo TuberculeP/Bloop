@@ -21,14 +21,14 @@ const measures = computed(() => {
 
 const handleClick = (event: MouseEvent) => {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-  const x = event.clientX - rect.left + props.scrollLeft;
+  const x = event.clientX - rect.left;
   const position = Math.floor(x / props.colWidth);
   emit("seek", Math.max(0, Math.min(position, props.cols - 1)));
 };
 </script>
 
 <template>
-  <div class="timeline-ruler">
+  <div class="timeline-ruler" :style="{ minWidth: `${180 + cols * colWidth}px` }">
     <div class="ruler-header">Pistes</div>
     <div class="ruler-measures" @click="handleClick">
       <div class="ruler-content" :style="{ width: `${cols * colWidth}px` }">

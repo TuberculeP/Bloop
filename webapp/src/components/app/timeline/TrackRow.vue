@@ -91,6 +91,7 @@ onBeforeUnmount(() =>
       expanded: isExpanded,
       'audio-track': isAudioTrack,
     }"
+    :style="{ minWidth: `${180 + cols * colWidth}px` }"
   >
     <TrackHeader
       :track="track"
