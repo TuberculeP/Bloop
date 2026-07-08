@@ -11,6 +11,7 @@ import adminRouter from "./admin";
 import mcpProjectsRouter from "./mcp/projects";
 import mcpOauthRouter from "./mcp/oauth";
 import mcpSseRouter from "./mcp/sse";
+import userRouter from "./user";
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use("/admin", adminRouter);
 router.use("/mcp/projects", mcpProjectsRouter);
 router.use("/mcp/oauth", mcpOauthRouter);
 router.use("/mcp/sse", mcpSseRouter);
+router.use("/user", userRouter);
 
 export default router;
