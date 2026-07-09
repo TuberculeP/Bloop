@@ -50,7 +50,12 @@ const apiClient = {
     (acc, method) => {
       acc[method] = async <T>(url: string, data?: any) => {
         try {
-          const result = await axiosClient[method]<T>(url, data);
+          // FormData : laisser le navigateur poser le Content-Type multipart (avec boundary)
+          const config =
+            data instanceof FormData
+              ? { headers: { "Content-Type": undefined } }
+              : undefined;
+          const result = await axiosClient[method]<T>(url, data, config);
           return {
             data: result.data,
             error: null,

@@ -74,9 +74,13 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import apiClient from "../../lib/utils/apiClient";
+import { resizeImageFile } from "../../lib/utils/imageResize";
+import { useAuthStore } from "../../stores/authStore";
 import { useRouter } from "vue-router";
+import type { User } from "../../lib/utils/types";
 
 const router = useRouter();
+const authStore = useAuthStore();
 const profilePictureFile = ref<File | null>(null);
 const previewUrl = ref<string>("");
 
@@ -85,55 +89,50 @@ const form = reactive({
   password: "",
   firstName: "",
   lastName: "",
-  profilePicture: "",
 });
 
-const handleFileUpload = (event: Event) => {
+const handleFileUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
 
   if (file) {
-    profilePictureFile.value = file;
+    profilePictureFile.value = await resizeImageFile(file);
 
     // Create a preview
     const reader = new FileReader();
     reader.onload = (e) => {
       previewUrl.value = e.target?.result as string;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(profilePictureFile.value);
   }
 };
 
 async function submitForm() {
   try {
-    let profilePictureData = "";
-
-    // Convert file to base64 if a file was selected
-    if (profilePictureFile.value) {
-      profilePictureData = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve(e.target?.result as string);
-        };
-        reader.readAsDataURL(profilePictureFile.value);
-      });
-    }
-
-    const result = await apiClient.post("/auth/register", {
+    const result = await apiClient.post<{ user: User }>("/auth/register", {
       email: form.email,
       password: form.password,
       firstName: form.firstName,
       lastName: form.lastName,
-      profilePicture: profilePictureData,
     });
 
-    if (!result.error) {
-      console.log("Inscription réussie:", result.data);
-      // Rediriger vers la page de connexion après inscription
-      router.push({ name: "app-login" });
-    } else {
+    if (result.error || !result.data?.user) {
       console.error("Erreur lors de l'inscription:", result.error);
+      return;
     }
+
+    authStore.user = result.data.user;
+
+    if (profilePictureFile.value) {
+      const { error: avatarError } = await authStore.updateAvatar(
+        profilePictureFile.value,
+      );
+      if (avatarError) {
+        console.error("Erreur lors de l'upload de l'avatar:", avatarError);
+      }
+    }
+
+    router.push({ name: "landing-main" });
   } catch (error) {
     console.error("Erreur lors de l'envoi du formulaire:", error);
   }

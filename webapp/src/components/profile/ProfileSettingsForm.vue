@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/authStore";
 import { updateUserProfile } from "../../services/users";
+import { resizeImageFile } from "../../lib/utils/imageResize";
 import BaseButton from "../ui/BaseButton.vue";
 
 const authStore = useAuthStore();
@@ -35,13 +36,13 @@ const resetForm = () => {
   photoPreview.value = null;
 };
 
-const handlePhotoChange = (event: Event) => {
+const handlePhotoChange = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
-  photoFile.value = file;
-  photoPreview.value = URL.createObjectURL(file);
+  photoFile.value = await resizeImageFile(file);
+  photoPreview.value = URL.createObjectURL(photoFile.value);
 };
 
 const save = async () => {
@@ -50,20 +51,23 @@ const save = async () => {
   success.value = false;
 
   try {
-    const payload = new FormData();
-    payload.append("firstName", settingsForm.value.firstName);
-    payload.append("lastName", settingsForm.value.lastName);
-    payload.append("email", settingsForm.value.email);
-    payload.append("phone", settingsForm.value.phone);
     if (photoFile.value) {
-      payload.append("profilePicture", photoFile.value);
+      const { error: avatarUploadError } = await authStore.updateAvatar(
+        photoFile.value,
+      );
+      if (avatarUploadError) throw new Error(avatarUploadError);
     }
 
-    const updatedUser = await updateUserProfile(payload);
+    const updatedUser = await updateUserProfile({
+      firstName: settingsForm.value.firstName,
+      lastName: settingsForm.value.lastName,
+      email: settingsForm.value.email,
+    });
     authStore.user = updatedUser;
 
     success.value = true;
     photoFile.value = null;
+    photoPreview.value = null;
   } catch (err) {
     console.error("Erreur lors de la mise à jour du profil:", err);
     error.value = "Erreur lors de la mise à jour du profil";

@@ -27,8 +27,8 @@ const main = async () => {
   const server = createHttpServer(app);
   app
     .use(cors({ origin: true, credentials: true }))
-    .use(express.json())
-    .use(express.urlencoded({ extended: false }))
+    .use(express.json({ limit: "1mb" }))
+    .use(express.urlencoded({ extended: false, limit: "1mb" }))
     .use(cookieParser())
     .use(customSession())
     .use(passport.initialize())
@@ -57,6 +57,21 @@ const main = async () => {
   });
 
   app.use("/api", router);
+
+  app.use(
+    (
+      err: Error & { status?: number; type?: string },
+      _req: express.Request,
+      res: express.Response,
+      next: express.NextFunction,
+    ) => {
+      if (err?.status === 413 || err?.type === "entity.too.large") {
+        res.status(413).json({ message: "Fichier ou requête trop volumineux" });
+        return;
+      }
+      next(err);
+    },
+  );
 
   const vite = await createViteServer();
 

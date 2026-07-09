@@ -338,24 +338,22 @@ export const useAdminStore = defineStore("admin", () => {
     formData.append("packSlug", packSlug);
     if (folderName) formData.append("folderName", folderName);
 
-    try {
-      const response = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
+    const result = await apiClient.post<
+      ApiResponse<{
+        filename: string;
+        key: string;
+        url: string;
+        size: number;
+        mimetype: string;
+      }>
+    >("/admin/upload", formData);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const data = await response.json();
-      return data.body;
-    } catch (error) {
-      console.error("Upload error:", error);
+    if (result.error || !result.data?.body) {
+      console.error("Upload error:", result.error);
       return null;
     }
+
+    return result.data.body;
   }
 
   // ===== IMPORT ZIP =====

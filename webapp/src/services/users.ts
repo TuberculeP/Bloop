@@ -2,7 +2,7 @@ import apiClient from "../lib/utils/apiClient";
 import type { User } from "../lib/utils/types";
 
 export const updateUserProfile = async (
-  payload: Partial<User> | FormData,
+  payload: Partial<User>,
 ): Promise<User> => {
   const { data, error } = await apiClient.patch<{ user: User }>(
     "/user",

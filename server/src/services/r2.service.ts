@@ -70,6 +70,14 @@ export function isR2Configured(): boolean {
   );
 }
 
+export function isR2Url(value: string | null | undefined): boolean {
+  return !!value && !!CDN_BASE_URL && value.startsWith(CDN_BASE_URL);
+}
+
+export function keyFromR2Url(url: string): string {
+  return url.replace(`${CDN_BASE_URL}/`, "");
+}
+
 export async function uploadJsonToR2(data: object, key: string): Promise<void> {
   await s3Client.send(
     new PutObjectCommand({

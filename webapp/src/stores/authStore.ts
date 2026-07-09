@@ -29,6 +29,25 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   }
 
+  async function updateAvatar(file: File): Promise<{ error: string | null }> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const { data, error } = await apiClient.post<{
+      user: { profilePicture: string };
+    }>("/user/avatar", formData);
+
+    if (error || !data) {
+      return { error: error || "Upload failed" };
+    }
+
+    if (user.value) {
+      user.value.profilePicture = data.user.profilePicture;
+    }
+
+    return { error: null };
+  }
+
   // Connecter le handler d'erreur auth
   setAuthErrorHandler(handleSessionExpired);
 
@@ -38,6 +57,7 @@ export const useAuthStore = defineStore("authStore", () => {
     googleAuthEnabled,
     sessionExpired,
     loadConfig,
+    updateAvatar,
     handleSessionExpired,
     clearSessionExpired,
   };

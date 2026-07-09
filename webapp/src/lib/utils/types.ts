@@ -272,6 +272,7 @@ export type User = {
   lastName: string;
   isActive: boolean;
   role: string;
+  profilePicture?: string;
   following: User[];
   followers: Record<string, any>[];
   posts: Record<string, any>[];
