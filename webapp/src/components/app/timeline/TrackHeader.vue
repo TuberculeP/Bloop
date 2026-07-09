@@ -105,8 +105,8 @@ function handleAction(action: () => void) {
           :title="isExpanded ? 'Réduire' : 'Éditer'"
         >
           <i
-            :class="isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-up'"
-          ></i>
+            :class="isExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+          />
         </button>
 
         <div class="more-menu-wrapper" @click.stop>

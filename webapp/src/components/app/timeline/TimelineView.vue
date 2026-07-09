@@ -9,7 +9,7 @@ import {
   type Ref,
 } from "vue";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useProjectStore } from "../../../stores/projectStore";
@@ -31,6 +31,7 @@ import MasterTrackRow from "./MasterTrackRow.vue";
 import AddTrackButton from "./AddTrackButton.vue";
 import InstrumentSettings from "../instruments/InstrumentSettings.vue";
 import MasterSettings from "../instruments/MasterSettings.vue";
+import BaseButton from "../../ui/BaseButton.vue";
 
 const emit = defineEmits<{
   (
@@ -54,6 +55,7 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
 const projectStore = useProjectStore();
@@ -94,6 +96,20 @@ const sortedTracks = computed(() => timelineStore.sortedTracks);
 
 const TRACK_HEADER_WIDTH = 180;
 const TRAILING_COLS = 16;
+
+watch(
+  () => route.query.projectId,
+  async (newId) => {
+    if (
+      newId &&
+      typeof newId === "string" &&
+      newId !== timelineStore.project.id
+    ) {
+      await projectStore.loadProjectToTimeline(newId, timelineStore);
+      await dawLoadingStore.preloadProject(timelineStore.project);
+    }
+  },
+);
 
 const displayCols = computed(() => {
   let lastEnd = 0;
@@ -556,7 +572,20 @@ const handleScroll = (event: Event) => {
   scrollLeft.value = target.scrollLeft;
 };
 
+const isTypingTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable
+  );
+};
+
 const handleKeydown = (event: KeyboardEvent) => {
+  if (isTypingTarget(event.target)) return;
+
   if (event.code === "Space") {
     event.preventDefault();
     togglePlayback();
@@ -600,22 +629,37 @@ defineExpose({
     </div>
     <div class="timeline-header">
       <div class="header-left">
-        <button
-          class="header-btn back-btn"
+        <BaseButton
+          variant="accent"
           @click="handleBackToProjects"
           title="Retour aux projets"
         >
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <AddTrackButton @add-track="handleAddTrack" />
-        <button
-          class="header-btn library-btn"
-          :class="{ active: showAudioLibrary }"
+          <i class="fas fa-home" />
+        </BaseButton>
+        <BaseButton
           @click="showAudioLibrary = !showAudioLibrary"
           title="Audio Library"
+          :variant="showAudioLibrary ? 'secondary' : 'primary'"
         >
-          <i class="fas fa-volume-down"></i>
-        </button>
+          Audio Library
+        </BaseButton>
+        <input
+          v-if="isEditingProjectName"
+          ref="projectNameInputRef"
+          v-model="editedProjectName"
+          class="project-name-input"
+          @blur="saveProjectName"
+          @keydown.enter="saveProjectName"
+          @keydown.escape="cancelEditProjectName"
+        />
+        <span
+          v-else
+          class="project-name"
+          @dblclick="startEditProjectName"
+          title="Double-clic pour renommer"
+        >
+          {{ timelineStore.project.name }}
+        </span>
       </div>
       <div class="header-center">
         <div class="transport-controls">
@@ -652,62 +696,38 @@ defineExpose({
         </div>
       </div>
       <div class="header-right">
-        <span v-if="saveMessage" :class="['save-message', saveMessage.type]">
-          {{ saveMessage.text }}
-        </span>
-        <div class="save-indicator-group">
-          <span
-            v-if="projectStore.hasUnsavedChanges"
-            class="unsaved-indicator"
-            title="Changements non sauvegardés"
-          >
-            ●
-          </span>
-          <button
-            class="header-btn save-btn"
-            :class="{
-              saving: isSaving,
-              'has-changes': projectStore.hasUnsavedChanges,
-            }"
-            @click="handleSaveProject"
-            :disabled="isSaving || isReadOnly"
-            :title="
-              isReadOnly
-                ? 'Projet en lecture seule'
-                : projectStore.hasUnsavedChanges
-                  ? 'Sauvegarder les changements'
-                  : 'Projet sauvegardé'
-            "
-          >
-            {{ isSaving ? "..." : "Sauvegarder" }}
-          </button>
-          <button
-            class="header-btn export-btn"
-            @click="startExport"
-            :disabled="isExporting"
-            title="Exporter en audio"
-          >
-            Exporter
-            <i class="fas fa-download"></i>
-          </button>
-        </div>
-        <input
-          v-if="isEditingProjectName"
-          ref="projectNameInputRef"
-          v-model="editedProjectName"
-          class="project-name-input"
-          @blur="saveProjectName"
-          @keydown.enter="saveProjectName"
-          @keydown.escape="cancelEditProjectName"
-        />
-        <span
-          v-else
-          class="project-name"
-          @dblclick="startEditProjectName"
-          title="Double-clic pour renommer"
+        <AddTrackButton @add-track="handleAddTrack" />
+
+        <BaseButton
+          @click="startExport"
+          title="Exporter en audio"
+          :disabled="isExporting"
+          variant="ghost"
         >
-          {{ timelineStore.project.name }}
-        </span>
+          Exporter
+          <i class="fas fa-download"></i>
+        </BaseButton>
+
+        <BaseButton
+          @click="handleSaveProject"
+          :title="
+            isReadOnly
+              ? 'Projet en lecture seule'
+              : projectStore.hasUnsavedChanges
+                ? 'Sauvegarder les changements'
+                : 'Projet sauvegardé'
+          "
+          :disabled="isSaving || isReadOnly"
+          :variant="
+            projectStore.hasUnsavedChanges || saveMessage
+              ? 'secondary'
+              : 'primary'
+          "
+        >
+          {{
+            saveMessage ? saveMessage.text : isSaving ? "..." : "Sauvegarder"
+          }}
+        </BaseButton>
       </div>
     </div>
 
