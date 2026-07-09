@@ -130,12 +130,11 @@ userRouter.patch("/", async (req, res) => {
     });
 
     if (user) {
-      const { firstName, lastName, email, profilePicture } = req.body;
+      const { firstName, lastName, email } = req.body;
 
       if (firstName) user.firstName = firstName;
       if (lastName) user.lastName = lastName;
       if (email) user.email = email;
-      if (profilePicture) user.profilePicture = profilePicture;
 
       await userRepository.save(user);
 

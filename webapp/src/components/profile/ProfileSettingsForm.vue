@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/authStore";
 import { updateUserProfile } from "../../services/users";
+import { resizeImageFile } from "../../lib/utils/imageResize";
 import BaseButton from "../ui/BaseButton.vue";
 
 const authStore = useAuthStore();
@@ -35,13 +36,13 @@ const resetForm = () => {
   photoPreview.value = null;
 };
 
-const handlePhotoChange = (event: Event) => {
+const handlePhotoChange = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
-  photoFile.value = file;
-  photoPreview.value = URL.createObjectURL(file);
+  photoFile.value = await resizeImageFile(file);
+  photoPreview.value = URL.createObjectURL(photoFile.value);
 };
 
 const save = async () => {
