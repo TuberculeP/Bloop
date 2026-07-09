@@ -8,6 +8,8 @@ import BlogSearch from "./BlogSearch.vue";
 import apiClient from "../../lib/utils/apiClient";
 import type { User } from "../../lib/utils/types";
 // import BlogUsers from "./BlogUsers.vue";
+import BlogTopLikedUsers from "./BlogTopLikedUsers.vue";
+import BlogBackground from "./BlogBackground.vue";
 
 const postsKey = ref(0);
 const isAuthenticated = ref(false);
@@ -49,6 +51,12 @@ onMounted(() => {
 </script>
 <template>
   <div class="blog-container">
+    <div class="blog-background">
+      <BlogBackground />
+    </div>
+    <div class="blog-users">
+      <BlogTopLikedUsers />
+    </div>
     <div class="blog-content">
       <!-- Afficher le formulaire seulement si connecté -->
       <BlogCreate v-if="isAuthenticated" @postCreated="handlePostCreated" />
@@ -67,16 +75,37 @@ onMounted(() => {
         @tagSelected="handleTagSelected"
         @tagDeselected="handleTagDeselected"
       />
-      <!-- <BlogUsers /> -->
     </div>
   </div>
 </template>
 <style scoped>
 .blog-container {
-  padding: 40px 24px;
-  margin: 0 32px;
+  position: relative;
+  /* background: var(--color-bg-primary-dark); */
+
+  padding: 24px;
   display: flex;
   gap: 16px;
+  /*   overflow: hidden; */
+
+  .blog-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+      180deg,
+      var(--color-bg-primary-dark) 0%,
+
+      var(--color-accent3) 100%
+    );
+  }
+
+  .blog-content,
+  .blog-trends,
+  .blog-users {
+    position: relative;
+    z-index: 1;
+  }
 
   .blog-content {
     flex: 1 1 auto;
@@ -87,6 +116,107 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+  .blog-users {
+    flex: 0 0 250px; /* Largeur fixe pour la colonne des tendances */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+/* Tablette et petit écran */
+@media (max-width: 1200px) {
+  .blog-container {
+    .blog-trends,
+    .blog-users {
+      flex: 0 0 320px;
+    }
+  }
+}
+
+/* Tablette */
+@media (max-width: 1024px) {
+  .blog-container {
+    flex-wrap: wrap;
+    padding: 32px 16px;
+
+    .blog-content {
+      flex: 1 1 100%;
+      order: 2;
+    }
+
+    .blog-trends,
+    .blog-users {
+      flex: 1 1 calc(50% - 8px);
+      order: 1;
+      gap: 16px;
+    }
+
+    .blog-users {
+      order: 1;
+    }
+
+    .blog-trends {
+      order: 3;
+    }
+  }
+}
+
+/* Mobile grand (768px - 1023px) */
+@media (max-width: 768px) {
+  .blog-container {
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 24px;
+
+    .blog-content {
+      order: 1;
+      flex: 1 1 100%;
+    }
+
+    .blog-trends,
+    .blog-users {
+      flex: 1 1 100%;
+      order: 2;
+      gap: 16px;
+    }
+
+    .blog-users {
+      order: 2;
+    }
+
+    .blog-trends {
+      order: 3;
+    }
+  }
+}
+
+/* Mobile petit (< 640px) */
+@media (max-width: 640px) {
+  .blog-container {
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 16px;
+
+    .blog-content {
+      order: 1;
+    }
+
+    .blog-trends,
+    .blog-users {
+      flex: 1 1 100%;
+      order: 2;
+      gap: 12px;
+    }
+
+    .blog-users {
+      order: 2;
+    }
+
+    .blog-trends {
+      order: 3;
+    }
   }
 }
 

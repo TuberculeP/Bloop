@@ -130,4 +130,64 @@ onMounted(() => {
   font-size: 0.9em;
   margin-left: auto;
 }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .filter-indicator {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    gap: 6px;
+    font-size: 0.9em;
+  }
+
+  .filter-tag {
+    font-size: 0.8em;
+    padding: 3px 8px;
+  }
+
+  .filter-count {
+    font-size: 0.85em;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-indicator {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    gap: 4px;
+    font-size: 0.85em;
+  }
+
+  .filter-tag {
+    font-size: 0.75em;
+    padding: 2px 6px;
+  }
+
+  .filter-count {
+    font-size: 0.8em;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-indicator {
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    gap: 3px;
+    font-size: 0.75em;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-tag {
+    font-size: 0.7em;
+    padding: 2px 4px;
+  }
+
+  .filter-count {
+    font-size: 0.7em;
+    margin-left: 0;
+    width: 100%;
+  }
+}
 </style>

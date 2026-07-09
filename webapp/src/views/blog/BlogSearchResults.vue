@@ -5,7 +5,7 @@ import { getAllPosts } from "../../services/posts";
 import BlogPost from "../../components/blog/BlogPost.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
 import type { Post } from "../../lib/utils/types";
-import LandingHeader from "../../components/landing/LandingHeader.vue";
+import AppLayout from "../../layouts/AppLayout.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -95,88 +95,89 @@ onMounted(() => {
 </script>
 
 <template>
-  <LandingHeader />
-  <div class="search-results-container">
-    <!-- Header avec informations de recherche -->
-    <div class="search-header">
-      <div class="search-info">
-        <h2>Résultats de recherche</h2>
-        <div v-if="!searchStats.isEmpty" class="search-query">
-          Recherche pour : <strong>"{{ searchStats.query }}"</strong>
+  <AppLayout>
+    <div class="search-results-container">
+      <!-- Header avec informations de recherche -->
+      <div class="search-header">
+        <div class="search-info">
+          <h2>Résultats de recherche</h2>
+          <div v-if="!searchStats.isEmpty" class="search-query">
+            Recherche pour : <strong>"{{ searchStats.query }}"</strong>
+          </div>
         </div>
-      </div>
 
-      <BaseButton
-        variant="ghost"
-        size="small"
-        @click="handleNewSearch"
-        color="secondary"
-      >
-        ← Nouvelle recherche
-      </BaseButton>
-    </div>
-    <!-- Statistiques et état -->
-    <div class="search-stats">
-      <div v-if="loading" class="loading">
-        <div class="loading-spinner"></div>
-        <p>Recherche en cours...</p>
-      </div>
-
-      <div v-else-if="error" class="error">
-        <p>{{ error }}</p>
-        <BaseButton variant="ghost" size="small" @click="fetchPosts">
-          Réessayer
+        <BaseButton
+          variant="ghost"
+          size="small"
+          @click="handleNewSearch"
+          color="secondary"
+        >
+          ← Nouvelle recherche
         </BaseButton>
       </div>
+      <!-- Statistiques et état -->
+      <div class="search-stats">
+        <div v-if="loading" class="loading">
+          <div class="loading-spinner"></div>
+          <p>Recherche en cours...</p>
+        </div>
 
-      <div v-else-if="searchStats.isEmpty" class="empty-query">
-        <div class="empty-icon">🔍</div>
-        <h3>Aucune recherche</h3>
-        <p>Utilisez la barre de recherche pour trouver des posts.</p>
+        <div v-else-if="error" class="error">
+          <p>{{ error }}</p>
+          <BaseButton variant="ghost" size="small" @click="fetchPosts">
+            Réessayer
+          </BaseButton>
+        </div>
+
+        <div v-else-if="searchStats.isEmpty" class="empty-query">
+          <div class="empty-icon">🔍</div>
+          <h3>Aucune recherche</h3>
+          <p>Utilisez la barre de recherche pour trouver des posts.</p>
+        </div>
+
+        <div v-else-if="!searchStats.hasResults" class="no-results">
+          <div class="empty-icon">
+            <i class="fas fa-search"></i>
+          </div>
+          <h3>Aucun résultat trouvé</h3>
+          <p>
+            Aucun post ne correspond à votre recherche "<strong>{{
+              searchStats.query
+            }}</strong
+            >".
+          </p>
+          <div class="suggestions">
+            <h4>Suggestions :</h4>
+            <ul>
+              <li>Vérifiez l'orthographe de vos mots-clés</li>
+              <li>Essayez des termes plus généraux</li>
+              <li>Utilisez des mots-clés différents</li>
+            </ul>
+          </div>
+        </div>
+
+        <div v-else class="results-count">
+          <p>
+            <strong>{{ searchStats.total }}</strong>
+            {{
+              searchStats.total === 1 ? "résultat trouvé" : "résultats trouvés"
+            }}
+          </p>
+        </div>
       </div>
 
-      <div v-else-if="!searchStats.hasResults" class="no-results">
-        <div class="empty-icon">
-          <i class="fas fa-search"></i>
-        </div>
-        <h3>Aucun résultat trouvé</h3>
-        <p>
-          Aucun post ne correspond à votre recherche "<strong>{{
-            searchStats.query
-          }}</strong
-          >".
-        </p>
-        <div class="suggestions">
-          <h4>Suggestions :</h4>
-          <ul>
-            <li>Vérifiez l'orthographe de vos mots-clés</li>
-            <li>Essayez des termes plus généraux</li>
-            <li>Utilisez des mots-clés différents</li>
-          </ul>
-        </div>
-      </div>
-
-      <div v-else class="results-count">
-        <p>
-          <strong>{{ searchStats.total }}</strong>
-          {{
-            searchStats.total === 1 ? "résultat trouvé" : "résultats trouvés"
-          }}
-        </p>
+      <!-- Liste des résultats -->
+      <div v-if="searchStats.hasResults" class="search-results">
+        <BlogPost
+          v-for="post in filteredPosts"
+          :key="post.id"
+          :post="post"
+          @refresh="fetchPosts"
+          class="search-result-item"
+        />
       </div>
     </div>
-
-    <!-- Liste des résultats -->
-    <div v-if="searchStats.hasResults" class="search-results">
-      <BlogPost
-        v-for="post in filteredPosts"
-        :key="post.id"
-        :post="post"
-        @refresh="fetchPosts"
-        class="search-result-item"
-      />
-    </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

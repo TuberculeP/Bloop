@@ -4,11 +4,9 @@ import { useRoute, useRouter } from "vue-router";
 import { getPostById } from "../../services/posts";
 import BlogPost from "../../components/blog/BlogPost.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
-import LandingHeader from "../../components/landing/LandingHeader.vue";
-import LandingFooter from "../../components/landing/LandingFooter.vue";
-import LandingLayout from "../../layouts/LandingLayout.vue";
 import type { Post } from "../../lib/utils/types";
-
+import AppLayout from "../../layouts/AppLayout.vue";
+import AppHeader from "../../components/ui/AppHeader.vue";
 const route = useRoute();
 const router = useRouter();
 
@@ -66,8 +64,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <LandingLayout>
-    <LandingHeader />
+  <AppLayout>
     <div class="post-detail-container">
       <!-- Navigation -->
       <div class="post-navigation">
@@ -108,13 +105,13 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <LandingFooter />
-  </LandingLayout>
+  </AppLayout>
 </template>
 
 <style scoped>
 .post-detail-container {
   max-width: 900px;
+  min-width: 80%;
   margin: 0 auto;
   padding: 2rem 1rem;
   padding-top: 144px;

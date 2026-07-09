@@ -97,7 +97,8 @@ defineExpose({ clearFilters, selectedTags });
 </template>
 <style scoped>
 .trends-container {
-  background: var(--color-bg-primary-dark);
+  background: hsla(325, 30%, 8%, 0.55);
+  backdrop-filter: blur(1px);
   border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
   padding: 20px;
@@ -149,8 +150,8 @@ defineExpose({ clearFilters, selectedTags });
   display: flex;
   align-items: center;
   gap: 6px;
-  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  border: 1px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-accent2) 20%, transparent);
+  border: 1px solid var(--color-accent3);
   color: var(--color-white);
   padding: 8px 14px;
   border-radius: 99px;
@@ -162,7 +163,7 @@ defineExpose({ clearFilters, selectedTags });
   box-shadow: 0 4px 16px
     color-mix(in srgb, var(--color-secondary) 20%, transparent);
   transform: translateY(-2px);
-  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-accent2) 30%, transparent);
   border-color: var(--color-accent);
 }
 
