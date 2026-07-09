@@ -73,12 +73,7 @@
     <div class="section-bg">
       <div class="bg-gradient"></div>
       <div class="bg-particles">
-        <div
-          v-for="n in 15"
-          :key="n"
-          class="particle"
-          :style="getParticleStyle(n)"
-        ></div>
+        <div class="particle" :style="getParticleStyle()"></div>
       </div>
     </div>
   </section>
@@ -277,7 +272,7 @@ const categories = [
 ];
 
 // Generate particle styles
-const getParticleStyle = (n: number) => {
+const getParticleStyle = () => {
   const size = Math.random() * 4 + 2;
   const left = Math.random() * 100;
   const delay = Math.random() * 5;

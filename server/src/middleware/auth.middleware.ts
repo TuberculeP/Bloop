@@ -63,6 +63,7 @@ export const bearerAuth = async (
     req.user = token.user;
     next();
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

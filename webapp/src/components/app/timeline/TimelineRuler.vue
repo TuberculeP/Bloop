@@ -28,7 +28,10 @@ const handleClick = (event: MouseEvent) => {
 </script>
 
 <template>
-  <div class="timeline-ruler" :style="{ minWidth: `${180 + cols * colWidth}px` }">
+  <div
+    class="timeline-ruler"
+    :style="{ minWidth: `${180 + cols * colWidth}px` }"
+  >
     <div class="ruler-header">Pistes</div>
     <div class="ruler-measures" @click="handleClick">
       <div class="ruler-content" :style="{ width: `${cols * colWidth}px` }">
