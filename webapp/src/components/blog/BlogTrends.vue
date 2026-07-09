@@ -2,10 +2,12 @@
 import { ref, onMounted, computed } from "vue";
 import { getPopularTags, type PopularTag } from "../../services/tags";
 import { defaultTags } from "../../services/tags";
+import BaseButton from "../ui/BaseButton.vue";
 
 const emit = defineEmits<{
   tagSelected: [tag: string];
   tagDeselected: [tag: string];
+  filtersCleared: [];
 }>();
 
 const popularTags = ref<PopularTag[]>([]);
@@ -54,6 +56,7 @@ const toggleTag = (tagName: string) => {
 // Réinitialiser les filtres
 const clearFilters = () => {
   selectedTags.value = [];
+  emit("filtersCleared");
 };
 
 // Exposer la méthode pour le parent
@@ -63,13 +66,14 @@ defineExpose({ clearFilters, selectedTags });
   <div class="trends-container">
     <div class="trends-header">
       <h2>Tendances</h2>
-      <button
+      <BaseButton
         v-if="selectedTags.length > 0"
-        class="clear-filters"
+        variant="lightghost"
+        size="small"
         @click="clearFilters"
       >
         Réinitialiser
-      </button>
+      </BaseButton>
     </div>
 
     <div v-if="loading" class="trends-loading">Chargement...</div>
@@ -97,7 +101,8 @@ defineExpose({ clearFilters, selectedTags });
 </template>
 <style scoped>
 .trends-container {
-  background: var(--color-bg-primary-dark);
+  background: hsla(325, 30%, 8%, 0.55);
+  backdrop-filter: blur(1px);
   border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
   padding: 20px;
@@ -112,26 +117,11 @@ defineExpose({ clearFilters, selectedTags });
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 35px;
 }
 
 .trends-header h2 {
   margin: 0;
-}
-
-.clear-filters {
-  background: transparent;
-  border: 1px solid var(--color-secondary);
-  color: var(--color-secondary);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.clear-filters:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
 }
 
 .trends-loading {
@@ -149,8 +139,8 @@ defineExpose({ clearFilters, selectedTags });
   display: flex;
   align-items: center;
   gap: 6px;
-  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  border: 1px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-accent2) 20%, transparent);
+  border: 1px solid var(--color-accent3);
   color: var(--color-white);
   padding: 8px 14px;
   border-radius: 99px;
@@ -162,7 +152,7 @@ defineExpose({ clearFilters, selectedTags });
   box-shadow: 0 4px 16px
     color-mix(in srgb, var(--color-secondary) 20%, transparent);
   transform: translateY(-2px);
-  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-accent2) 30%, transparent);
   border-color: var(--color-accent);
 }
 

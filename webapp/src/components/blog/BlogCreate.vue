@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { createPost } from "../../services/posts";
 import { getAllTags, defaultTags, type Tag } from "../../services/tags";
 import type { CreatePostData } from "../../lib/utils/types";
+import BaseButton from "../ui/BaseButton.vue";
 
 const emit = defineEmits<{
   postCreated: [];
@@ -197,14 +198,14 @@ const handleSubmit = async () => {
                 @input="showAllTags = false"
                 autocomplete="off"
               />
-              <button
+              <BaseButton
                 type="button"
-                class="show-tags-button"
+                size="small"
+                :variant="showAllTags ? 'accent' : 'lightghost'"
                 @click="toggleShowAllTags"
-                :class="{ active: showAllTags }"
               >
                 {{ showAllTags ? "Masquer" : "Voir les tags" }}
-              </button>
+              </BaseButton>
             </div>
             <!-- Liste des suggestions ou tous les tags -->
             <ul
@@ -227,10 +228,17 @@ const handleSubmit = async () => {
           </div>
         </div>
       </div>
-
-      <button type="submit" :disabled="loading" class="submit-button">
-        {{ loading ? "Création..." : "Poster" }}
-      </button>
+      <div>
+        <BaseButton
+          type="submit"
+          variant="secondary"
+          size="normal"
+          :disabled="loading"
+          :loading="loading"
+        >
+          Poster
+        </BaseButton>
+      </div>
     </form>
   </div>
 </template>

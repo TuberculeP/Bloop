@@ -4,13 +4,16 @@
 .post-container {
   display: flex;
   flex-direction: column;
-  background-color: var(--color-bg-secondary-dark);
+
   border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
   padding: 16px;
   margin: 16px 0;
   transition: all 0.3s ease;
   cursor: pointer;
+
+  background: hsla(325, 30%, 8%, 0.55);
+  backdrop-filter: blur(1px);
 }
 
 .post-container:hover {
@@ -194,11 +197,13 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: space-between;
 }
 
 /* Styles pour le bouton like avec icône de cœur */
 .like-button {
   display: flex;
+  height: 37px;
   align-items: center;
   gap: 6px;
   background: none;
@@ -270,6 +275,9 @@
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--color-black);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .comments-loading {
@@ -304,7 +312,6 @@
 
 .comment-item {
   background-color: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-black);
   border-radius: 6px;
   padding: 12px;
   margin-left: 20px;
@@ -355,10 +362,10 @@
 
 /* Styles pour le formulaire de commentaire */
 .comment-form {
-  background-color: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-secondary);
-  border-radius: 8px;
-  padding: 16px;
+  /* background-color: var(--color-bg-secondary-dark); */
+  /* border: 1px solid var(--color-secondary); */
+  /* border-radius: 8px; */
+  /* padding: 16px; */
   margin-bottom: 16px;
 }
 
@@ -425,10 +432,14 @@
   gap: 8px;
   justify-content: flex-end;
 }
-
+.post-create,
+.post-container {
+  backdrop-filter: blur(1px);
+}
 /* Styles pour la création de posts */
 .post-create {
-  background: var(--color-bg-primary-dark);
+  background: hsla(325, 30%, 8%, 0.55);
+
   border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
   padding: 20px;
@@ -439,10 +450,36 @@
   gap: 16px;
 }
 
-.create-form {
+.create-form,
+.comment-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  .base-button {
+    font-weight: 700;
+  }
+
+  .submit-button {
+    background: var(--color-secondary);
+    color: var(--color-black);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: background-color 0.2s ease;
+  }
+
+  .submit-button:hover:not(:disabled) {
+    background: var(--color-secondary-hover);
+  }
+
+  .submit-button:disabled {
+    background: var(--color-white-active);
+    cursor: not-allowed;
+  }
 }
 
 .form-group {
@@ -464,7 +501,7 @@
   transition: border-color 0.2s ease;
   font-family: inherit;
   color: var(--color-white);
-  background-color: var(--color-bg-secondary-dark);
+  background-color: var(--color-bg-primary-dark);
 }
 
 .form-group input:focus,
@@ -473,30 +510,10 @@
   border-color: var(--color-primary);
 }
 
-.submit-button {
-  background: var(--color-primary);
-  color: var(--color-white);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  align-self: flex-start;
-  transition: background-color 0.2s ease;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.submit-button:disabled {
-  background: var(--color-white-active);
-  cursor: not-allowed;
-}
-
 /* Styles pour la recherche */
 .search-container {
-  background-color: var(--color-bg-primary-dark);
+  background-color: hsla(325, 30%, 8%, 0.55);
+  backdrop-filter: blur(1px);
   border: 1px solid var(--color-border-secondary);
   border-radius: 12px;
   padding: 20px;
@@ -553,7 +570,7 @@
 .search-input {
   flex: 1;
   padding: 12px 16px;
-  background-color: var(--color-bg-secondary-dark);
+  background-color: var(--color-bg-primary-dark);
   border: 1px solid var(--color-black);
   border-radius: 8px;
   color: var(--color-white);
@@ -571,7 +588,6 @@
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(79, 112, 155, 0.1);
-  background-color: var(--color-bg-primary-dark);
 }
 
 .search-input:hover:not(:focus) {
@@ -598,7 +614,7 @@
   padding: 10px 16px;
   margin-top: 12px;
   background: transparent;
-  border: 1px dashed var(--color-border-secondary);
+  border: 1px dashed var(--color-accent3);
   border-radius: 6px;
   color: var(--color-secondary);
   font-size: 0.85em;
@@ -685,18 +701,73 @@
   color: var(--color-secondary);
 }
 
-/* Responsive */
-@media (max-width: 480px) {
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+/* Tablette grand (1024px - 1200px) */
+@media (max-width: 1200px) {
+  .post-container {
+    padding: 14px;
+    margin: 14px 0;
+  }
+
+  .post-header {
+    gap: 12px;
+  }
+
+  .post-header {
+    font-size: 0.95em;
+  }
+}
+
+/* Tablette (768px - 1023px) */
+@media (max-width: 1024px) {
+  .post-container {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .post-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admin-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .post-content {
+    font-size: 0.95em;
+    line-height: 1.4;
+  }
+
+  .comment-item {
+    margin-left: 16px;
+    padding: 10px;
+  }
+
+  .comment-item::before {
+    left: -8px;
+  }
+
+  .comment-form {
+    padding: 12px;
+  }
+
+  .search-container {
+    padding: 16px;
+  }
+
   .search-input-group {
     flex-direction: column;
   }
 
   .search-button {
     min-width: auto;
-  }
-
-  .search-container {
-    padding: 16px;
+    width: 100%;
   }
 }
 
@@ -792,30 +863,6 @@
 .tag-input-row input::placeholder {
   color: var(--color-secondary);
   opacity: 0.6;
-}
-
-/* Bouton "Voir les tags" */
-.show-tags-button {
-  padding: 10px 16px;
-  background: var(--color-bg-primary-dark);
-  border: 1px solid var(--color-accent);
-  border-radius: 6px;
-  color: var(--color-accent);
-  font-size: 0.85em;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.show-tags-button:hover {
-  background: var(--color-accent);
-  color: var(--color-black);
-}
-
-.show-tags-button.active {
-  background: var(--color-accent);
-  color: var(--color-black);
 }
 
 /* Liste des suggestions */

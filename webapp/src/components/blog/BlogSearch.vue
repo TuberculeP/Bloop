@@ -84,7 +84,7 @@ const toggleShowTags = () => {
           :disabled="isSearching"
         />
         <BaseButton
-          variant="primary"
+          variant="secondary"
           size="small"
           @click="handleSearch"
           :loading="isSearching"

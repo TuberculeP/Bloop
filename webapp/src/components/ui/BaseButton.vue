@@ -18,10 +18,16 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits } from "vue";
-
 export interface ButtonProps {
-  variant?: "primary" | "secondary" | "accent" | "error" | "link" | "ghost";
+  variant?:
+    | "primary"
+    | "secondary"
+    | "accent"
+    | "error"
+    | "link"
+    | "ghost"
+    | "lightghost"
+    | "lightlink";
   size?: "small" | "normal" | "large";
   disabled?: boolean;
   loading?: boolean;
@@ -146,6 +152,18 @@ const handleClick = (event: MouseEvent) => {
   color: var(--color-primary-hover);
   background: rgba(var(--color-primary-rgb), 0.1);
 }
+.base-button--lightlink {
+  background: transparent;
+  color: var(--color-accent);
+  border: none;
+  padding: 4px 8px;
+  text-decoration: underline;
+}
+
+.base-button--lightlink:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  background: rgba(var(--color-accent-rgb), 0.1);
+}
 
 .base-button--ghost {
   background: transparent;
@@ -156,6 +174,17 @@ const handleClick = (event: MouseEvent) => {
 .base-button--ghost:hover:not(:disabled) {
   background: var(--color-accent3);
   color: var(--color-white);
+  transform: translateY(-1px);
+}
+.base-button--lightghost {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.base-button--lightghost:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-black);
   transform: translateY(-1px);
 }
 

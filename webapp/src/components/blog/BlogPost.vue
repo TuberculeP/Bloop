@@ -291,7 +291,24 @@ fetchComments();
           </button>
         </div>
       </div>
-      <div class="date">{{ formatFullDate(props.post.createdAt) }}</div>
+      <!-- Bouton Like avec icône de cœur -->
+      <button
+        class="like-button"
+        @click.stop="toggleLike"
+        :disabled="!authStore.isAuthenticated || isLiking"
+        :title="
+          !authStore.isAuthenticated
+            ? 'Connectez-vous pour liker'
+            : isLiked
+              ? 'Retirer le like'
+              : 'Liker ce post'
+        "
+      >
+        <span class="like-count" v-if="likeCount > 0">{{ likeCount }}</span>
+        <div class="heart-icon" :class="{ liked: isLiked, liking: isLiking }">
+          <i class="fas fa-heart"></i>
+        </div>
+      </button>
 
       <!-- Boutons d'administration (visibles seulement pour les admins) -->
       <div v-if="isAdmin" class="admin-controls" @click.stop>
@@ -327,52 +344,36 @@ fetchComments();
     </div>
 
     <div class="post-footer" @click.stop>
-      <!-- Bouton Like avec icône de cœur -->
-      <button
-        class="like-button"
-        @click="toggleLike"
-        :disabled="!authStore.isAuthenticated || isLiking"
-        :title="
-          !authStore.isAuthenticated
-            ? 'Connectez-vous pour liker'
-            : isLiked
-              ? 'Retirer le like'
-              : 'Liker ce post'
-        "
-      >
-        <div class="heart-icon" :class="{ liked: isLiked, liking: isLiking }">
-          <i class="fas fa-heart"></i>
-        </div>
-        <span class="like-count" v-if="likeCount > 0">{{ likeCount }}</span>
-      </button>
+      <div>
+        <BaseButton
+          variant="lightlink"
+          size="small"
+          @click="toggleComments"
+          :loading="loadingComments"
+          :title="
+            showComments
+              ? 'Masquer les commentaires'
+              : 'Afficher les commentaires'
+          "
+        >
+          {{ showComments ? "Masquer" : "Voir" }} commentaires ({{
+            commentsCount
+          }})
+        </BaseButton>
 
-      <BaseButton
-        variant="ghost"
-        size="small"
-        @click="toggleComments"
-        :loading="loadingComments"
-        :title="
-          showComments
-            ? 'Masquer les commentaires'
-            : 'Afficher les commentaires'
-        "
-      >
-        {{ showComments ? "Masquer" : "Voir" }} commentaires ({{
-          commentsCount
-        }})
-      </BaseButton>
-
-      <!-- Bouton pour ajouter un commentaire (uniquement si connecté) -->
-      <BaseButton
-        v-if="authStore.isAuthenticated"
-        variant="ghost"
-        size="small"
-        @click="toggleCommentForm"
-        :title="showCommentForm ? 'Annuler' : 'Ajouter un commentaire'"
-        color="accent"
-      >
-        {{ showCommentForm ? "Annuler" : "Commenter" }}
-      </BaseButton>
+        <!-- Bouton pour ajouter un commentaire (uniquement si connecté) -->
+        <BaseButton
+          v-if="authStore.isAuthenticated"
+          variant="lightghost"
+          size="small"
+          @click="toggleCommentForm"
+          :title="showCommentForm ? 'Annuler' : 'Ajouter un commentaire'"
+          color="primary"
+        >
+          {{ showCommentForm ? "Réduire" : "Commenter" }}
+        </BaseButton>
+      </div>
+      <div class="date">{{ formatFullDate(props.post.createdAt) }}</div>
     </div>
 
     <!-- Section des commentaires -->
@@ -387,9 +388,9 @@ fetchComments();
         v-if="showCommentForm && authStore.isAuthenticated"
         class="comment-form"
       >
-        <div class="comment-form-header">
-          <h4>Ajouter un commentaire</h4>
-        </div>
+        <!-- <div class="comment-form-header">
+          <h2>Ajouter un commentaire</h2>
+        </div> -->
         <div class="comment-form-content">
           <textarea
             v-model="form.body"
@@ -398,6 +399,7 @@ fetchComments();
             class="comment-input"
             rows="3"
             :disabled="isSubmittingComment"
+            @keydown.enter.exact.prevent="handleSubmit"
           ></textarea>
 
           <div v-if="commentError" class="comment-form-error">
@@ -406,28 +408,21 @@ fetchComments();
 
           <div class="comment-form-actions">
             <BaseButton
-              variant="primary"
-              size="small"
-              @click="handleSubmit"
-              :loading="isSubmittingComment"
-              :disabled="!commentText.trim()"
-            >
-              Publier
-            </BaseButton>
-            <button
-              type="submit"
-              :disabled="loadingComments"
-              class="submit-button"
-            >
-              {{ loadingComments ? "Création..." : "Poster" }}
-            </button>
-            <BaseButton
-              variant="ghost"
+              variant="lightghost"
               size="small"
               @click="toggleCommentForm"
               :disabled="isSubmittingComment"
             >
               Annuler
+            </BaseButton>
+            <BaseButton
+              type="submit"
+              variant="secondary"
+              size="small"
+              :disabled="loadingComments"
+              :loading="loadingComments"
+            >
+              Poster
             </BaseButton>
           </div>
         </div>

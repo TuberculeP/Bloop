@@ -4,11 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import { getPostById } from "../../services/posts";
 import BlogPost from "../../components/blog/BlogPost.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
-import LandingHeader from "../../components/landing/LandingHeader.vue";
-import LandingFooter from "../../components/landing/LandingFooter.vue";
-import LandingLayout from "../../layouts/LandingLayout.vue";
 import type { Post } from "../../lib/utils/types";
-
+import AppLayout from "../../layouts/AppLayout.vue";
 const route = useRoute();
 const router = useRouter();
 
@@ -66,9 +63,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <LandingLayout>
-    <LandingHeader />
-    <div class="post-detail-container">
+  <AppLayout>
+    <div class="page-container">
       <!-- Navigation -->
       <div class="post-navigation">
         <BaseButton variant="ghost" size="small" @click="goBack">
@@ -108,18 +104,10 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <LandingFooter />
-  </LandingLayout>
+  </AppLayout>
 </template>
 
 <style scoped>
-.post-detail-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  padding-top: 144px;
-}
-
 /* Navigation */
 .post-navigation {
   display: flex;
@@ -186,20 +174,8 @@ onMounted(() => {
   gap: 2rem;
 }
 
-.main-post {
-  background: var(--color-background-primary);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-  .post-detail-container {
-    padding: 1rem 0.75rem;
-    padding-top: 1rem; /* Padding normal pour mobile */
-  }
-
   .post-navigation {
     flex-direction: column;
     gap: 1rem;
