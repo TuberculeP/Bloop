@@ -1,21 +1,32 @@
 import { ref, onMounted, onBeforeUnmount, type Ref } from "vue";
 import type { AutomationLane, AutomationPoint } from "../lib/utils/types";
-import { useTimelineStore } from "../stores/timelineStore";
 import type { AutomationLaneRenderer } from "../lib/canvas/automationLaneRenderer";
 
 const DRAG_THRESHOLD = 4;
 const DUPLICATE_OFFSET = 4;
 const MAX_UNDO = 50;
 
+export interface AutomationLaneActions {
+  addPoint: (
+    laneId: string,
+    point: Omit<AutomationPoint, "id">,
+  ) => string | null;
+  updatePoint: (
+    laneId: string,
+    pointId: string,
+    updates: Partial<Pick<AutomationPoint, "x" | "y">>,
+  ) => boolean;
+  removePoint: (laneId: string, pointId: string) => boolean;
+  setPoints: (laneId: string, points: AutomationPoint[]) => boolean;
+}
+
 export function useAutomationLane(
-  trackId: string,
+  actions: AutomationLaneActions,
   lane: AutomationLane,
   rendererRef: Ref<AutomationLaneRenderer | null>,
   scrollLeft: () => number,
   cols: () => number,
 ) {
-  const timelineStore = useTimelineStore();
-
   const hoveredPointId = ref<string | null>(null);
   const selectedPointIds = ref<Set<string>>(new Set());
   const marqueeRect = ref<{
@@ -40,7 +51,7 @@ export function useAutomationLane(
     const snapshot = undoStack.pop();
     if (!snapshot) return;
     redoStack.push(lane.points.map((p) => ({ ...p })));
-    timelineStore.setAutomationPoints(trackId, lane.id, snapshot);
+    actions.setPoints(lane.id, snapshot);
     selectedPointIds.value = new Set();
   };
 
@@ -48,7 +59,7 @@ export function useAutomationLane(
     const snapshot = redoStack.pop();
     if (!snapshot) return;
     undoStack.push(lane.points.map((p) => ({ ...p })));
-    timelineStore.setAutomationPoints(trackId, lane.id, snapshot);
+    actions.setPoints(lane.id, snapshot);
     selectedPointIds.value = new Set();
   };
 
@@ -112,7 +123,7 @@ export function useAutomationLane(
         const deltaY = cur.y - pendingDrag.startGridY;
 
         for (const [pid, initial] of pendingDrag.groupInitial) {
-          timelineStore.updateAutomationPoint(trackId, lane.id, pid, {
+          actions.updatePoint(lane.id, pid, {
             x: Math.max(0, Math.round(initial.x + deltaX)),
             y: Math.max(0, Math.min(1, initial.y + deltaY)),
           });
@@ -212,7 +223,7 @@ export function useAutomationLane(
           coords.y,
           scrollLeft(),
         );
-        const pointId = timelineStore.addAutomationPoint(trackId, lane.id, {
+        const pointId = actions.addPoint(lane.id, {
           x: Math.max(0, Math.round(x)),
           y,
         });
@@ -249,7 +260,7 @@ export function useAutomationLane(
     const hit = renderer.getPointAtPosition(coords.x, coords.y, lane.points);
     if (hit) {
       pushSnapshot();
-      timelineStore.removeAutomationPoint(trackId, lane.id, hit.id);
+      actions.removePoint(lane.id, hit.id);
       selectedPointIds.value.delete(hit.id);
       if (hoveredPointId.value === hit.id) hoveredPointId.value = null;
     }
@@ -267,7 +278,7 @@ export function useAutomationLane(
     if (selectedPointIds.value.size === 0) return;
     pushSnapshot();
     for (const pid of [...selectedPointIds.value]) {
-      timelineStore.removeAutomationPoint(trackId, lane.id, pid);
+      actions.removePoint(lane.id, pid);
     }
     selectedPointIds.value = new Set();
   };
@@ -285,7 +296,7 @@ export function useAutomationLane(
     for (const p of toDuplicate) {
       const newX = p.x + DUPLICATE_OFFSET;
       if (newX >= maxCols) continue;
-      const id = timelineStore.addAutomationPoint(trackId, lane.id, {
+      const id = actions.addPoint(lane.id, {
         x: newX,
         y: p.y,
       });

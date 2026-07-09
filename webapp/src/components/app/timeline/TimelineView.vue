@@ -27,8 +27,10 @@ import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
-import InstrumentSettings from "../instruments/InstrumentSettings.vue";
+import MasterTrackRow from "./MasterTrackRow.vue";
 import AddTrackButton from "./AddTrackButton.vue";
+import InstrumentSettings from "../instruments/InstrumentSettings.vue";
+import MasterSettings from "../instruments/MasterSettings.vue";
 import BaseButton from "../../ui/BaseButton.vue";
 
 const emit = defineEmits<{
@@ -83,6 +85,7 @@ const animationFrameId = ref<number | null>(null);
 
 const settingsTrack = ref<Track | null>(null);
 const showSettings = ref(false);
+const showMasterSettings = ref(false);
 const showAudioLibrary = inject<Ref<boolean>>("showAudioLibrary", ref(false));
 
 const isEditingProjectName = ref(false);
@@ -349,6 +352,11 @@ const applyAutomationAtPosition = (position: number) => {
       const value = getAutomationValueAt(lane.points, position);
       trackAudioStore.applyAutomation(track.id, lane.parameter, value);
     }
+  }
+  for (const lane of timelineStore.masterAutomationLanes) {
+    if (lane.points.length === 0) continue;
+    const value = getAutomationValueAt(lane.points, position);
+    audioBusStore.applyMasterAutomation(lane.parameter, value);
   }
 };
 
@@ -769,6 +777,13 @@ defineExpose({
         />
 
         <div class="tracks-container">
+          <MasterTrackRow
+            :cols="displayCols"
+            :col-width="COL_WIDTH"
+            :scroll-left="scrollLeft"
+            @open-settings="showMasterSettings = true"
+          />
+
           <TrackRow
             v-for="track in sortedTracks"
             :key="track.id"
@@ -808,6 +823,11 @@ defineExpose({
       :track="settingsTrack"
       :visible="showSettings"
       @close="handleCloseSettings"
+    />
+
+    <MasterSettings
+      :visible="showMasterSettings"
+      @close="showMasterSettings = false"
     />
   </div>
 </template>

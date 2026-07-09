@@ -13,9 +13,17 @@ import type {
   AutomatableParam,
   AutomationLane,
   AutomationPoint,
+  MasterCompressorConfig,
+  MasterLimiterConfig,
 } from "../lib/utils/types";
 import { TRACK_COLORS } from "../lib/utils/types";
-import { cloneEQBands } from "../lib/audio/config";
+import {
+  cloneEQBands,
+  cloneCompressorConfig,
+  cloneLimiterConfig,
+  DEFAULT_COMPRESSOR_CONFIG,
+  DEFAULT_LIMITER_CONFIG,
+} from "../lib/audio/config";
 import { useProjectStore } from "./projectStore";
 
 const STORAGE_KEY = "bloop-timeline-project";
@@ -36,6 +44,9 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     volume: DEFAULT_VOLUME,
     reverb: DEFAULT_REVERB,
     eqBands: cloneEQBands(),
+    compressor: cloneCompressorConfig(),
+    limiter: cloneLimiterConfig(),
+    automationLanes: [],
     version: "4.0",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -47,6 +58,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const activeTrackId = ref<string | null>(null);
   const expandedTrackId = ref<string | null>(null);
   const automationExpandedTrackId = ref<string | null>(null);
+  const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
 
   // ============================================
@@ -86,6 +98,18 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       project.value.updatedAt = new Date();
     },
   });
+
+  const compressor = computed(
+    () => project.value.compressor ?? DEFAULT_COMPRESSOR_CONFIG,
+  );
+
+  const limiter = computed(
+    () => project.value.limiter ?? DEFAULT_LIMITER_CONFIG,
+  );
+
+  const masterAutomationLanes = computed(
+    () => project.value.automationLanes ?? [],
+  );
 
   const activeTrack = computed<Track | null>(() => {
     if (!activeTrackId.value) return null;
@@ -489,6 +513,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       automationExpandedTrackId.value === trackId ? null : trackId;
   };
 
+  const toggleMasterAutomationExpanded = (): void => {
+    automationExpandedMaster.value = !automationExpandedMaster.value;
+  };
+
   const setActiveTrack = (trackId: string | null): void => {
     activeTrackId.value = trackId;
   };
@@ -537,6 +565,34 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       project.value.eqBands = bands;
       project.value.updatedAt = new Date();
     }
+  };
+
+  // ============================================
+  // Actions - Mastering (Compresseur / Limiteur)
+  // ============================================
+
+  const clamp = (value: number, min: number, max: number): number =>
+    Math.min(max, Math.max(min, value));
+
+  const updateCompressor = (patch: Partial<MasterCompressorConfig>): void => {
+    const current = project.value.compressor ?? cloneCompressorConfig();
+    const next: MasterCompressorConfig = { ...current, ...patch };
+    next.threshold = clamp(next.threshold, -100, 0);
+    next.ratio = clamp(next.ratio, 1, 20);
+    next.attack = clamp(next.attack, 0, 1);
+    next.release = clamp(next.release, 0, 1);
+    next.knee = clamp(next.knee, 0, 40);
+    project.value.compressor = next;
+    project.value.updatedAt = new Date();
+  };
+
+  const updateLimiter = (patch: Partial<MasterLimiterConfig>): void => {
+    const current = project.value.limiter ?? cloneLimiterConfig();
+    const next: MasterLimiterConfig = { ...current, ...patch };
+    next.threshold = clamp(next.threshold, -100, 0);
+    next.release = clamp(next.release, 0, 1);
+    project.value.limiter = next;
+    project.value.updatedAt = new Date();
   };
 
   // ============================================
@@ -646,6 +702,91 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   };
 
   // ============================================
+  // Actions - Automation Lanes (Master)
+  // ============================================
+
+  const addMasterAutomationLane = (
+    parameter: AutomatableParam,
+  ): string | null => {
+    if (!project.value.automationLanes) project.value.automationLanes = [];
+
+    if (project.value.automationLanes.some((l) => l.parameter === parameter))
+      return null;
+
+    const laneId = generateId("lane");
+    const lane: AutomationLane = { id: laneId, parameter, points: [] };
+    project.value.automationLanes.push(lane);
+    project.value.updatedAt = new Date();
+    return laneId;
+  };
+
+  const removeMasterAutomationLane = (laneId: string): boolean => {
+    const index =
+      project.value.automationLanes?.findIndex((l) => l.id === laneId) ?? -1;
+    if (index === -1) return false;
+
+    project.value.automationLanes!.splice(index, 1);
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  const addMasterAutomationPoint = (
+    laneId: string,
+    point: Omit<AutomationPoint, "id">,
+  ): string | null => {
+    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
+    if (!lane) return null;
+
+    const pointId = generateId("pt");
+    lane.points.push({ ...point, id: pointId });
+    lane.points.sort((a, b) => a.x - b.x);
+    project.value.updatedAt = new Date();
+    return pointId;
+  };
+
+  const updateMasterAutomationPoint = (
+    laneId: string,
+    pointId: string,
+    updates: Partial<Pick<AutomationPoint, "x" | "y">>,
+  ): boolean => {
+    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
+    const point = lane?.points.find((p) => p.id === pointId);
+    if (!point) return false;
+
+    Object.assign(point, updates);
+    lane!.points.sort((a, b) => a.x - b.x);
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  const removeMasterAutomationPoint = (
+    laneId: string,
+    pointId: string,
+  ): boolean => {
+    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
+    if (!lane) return false;
+
+    const index = lane.points.findIndex((p) => p.id === pointId);
+    if (index === -1) return false;
+
+    lane.points.splice(index, 1);
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  const setMasterAutomationPoints = (
+    laneId: string,
+    points: AutomationPoint[],
+  ): boolean => {
+    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
+    if (!lane) return false;
+
+    lane.points = [...points].sort((a, b) => a.x - b.x);
+    project.value.updatedAt = new Date();
+    return true;
+  };
+
+  // ============================================
   // Persistence
   // ============================================
 
@@ -707,6 +848,17 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         }
       });
 
+      // Migration: ajouter compressor et limiter master si manquants
+      if (!data.compressor) {
+        data.compressor = cloneCompressorConfig();
+      }
+      if (!data.limiter) {
+        data.limiter = cloneLimiterConfig();
+      }
+      if (!data.automationLanes) {
+        data.automationLanes = [];
+      }
+
       project.value = data;
       setTimeout(() => {
         isLoadingProject.value = false;
@@ -750,6 +902,16 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     // S'assurer que les EQ bands globaux sont présents
     if (!data.eqBands) {
       data.eqBands = cloneEQBands();
+    }
+    // Migration: ajouter compressor et limiter master si manquants
+    if (!data.compressor) {
+      data.compressor = cloneCompressorConfig();
+    }
+    if (!data.limiter) {
+      data.limiter = cloneLimiterConfig();
+    }
+    if (!data.automationLanes) {
+      data.automationLanes = [];
     }
 
     project.value = data;
@@ -801,6 +963,9 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       volume: DEFAULT_VOLUME,
       reverb: DEFAULT_REVERB,
       eqBands: cloneEQBands(),
+      compressor: cloneCompressorConfig(),
+      limiter: cloneLimiterConfig(),
+      automationLanes: [],
       version: "4.0",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -851,12 +1016,16 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     volume,
     reverb,
     eqBands,
+    compressor,
+    limiter,
+    masterAutomationLanes,
 
     // État édition
     activeTrackId,
     activeTrack,
     expandedTrackId,
     expandedTrack,
+    automationExpandedMaster,
 
     // Actions - Tracks
     createTrack,
@@ -900,6 +1069,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     // Actions - EQ
     updateEQBand,
 
+    // Actions - Mastering
+    updateCompressor,
+    updateLimiter,
+
     // Actions - Automation
     addAutomationLane,
     removeAutomationLane,
@@ -907,6 +1080,15 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     updateAutomationPoint,
     removeAutomationPoint,
     setAutomationPoints,
+
+    // Actions - Automation (Master)
+    toggleMasterAutomationExpanded,
+    addMasterAutomationLane,
+    removeMasterAutomationLane,
+    addMasterAutomationPoint,
+    updateMasterAutomationPoint,
+    removeMasterAutomationPoint,
+    setMasterAutomationPoints,
 
     // Persistence
     saveToLocalStorage,

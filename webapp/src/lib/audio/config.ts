@@ -1,4 +1,8 @@
-import type { EQBand } from "../utils/types";
+import type {
+  EQBand,
+  MasterCompressorConfig,
+  MasterLimiterConfig,
+} from "../utils/types";
 
 export const EQ_GAIN_MAX = 18;
 export const EQ_GAIN_MIN = -18;
@@ -33,6 +37,29 @@ export const EQ_BAND_COLORS: Record<string, string> = {
 
 export const cloneEQBands = (): EQBand[] =>
   JSON.parse(JSON.stringify(DEFAULT_EQ_BANDS));
+
+export const DEFAULT_COMPRESSOR_CONFIG: MasterCompressorConfig = {
+  enabled: false,
+  threshold: -24,
+  ratio: 3,
+  attack: 0.003,
+  release: 0.25,
+  knee: 30,
+};
+
+export const DEFAULT_LIMITER_CONFIG: MasterLimiterConfig = {
+  enabled: false,
+  threshold: -1,
+  release: 0.05,
+};
+
+export const cloneCompressorConfig = (): MasterCompressorConfig => ({
+  ...DEFAULT_COMPRESSOR_CONFIG,
+});
+
+export const cloneLimiterConfig = (): MasterLimiterConfig => ({
+  ...DEFAULT_LIMITER_CONFIG,
+});
 
 export const createImpulseResponse = (
   ctx: AudioContext,
