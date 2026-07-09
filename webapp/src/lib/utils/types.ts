@@ -62,6 +62,21 @@ export interface EQBand {
   label: string;
 }
 
+export interface MasterCompressorConfig {
+  enabled: boolean;
+  threshold: number; // dB, -100..0
+  ratio: number; // 1..20
+  attack: number; // s, 0..1
+  release: number; // s, 0..1
+  knee: number; // dB, 0..40
+}
+
+export interface MasterLimiterConfig {
+  enabled: boolean;
+  threshold: number; // dB (plafond de sortie), -100..0
+  release: number; // s
+}
+
 export interface SequencerProject {
   sequences: Sequence[];
   activeSequenceId: string | null;
@@ -245,6 +260,9 @@ export interface TimelineProject {
   volume: number; // Volume master (0-100)
   reverb: number; // Reverb master (0-100)
   eqBands?: EQBand[];
+  compressor?: MasterCompressorConfig;
+  limiter?: MasterLimiterConfig;
+  automationLanes?: AutomationLane[]; // Automation du bus master (volume/reverb/EQ)
   usedSamples?: Record<string, AudioSample>; // Samples utilisés par les audio clips
   version: string;
   createdAt: Date;

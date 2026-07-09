@@ -2,11 +2,15 @@
 import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from "vue";
 import type { AutomationLane } from "../../../lib/utils/types";
 import { AutomationLaneRenderer } from "../../../lib/canvas/automationLaneRenderer";
-import { useAutomationLane } from "../../../composables/useAutomationLane";
+import {
+  useAutomationLane,
+  type AutomationLaneActions,
+} from "../../../composables/useAutomationLane";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
+import { useTimelineStore } from "../../../stores/timelineStore";
 
 const props = defineProps<{
-  trackId: string;
+  trackId?: string; // absent = lane du bus master
   lane: AutomationLane;
   cols: number;
   colWidth: number;
@@ -26,8 +30,33 @@ const dpr = window.devicePixelRatio || 1;
 
 const paramConfig = AUTOMATABLE_PARAMS[props.lane.parameter];
 
+const timelineStore = useTimelineStore();
+
+const actions: AutomationLaneActions = props.trackId
+  ? {
+      addPoint: (laneId, point) =>
+        timelineStore.addAutomationPoint(props.trackId!, laneId, point),
+      updatePoint: (laneId, pointId, updates) =>
+        timelineStore.updateAutomationPoint(
+          props.trackId!,
+          laneId,
+          pointId,
+          updates,
+        ),
+      removePoint: (laneId, pointId) =>
+        timelineStore.removeAutomationPoint(props.trackId!, laneId, pointId),
+      setPoints: (laneId, points) =>
+        timelineStore.setAutomationPoints(props.trackId!, laneId, points),
+    }
+  : {
+      addPoint: timelineStore.addMasterAutomationPoint,
+      updatePoint: timelineStore.updateMasterAutomationPoint,
+      removePoint: timelineStore.removeMasterAutomationPoint,
+      setPoints: timelineStore.setMasterAutomationPoints,
+    };
+
 const interaction = useAutomationLane(
-  props.trackId,
+  actions,
   props.lane,
   rendererRef,
   () => props.scrollLeft,
