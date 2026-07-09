@@ -5,6 +5,8 @@ import BlogPosts from "./BlogPosts.vue";
 import BlogTrends from "./BlogTrends.vue";
 import { useAuthStore } from "../../stores/authStore";
 import BlogSearch from "./BlogSearch.vue";
+import apiClient from "../../lib/utils/apiClient";
+import type { User } from "../../lib/utils/types";
 // import BlogUsers from "./BlogUsers.vue";
 
 const postsKey = ref(0);
@@ -14,22 +16,14 @@ const selectedTagsFilter = ref<string[]>([]);
 
 // Vérifier si l'utilisateur est connecté
 const checkAuthentication = async () => {
-  try {
-    const response = await fetch("/api/auth/check", {
-      credentials: "include",
-    });
-    if (response.ok) {
-      const data = await response.json();
-      isAuthenticated.value = !!data.user; // true si user existe
-      if (data.user) {
-        authStore.user = data.user;
-      }
-    } else {
-      isAuthenticated.value = false;
-    }
-  } catch (error) {
-    console.error("Erreur vérification auth:", error);
+  const { data, error } = await apiClient.get<{ user: User }>("/auth/check");
+  if (error || !data) {
     isAuthenticated.value = false;
+    return;
+  }
+  isAuthenticated.value = !!data.user; // true si user existe
+  if (data.user) {
+    authStore.user = data.user;
   }
 };
 

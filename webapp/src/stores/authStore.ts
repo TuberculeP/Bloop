@@ -33,15 +33,12 @@ export const useAuthStore = defineStore("authStore", () => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("/api/user/avatar", {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
-    const data = await response.json();
+    const { data, error } = await apiClient.post<{
+      user: { profilePicture: string };
+    }>("/user/avatar", formData);
 
-    if (!response.ok) {
-      return { error: data.message || "Upload failed" };
+    if (error || !data) {
+      return { error: error || "Upload failed" };
     }
 
     if (user.value) {
