@@ -20,7 +20,6 @@ const profileTabs: TabItem[] = [
 
 const router = useRouter();
 const authStore = useAuthStore();
-
 const user = computed(() => authStore.user);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
@@ -179,6 +178,7 @@ onMounted(() => {
   object-fit: cover;
 }
 
+/* ── Stats ── */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
