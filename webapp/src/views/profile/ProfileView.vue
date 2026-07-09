@@ -99,7 +99,7 @@ onMounted(() => {
           </div>
           <div class="stat-card">
             <span class="stat-number">{{ userStats.totalComments }}</span>
-            <span class="stat-label">Commentaires reçus</span>
+            <span class="stat-label">Commentaires</span>
           </div>
         </div>
       </header>
@@ -218,7 +218,6 @@ onMounted(() => {
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
-    align-items: flex-start;
   }
 
   .profile-info {
@@ -227,7 +226,7 @@ onMounted(() => {
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 </style>

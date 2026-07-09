@@ -13,15 +13,6 @@
               animation-type="rotate3d"
               :delay="0.2"
             />
-            <span class="title-line highlight">
-              <SplitText
-                text="sans limites"
-                tag="span"
-                class="gradient-text"
-                animation-type="rotate3d"
-                :delay="0.5"
-              />
-            </span>
           </h1>
 
           <p class="hero-description" ref="heroDescRef">
@@ -81,7 +72,6 @@
 
         <!-- Hero Visual - 3D Rotating Mockup -->
         <div class="hero-visual" ref="heroVisualRef">
-          <div class="visual-glow"></div>
           <div class="studio-mockup" ref="mockupRef">
             <div class="mockup-header">
               <div class="mockup-dots">
@@ -814,7 +804,7 @@ const plans = [
   },
   {
     name: "Medium",
-    price: "11.99",
+    price: "9.99",
     description: "Pour les créateurs sérieux",
     popular: true,
     features: [
@@ -828,7 +818,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "15.99",
+    price: "14.99",
     description: "Pour les professionnels",
     popular: false,
     features: [
@@ -1335,18 +1325,6 @@ onUnmounted(() => {
 .hero-visual {
   position: relative;
   transform-style: preserve-3d;
-}
-
-.visual-glow {
-  position: absolute;
-  inset: -20%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 210, 105, 0.15) 0%,
-    transparent 60%
-  );
-  filter: blur(40px);
-  animation: pulse-glow 4s ease-in-out infinite;
 }
 
 @keyframes pulse-glow {

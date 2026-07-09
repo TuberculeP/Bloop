@@ -1,10 +1,29 @@
 <template>
   <header v-if="isAuthenticated" class="app-header">
-    <div class="header-welcome">
-      <span class="welcome-label">Bonjour,</span>
-      <strong class="welcome-name">{{ user?.firstName }}</strong>
+    <div class="header-top">
+      <div class="header-welcome">
+        <span class="welcome-label">Bonjour,</span>
+        <strong class="welcome-name">{{ user?.firstName }}</strong>
+      </div>
+
+      <button
+        class="burger-btn"
+        :class="{ active: isMenuOpen }"
+        @click="isMenuOpen = !isMenuOpen"
+        aria-label="Ouvrir le menu"
+        :aria-expanded="isMenuOpen"
+      >
+        <i :class="isMenuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+      </button>
     </div>
-    <nav class="app-nav">
+
+    <div
+      v-if="isMenuOpen"
+      class="nav-backdrop"
+      @click="isMenuOpen = false"
+    ></div>
+
+    <nav class="app-nav" :class="{ 'nav-open': isMenuOpen }">
       <button
         v-for="item in menuItems"
         :key="item.id"
@@ -26,7 +45,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useAuthStore } from "../../stores/authStore.ts";
 import apiClient from "../../lib/utils/apiClient.ts";
 import { useRoute, useRouter } from "vue-router";
@@ -37,21 +56,33 @@ const router = useRouter();
 const route = useRoute();
 const currentPath = route.path;
 
-const menuItems = computed(() => [
-  { id: "home", icon: "fas fa-home", name: "Accueil", route: "/" },
-  { id: "app", icon: "fas fa-th-large", name: "Application", route: "/app" },
-  { id: "blog", icon: "fas fa-newspaper", name: "Blog", route: "/blog" },
-  {
-    id: "messages",
-    icon: "fas fa-envelope",
-    name: "Messagerie",
-    route: "/messages",
-  },
-  { id: "profile", icon: "fas fa-user", name: "Profil", route: "/profile" },
-  { id: "logout", icon: "fas fa-sign-out-alt", name: "Déconnexion" },
-]);
+const isMenuOpen = ref(false);
+
+const menuItems = computed(() =>
+  [
+    { id: "home", icon: "fas fa-home", name: "Accueil", route: "/" },
+    { id: "app", icon: "fas fa-th-large", name: "Application", route: "/app" },
+    { id: "blog", icon: "fas fa-newspaper", name: "Blog", route: "/blog" },
+    {
+      id: "messages",
+      icon: "fas fa-envelope",
+      name: "Messagerie",
+      route: "/messages",
+    },
+    { id: "profile", icon: "fas fa-user", name: "Profil", route: "/profile" },
+    {
+      id: "admin",
+      icon: "fas fa-user",
+      name: "Admin",
+      route: "/admin",
+      isVisible: user?.value?.role === "ROLE_ADMIN",
+    },
+    { id: "logout", icon: "fas fa-sign-out-alt", name: "Déconnexion" },
+  ].filter((item) => item.isVisible !== false),
+);
 
 async function handleMenuClick(item: any) {
+  isMenuOpen.value = false;
   if (item.id === "logout") {
     await disconnect();
   } else if (item.route) {
@@ -91,6 +122,10 @@ span {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-top {
+  display: contents;
 }
 
 .header-welcome {
@@ -194,30 +229,111 @@ span {
   transform: translateX(-50%) scaleX(1);
 }
 
+.burger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: var(--color-white);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.burger-btn:hover,
+.burger-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-secondary-hover);
+}
+
+.nav-backdrop {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .app-header {
+    position: sticky;
     top: 0;
-    margin: 0;
-    border-radius: 0 0 16px 16px;
     padding: 12px 16px;
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+  }
+
+  .header-top {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .header-welcome {
-    justify-content: center;
-    margin-bottom: 4px;
+    justify-content: flex-start;
+  }
+
+  .burger-btn {
+    display: flex;
+  }
+
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
   }
 
   .app-nav {
-    justify-content: center;
-    gap: 6px;
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    right: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 4px;
+
+    background: rgba(45, 15, 32, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition:
+      max-height 0.25s ease,
+      opacity 0.2s ease,
+      transform 0.2s ease,
+      margin-top 0.25s ease;
+  }
+
+  .app-nav.nav-open {
+    max-height: 70vh;
+    opacity: 1;
+    margin-top: 8px;
+    pointer-events: auto;
+    transform: translateY(0);
+    overflow-y: auto;
   }
 
   .nav-button {
-    padding: 6px 14px;
-    font-size: 0.85rem;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+
+  .nav-underline {
+    display: none;
   }
 }
 </style>

@@ -750,13 +750,11 @@ onUnmounted(() => {
   cursor: pointer;
   transform: translateY(20px);
   transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(255, 210, 105, 0.3);
   z-index: 100;
-}
 
-.back-to-top:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 30px rgba(255, 210, 105, 0.4);
+  &:hover {
+    box-shadow: 0 0 30px rgba(255, 210, 105, 0.4);
+  }
 }
 
 /* Responsive */
