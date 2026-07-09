@@ -144,6 +144,7 @@ postsRouter.get("/:id", async (req, res) => {
     let post = await postRepository.findOne({
       where: { id: req.params.id },
       relations: ["author", "tags", "likedBy", "comments", "comments.author"],
+      order: { comments: { createdAt: "DESC" } },
     });
 
     if (!post) {

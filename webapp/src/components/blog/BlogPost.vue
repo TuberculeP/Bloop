@@ -399,6 +399,7 @@ fetchComments();
             class="comment-input"
             rows="3"
             :disabled="isSubmittingComment"
+            @keydown.enter.exact.prevent="handleSubmit"
           ></textarea>
 
           <div v-if="commentError" class="comment-form-error">
@@ -406,15 +407,14 @@ fetchComments();
           </div>
 
           <div class="comment-form-actions">
-            <!-- <BaseButton
-              variant="primary"
+            <BaseButton
+              variant="lightghost"
               size="small"
-              @click="handleSubmit"
-              :loading="isSubmittingComment"
-              :disabled="!commentText.trim()"
+              @click="toggleCommentForm"
+              :disabled="isSubmittingComment"
             >
-              Publier
-            </BaseButton> -->
+              Annuler
+            </BaseButton>
             <BaseButton
               type="submit"
               variant="secondary"
@@ -423,15 +423,6 @@ fetchComments();
               :loading="loadingComments"
             >
               Poster
-            </BaseButton>
-
-            <BaseButton
-              variant="lightghost"
-              size="small"
-              @click="toggleCommentForm"
-              :disabled="isSubmittingComment"
-            >
-              Annuler
             </BaseButton>
           </div>
         </div>

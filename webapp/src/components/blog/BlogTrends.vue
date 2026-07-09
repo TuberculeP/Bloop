@@ -2,10 +2,12 @@
 import { ref, onMounted, computed } from "vue";
 import { getPopularTags, type PopularTag } from "../../services/tags";
 import { defaultTags } from "../../services/tags";
+import BaseButton from "../ui/BaseButton.vue";
 
 const emit = defineEmits<{
   tagSelected: [tag: string];
   tagDeselected: [tag: string];
+  filtersCleared: [];
 }>();
 
 const popularTags = ref<PopularTag[]>([]);
@@ -54,6 +56,7 @@ const toggleTag = (tagName: string) => {
 // Réinitialiser les filtres
 const clearFilters = () => {
   selectedTags.value = [];
+  emit("filtersCleared");
 };
 
 // Exposer la méthode pour le parent
@@ -63,13 +66,14 @@ defineExpose({ clearFilters, selectedTags });
   <div class="trends-container">
     <div class="trends-header">
       <h2>Tendances</h2>
-      <button
+      <BaseButton
         v-if="selectedTags.length > 0"
-        class="clear-filters"
+        variant="lightghost"
+        size="small"
         @click="clearFilters"
       >
         Réinitialiser
-      </button>
+      </BaseButton>
     </div>
 
     <div v-if="loading" class="trends-loading">Chargement...</div>
@@ -113,26 +117,11 @@ defineExpose({ clearFilters, selectedTags });
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 35px;
 }
 
 .trends-header h2 {
   margin: 0;
-}
-
-.clear-filters {
-  background: transparent;
-  border: 1px solid var(--color-secondary);
-  color: var(--color-secondary);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.clear-filters:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
 }
 
 .trends-loading {

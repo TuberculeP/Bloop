@@ -96,7 +96,7 @@ onMounted(() => {
 
 <template>
   <AppLayout>
-    <div class="search-results-container">
+    <div class="page-container">
       <!-- Header avec informations de recherche -->
       <div class="search-header">
         <div class="search-info">
@@ -181,13 +181,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.search-results-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  margin-top: 100px;
-}
-
 .search-header {
   display: flex;
   justify-content: space-between;
@@ -336,10 +329,6 @@ onMounted(() => {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .search-results-container {
-    padding: 16px;
-  }
-
   .search-header {
     flex-direction: column;
     gap: 16px;

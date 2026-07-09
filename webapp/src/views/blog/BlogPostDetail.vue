@@ -64,7 +64,7 @@ onMounted(() => {
 
 <template>
   <AppLayout>
-    <div class="post-detail-container">
+    <div class="page-container">
       <!-- Navigation -->
       <div class="post-navigation">
         <BaseButton variant="ghost" size="small" @click="goBack">
@@ -108,14 +108,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.post-detail-container {
-  max-width: 900px;
-  min-width: 80%;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  padding-top: 144px;
-}
-
 /* Navigation */
 .post-navigation {
   display: flex;
@@ -182,20 +174,8 @@ onMounted(() => {
   gap: 2rem;
 }
 
-.main-post {
-  background: var(--color-background-primary);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-  .post-detail-container {
-    padding: 1rem 0.75rem;
-    padding-top: 1rem; /* Padding normal pour mobile */
-  }
-
   .post-navigation {
     flex-direction: column;
     gap: 1rem;

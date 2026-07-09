@@ -45,6 +45,10 @@ const handleTagDeselected = (tag: string) => {
   selectedTagsFilter.value = selectedTagsFilter.value.filter((t) => t !== tag);
 };
 
+const handleFiltersCleared = () => {
+  selectedTagsFilter.value = [];
+};
+
 onMounted(() => {
   checkAuthentication();
 });
@@ -74,6 +78,7 @@ onMounted(() => {
       <BlogTrends
         @tagSelected="handleTagSelected"
         @tagDeselected="handleTagDeselected"
+        @filtersCleared="handleFiltersCleared"
       />
     </div>
   </div>
