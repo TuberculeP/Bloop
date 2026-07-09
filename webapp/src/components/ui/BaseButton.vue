@@ -96,7 +96,7 @@ const handleClick = (event: MouseEvent) => {
 
 .base-button--secondary {
   background: var(--color-secondary);
-  color: var(--color-white);
+  color: var(--color-primary);
   border: 1px solid var(--color-secondary);
 }
 

@@ -109,7 +109,7 @@ span {
 
 .welcome-name {
   font-size: 1rem;
-  color: var(--color-accent3-hover);
+  color: var(--color-accent);
   font-weight: 700;
   letter-spacing: 0.3px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -144,14 +144,14 @@ span {
 .nav-button:not(.btn-logout):hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--color-white);
-  border-color: var(--color-border-secondary-hover);
+  border-color: var(--color-secondary-hover);
   transform: translateY(-1px);
 }
 
 .nav-button.btn-active {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--color-white);
-  border-color: var(--color-border-secondary-hover);
+  border-color: var(--color-secondary-hover);
   transform: translateY(-1px);
 }
 

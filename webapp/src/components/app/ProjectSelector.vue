@@ -10,6 +10,7 @@ import type {
   FavoriteProjectListItem,
   TrashedProjectListItem,
 } from "../../lib/utils/types";
+import TabBar, { type TabItem } from "../shared/TabBar.vue";
 
 type Tab = "mine" | "favorites" | "discover" | "trash";
 
@@ -20,6 +21,13 @@ const emit = defineEmits<{
 }>();
 
 const projectStore = useProjectStore();
+
+const tabs: TabItem[] = [
+  { id: "mine", label: "Mes projets", icon: "fas fa-folder" },
+  { id: "favorites", label: "Favoris", icon: "fas fa-heart" },
+  { id: "discover", label: "Découvrir", icon: "fas fa-globe" },
+  { id: "trash", label: "Corbeille", icon: "fas fa-trash" },
+];
 
 const activeTab = ref<Tab>("mine");
 
@@ -239,40 +247,7 @@ onMounted(() => loadProjects());
       </BaseButton>
     </header>
 
-    <div class="tab-bar">
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'mine' }"
-        @click="activeTab = 'mine'"
-      >
-        <i class="fas fa-folder" />
-        Mes projets
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'favorites' }"
-        @click="activeTab = 'favorites'"
-      >
-        <i class="fas fa-heart" />
-        Favoris
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'discover' }"
-        @click="activeTab = 'discover'"
-      >
-        <i class="fas fa-globe" />
-        Découvrir
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'trash' }"
-        @click="activeTab = 'trash'"
-      >
-        <i class="fas fa-trash" />
-        Corbeille
-      </button>
-    </div>
+    <TabBar v-model="activeTab" :tabs="tabs" />
 
     <main class="dashboard-content">
       <!-- Onglet Mes projets -->
@@ -551,7 +526,7 @@ onMounted(() => loadProjects());
           v-else-if="trashProjects.length === 0"
           class="state-container empty"
         >
-          <div class="music-note">🗑</div>
+          <div class="music-note"><i class="fas fa-trash" /></div>
           <h3>Corbeille vide</h3>
           <p>Les projets supprimés apparaissent ici pendant 30 jours.</p>
         </div>
@@ -661,42 +636,6 @@ onMounted(() => loadProjects());
   font-size: 1.1rem;
 }
 
-.tab-bar {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 32px;
-  border-bottom: 1px solid var(--color-border-secondary);
-  padding-bottom: 0;
-}
-
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--color-white-light);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: -1px;
-  opacity: 0.6;
-
-  &:hover {
-    opacity: 1;
-    color: var(--color-white);
-  }
-
-  &.active {
-    opacity: 1;
-    color: var(--color-accent3-hover);
-    border-bottom-color: var(--color-accent3-hover);
-  }
-}
-
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -792,7 +731,7 @@ onMounted(() => loadProjects());
 
 .badge {
   background: rgba(122, 15, 62, 0.3);
-  color: var(--color-accent3-hover);
+  color: var(--color-secondary);
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: 700;
@@ -808,7 +747,6 @@ onMounted(() => loadProjects());
 
 .date {
   color: var(--color-white-light);
-  opacity: 0.6;
 }
 
 .card-title {
@@ -983,7 +921,6 @@ onMounted(() => loadProjects());
 
 .days-badge {
   background: rgba(226, 85, 85, 0.2);
-  color: #e25555;
 }
 
 .modal-overlay {
@@ -1033,10 +970,6 @@ onMounted(() => loadProjects());
 
   .projects-grid {
     grid-template-columns: 1fr;
-  }
-
-  .tab-bar {
-    overflow-x: auto;
   }
 }
 </style>
