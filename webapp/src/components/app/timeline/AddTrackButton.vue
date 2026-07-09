@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { vOnClickOutside } from "@vueuse/components";
 import type { InstrumentType } from "../../../lib/utils/types";
+import BaseButton from "../../ui/BaseButton.vue";
 
 const emit = defineEmits<{
   (e: "add-track", type: InstrumentType): void;
@@ -54,13 +55,14 @@ const handleClickOutside = () => {
 
 <template>
   <div class="add-track-wrapper" v-on-click-outside="handleClickOutside">
-    <button
-      class="add-track-btn"
+    <BaseButton
+      variant="error"
       @click="showMenu = !showMenu"
       title="Ajouter une piste"
     >
-      <span class="label">+ Ajouter</span>
-    </button>
+      <span class="label">Nouvelle piste</span>
+      <i class="fas fa-plus" />
+    </BaseButton>
 
     <Transition name="fade">
       <div v-if="showMenu" class="instrument-menu">
@@ -85,26 +87,7 @@ const handleClickOutside = () => {
 <style scoped lang="scss">
 .add-track-wrapper {
   position: relative;
-}
-
-.add-track-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--color-accent3);
-  border: 1px solid var(--color-accent3);
-  border-radius: 6px;
-  color: var(--color-white);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: var(--color-primary-active);
-    border-color: var(--color-accent2);
-  }
+  padding-right: 12px;
 }
 
 .instrument-menu {
