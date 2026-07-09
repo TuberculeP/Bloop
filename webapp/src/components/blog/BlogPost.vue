@@ -78,6 +78,7 @@ const fetchComments = async () => {
     const result = await getPostById(String(props.post.id));
     comments.value = Array.isArray(result.comments) ? result.comments : [];
   } catch (err) {
+    console.error(err);
     errorComments.value = "Erreur lors du chargement des commentaires";
   } finally {
     loadingComments.value = false;
@@ -310,7 +311,6 @@ fetchComments();
         </div>
       </button>
 
-      <!-- Boutons d'administration (visibles seulement pour les admins) -->
       <div v-if="isAdmin" class="admin-controls" @click.stop>
         <button
           @click="toggleHighlight"

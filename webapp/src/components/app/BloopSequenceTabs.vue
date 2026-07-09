@@ -64,13 +64,6 @@
         >
           💾 Exporter
         </button>
-        <button
-          @click="importProject"
-          class="btn btn-sm btn-info"
-          title="Importer un projet"
-        >
-          📁 Importer
-        </button>
       </div>
     </div>
 
@@ -285,32 +278,6 @@ const exportProject = (): void => {
   sequencerStore.exportProject();
 };
 
-// Importer un projet
-const importProject = async (): Promise<void> => {
-  // Vérifier s'il y a des changements non sauvegardés
-  if (projectStore.hasUnsavedChanges) {
-    if (!projectStore.confirmUnsavedChanges()) {
-      return;
-    }
-  }
-
-  if (sequencerStore.project.sequences.some((seq) => seq.layout.length > 0)) {
-    if (
-      !confirm(
-        "L'import va remplacer le projet actuel. Voulez-vous continuer ?",
-      )
-    ) {
-      return;
-    }
-  }
-
-  await sequencerStore.importProject();
-  // Le nom se met à jour automatiquement via le computed
-
-  // Réinitialiser l'état du projectStore pour un nouveau projet
-  projectStore.createNewProject();
-};
-
 // Gestion des clics globaux pour fermer le menu contextuel
 const handleGlobalClick = (event: MouseEvent): void => {
   if (contextMenu.value.visible) {
@@ -489,15 +456,6 @@ onUnmounted(() => {
 
 .btn-success:hover {
   background-color: var(--color-validate-hover);
-}
-
-.btn-info {
-  background-color: var(--color-success);
-  color: white;
-}
-
-.btn-info:hover {
-  background-color: var(--color-success-hover);
 }
 
 .btn-primary {

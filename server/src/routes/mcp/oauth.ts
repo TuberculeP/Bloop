@@ -206,6 +206,7 @@ oauthRouter.post("/token", async (req, res) => {
 
     res.status(400).json({ error: "Unsupported grant_type" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
