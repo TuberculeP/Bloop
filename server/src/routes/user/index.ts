@@ -9,8 +9,11 @@ import {
   isR2Url,
   keyFromR2Url,
 } from "../../services/r2.service";
+import userSamplesRouter from "./samples";
 
 const userRouter = Router();
+
+userRouter.use("/samples", userSamplesRouter);
 
 const upload = multer({
   storage: multer.memoryStorage(),
