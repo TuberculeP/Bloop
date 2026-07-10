@@ -152,7 +152,9 @@ const handleClose = () => {
         <div class="settings-panel">
           <div class="panel-header">
             <h3>{{ track.name }}</h3>
-            <button class="close-btn" @click="handleClose">×</button>
+            <button class="close-btn close-settings-btn" @click="handleClose">
+              ×
+            </button>
           </div>
 
           <div class="panel-body">
@@ -242,7 +244,7 @@ const handleClose = () => {
               <div class="setting-group">
                 <label class="setting-label">Instrument</label>
                 <select
-                  class="soundfont-select"
+                  class="soundfont-select instrument-select"
                   :value="currentSoundfont"
                   @change="
                     handleSoundfontChange(
@@ -265,7 +267,7 @@ const handleClose = () => {
                 </template>
                 <template v-else-if="undertaleInstruments.length > 0">
                   <select
-                    class="soundfont-select"
+                    class="soundfont-select instrument-select"
                     :value="currentUndertaleInstrument"
                     @change="
                       handleUndertaleInstrumentChange(

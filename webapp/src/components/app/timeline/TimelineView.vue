@@ -226,6 +226,7 @@ const finishExport = () => {
   URL.revokeObjectURL(url);
   isExporting.value = false;
   isManualExport.value = false;
+  projectStore.markExportSuccess();
   if (props.exportMode) router.push({ name: "app-main" });
 };
 
@@ -376,6 +377,7 @@ const animate = () => {
     playbackStartTime.value =
       performance.now() + (checkpointPosition.value / stepsPerSecond) * 1000;
     triggerNotesAtPosition(newPosition);
+    projectStore.markPlaybackLooped();
   }
 
   const prevIntPosition = Math.floor(currentPosition.value);
@@ -632,7 +634,7 @@ defineExpose({
         class="modal-overlay"
         @click="cancelExportModal"
       >
-        <div class="modal" @click.stop>
+        <div class="modal export-format-modal" @click.stop>
           <h3>Exporter le projet</h3>
           <p>Choisissez le format du fichier audio à générer.</p>
           <div class="export-format-options">
@@ -652,10 +654,18 @@ defineExpose({
             </label>
           </div>
           <div class="modal-actions">
-            <BaseButton variant="secondary" @click="cancelExportModal">
+            <BaseButton
+              class="export-cancel-btn"
+              variant="secondary"
+              @click="cancelExportModal"
+            >
               Annuler
             </BaseButton>
-            <BaseButton variant="accent" @click="confirmExport">
+            <BaseButton
+              class="export-confirm-btn"
+              variant="accent"
+              @click="confirmExport"
+            >
               Exporter
             </BaseButton>
           </div>
@@ -735,6 +745,7 @@ defineExpose({
         <AddTrackButton @add-track="handleAddTrack" />
 
         <BaseButton
+          class="export-audio-btn"
           @click="openExportModal"
           title="Exporter en audio"
           :disabled="isExporting"
@@ -745,6 +756,7 @@ defineExpose({
         </BaseButton>
 
         <BaseButton
+          class="save-project-btn"
           @click="handleSaveProject"
           :title="
             isReadOnly
