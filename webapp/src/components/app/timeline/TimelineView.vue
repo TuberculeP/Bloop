@@ -811,7 +811,7 @@ defineExpose({
                 : 'Activer le métronome'
             "
           >
-            <i class="fas fa-drum"></i>
+            <i class="fas fa-stopwatch"></i>
           </button>
         </div>
         <div class="position-display">

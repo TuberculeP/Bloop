@@ -9,7 +9,6 @@ const props = defineProps<{
   colWidth: number;
   rowHeight: number;
   color: string;
-  metronomeEnabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -64,21 +63,17 @@ const render = () => {
   ctx.fillStyle = isHovered.value ? "#1f1119" : "#1a0e15";
   ctx.fillRect(0, 0, width, height);
 
-  // Une ligne toutes les 4 colonnes = 1 temps. Quand le métronome est actif,
-  // 1 ligne sur 4 (= toutes les 4 temps = 1 mesure en 4/4) est marquée en blanc,
-  // en permanence (pas d'animation liée à la lecture).
+  // Une ligne toutes les 4 colonnes = 1 temps. 1 ligne sur 4
+  // (= toutes les 4 temps = 1 mesure en 4/4) est marquée en rose clair.
   for (let i = 0; i <= Math.ceil(props.cols / 4); i++) {
     const x = i * 4 * props.colWidth - 0.5;
-    const isBeatMarker = props.metronomeEnabled && i % 4 === 0;
+    const isBeatMarker = i % 4 === 0;
 
     ctx.beginPath();
-    if (isBeatMarker) {
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-      ctx.lineWidth = 2;
-    } else {
-      ctx.strokeStyle = "rgba(122, 15, 62, 0.5)";
-      ctx.lineWidth = 1;
-    }
+    ctx.strokeStyle = isBeatMarker
+      ? "rgba(170, 27, 86, 0.7)"
+      : "rgba(122, 15, 62, 0.5)";
+    ctx.lineWidth = 1;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, height);
     ctx.stroke();
@@ -116,16 +111,9 @@ const render = () => {
   ctx.globalAlpha = 1;
 };
 
-watch(
-  [
-    () => props.notes,
-    () => props.color,
-    isHovered,
-    () => props.metronomeEnabled,
-  ],
-  render,
-  { deep: true },
-);
+watch([() => props.notes, () => props.color, isHovered], render, {
+  deep: true,
+});
 watch(
   [() => props.cols, () => props.colWidth, () => props.rowHeight],
   updateCanvasSize,

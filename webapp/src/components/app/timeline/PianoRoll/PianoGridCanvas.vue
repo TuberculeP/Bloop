@@ -21,7 +21,6 @@ const props = defineProps<{
   color: string;
   activeNotes: Set<NoteName>;
   trackId: string;
-  metronomeEnabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -143,7 +142,6 @@ const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
     resizingState,
     resizePreviewDelta,
     selectionRect,
-    metronomeEnabled: () => props.metronomeEnabled ?? false,
   },
 );
 

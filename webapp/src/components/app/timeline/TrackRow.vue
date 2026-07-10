@@ -115,7 +115,6 @@ onBeforeUnmount(() =>
       :col-width="colWidth"
       :row-height="rowHeight"
       :color="track.color"
-      :metronome-enabled="timelineStore.metronomeEnabled"
       @dblclick="emit('toggle-expand', track)"
     />
 
