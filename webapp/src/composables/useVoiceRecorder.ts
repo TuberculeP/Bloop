@@ -1,6 +1,6 @@
 import { ref, onBeforeUnmount } from "vue";
 
-export type RecorderState = "idle" | "recording" | "stopped" | "error";
+export type RecorderState = "idle" | "recording" | "error";
 
 const PREFERRED_MIME_TYPES = [
   "audio/webm;codecs=opus",
@@ -26,22 +26,20 @@ export function useVoiceRecorder() {
   const elapsedMs = ref(0);
   const level = ref(0);
   const error = ref<string | null>(null);
-  const previewUrl = ref<string | null>(null);
-  const lastBlob = ref<Blob | null>(null);
-  const lastMimeType = ref<string>("audio/webm");
   const devices = ref<MediaDeviceInfo[]>([]);
   const selectedDeviceId = ref<string | null>(null);
 
   let permissionPrimed = false;
-
   let stream: MediaStream | null = null;
   let recorder: MediaRecorder | null = null;
   let chunks: BlobPart[] = [];
+  let mimeType = "audio/webm";
   let startedAt = 0;
   let timerHandle: ReturnType<typeof setInterval> | null = null;
   let audioContext: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
   let levelFrame: number | null = null;
+  let pendingStopResolve: ((blob: Blob | null) => void) | null = null;
 
   const cleanupStream = () => {
     stream?.getTracks().forEach((track) => track.stop());
@@ -76,14 +74,6 @@ export function useVoiceRecorder() {
       levelFrame = requestAnimationFrame(tick);
     };
     levelFrame = requestAnimationFrame(tick);
-  };
-
-  const clearPreview = () => {
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value);
-      previewUrl.value = null;
-    }
-    lastBlob.value = null;
   };
 
   const loadDevices = async (): Promise<void> => {
@@ -135,7 +125,6 @@ export function useVoiceRecorder() {
     }
 
     error.value = null;
-    clearPreview();
     chunks = [];
 
     try {
@@ -151,9 +140,8 @@ export function useVoiceRecorder() {
 
     await loadDevices();
 
-    const mimeType = pickSupportedMimeType();
-    lastMimeType.value = mimeType ?? "audio/webm";
-    recorder = mimeType
+    mimeType = pickSupportedMimeType() ?? "audio/webm";
+    recorder = MediaRecorder.isTypeSupported(mimeType)
       ? new MediaRecorder(stream, { mimeType })
       : new MediaRecorder(stream);
 
@@ -162,9 +150,11 @@ export function useVoiceRecorder() {
     };
 
     recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: lastMimeType.value });
-      lastBlob.value = blob;
-      previewUrl.value = URL.createObjectURL(blob);
+      const blob = new Blob(chunks, { type: mimeType });
+      cleanupStream();
+      state.value = "idle";
+      pendingStopResolve?.(blob);
+      pendingStopResolve = null;
     };
 
     audioContext = new (window.AudioContext ||
@@ -185,29 +175,21 @@ export function useVoiceRecorder() {
     state.value = "recording";
   };
 
-  const stop = (): void => {
-    if (recorder && recorder.state !== "inactive") {
-      recorder.stop();
-    }
-    cleanupStream();
-    state.value = "stopped";
-  };
-
-  const reset = (): void => {
-    if (recorder && recorder.state !== "inactive") {
-      recorder.stop();
-    }
-    cleanupStream();
-    clearPreview();
-    elapsedMs.value = 0;
-    level.value = 0;
-    error.value = null;
-    state.value = "idle";
+  const stop = (): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      if (recorder && recorder.state !== "inactive") {
+        pendingStopResolve = resolve;
+        recorder.stop();
+      } else {
+        cleanupStream();
+        state.value = "idle";
+        resolve(null);
+      }
+    });
   };
 
   onBeforeUnmount(() => {
     cleanupStream();
-    clearPreview();
     if (isSupported) {
       navigator.mediaDevices.removeEventListener?.("devicechange", loadDevices);
     }
@@ -219,14 +201,10 @@ export function useVoiceRecorder() {
     elapsedMs,
     level,
     error,
-    previewUrl,
-    lastBlob,
-    lastMimeType,
     devices,
     selectedDeviceId,
     start,
     stop,
-    reset,
     requestPermission,
   };
 }

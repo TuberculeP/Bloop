@@ -391,18 +391,12 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     previewSource = source;
   };
 
-  const EXT_BY_BASE_MIME: Record<string, string> = {
-    "audio/webm": "webm",
-    "audio/ogg": "ogg",
-    "audio/wav": "wav",
-    "audio/mp4": "m4a",
-    "audio/mpeg": "mp3",
-  };
-
-  const createSampleFromRecording = async (
+  // Enregistrement vocal live : 100% client, jamais envoyé au serveur.
+  // Le sample vit en mémoire (blob: URL) et disparaît au rechargement de la page.
+  const createLocalSampleFromRecording = async (
     blob: Blob,
     name: string,
-  ): Promise<{ sample: AudioSample; persisted: boolean } | null> => {
+  ): Promise<AudioSample | null> => {
     let audioBuffer: AudioBuffer;
     try {
       const arrayBuffer = await blob.arrayBuffer();
@@ -414,28 +408,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     }
 
     const id = `recording_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    const baseMimeType = blob.type.split(";")[0].trim();
-    const ext = EXT_BY_BASE_MIME[baseMimeType] ?? "webm";
-
-    let fullUrl = URL.createObjectURL(blob);
-    let persisted = false;
-
-    try {
-      const formData = new FormData();
-      formData.append("file", blob, `${id}.${ext}`);
-
-      const result = await apiClient.post<
-        ApiResponse<{ key: string; url: string }>
-      >("/app/recordings", formData);
-
-      if (!result.error && result.data?.body?.url) {
-        URL.revokeObjectURL(fullUrl);
-        fullUrl = result.data.body.url;
-        persisted = true;
-      }
-    } catch (error) {
-      console.error("Failed to upload recording:", error);
-    }
+    const ext = blob.type.split(";")[0].split("/")[1] ?? "webm";
 
     const sample: AudioSample = {
       id,
@@ -445,14 +418,14 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
       filename: `${name}.${ext}`,
       duration: audioBuffer.duration,
       waveformData: generateWaveformData(audioBuffer),
-      fullUrl,
+      fullUrl: URL.createObjectURL(blob),
     };
 
     samples.value.set(id, sample);
     buffers.value.set(id, markRaw(audioBuffer));
     loadingStates.value.set(id, "ready");
 
-    return { sample, persisted };
+    return sample;
   };
 
   return {
@@ -478,7 +451,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     initialize,
     startPreview,
     stopPreview,
-    createSampleFromRecording,
+    createLocalSampleFromRecording,
 
     fetchPacksFromApi,
     fetchPackDetails,
