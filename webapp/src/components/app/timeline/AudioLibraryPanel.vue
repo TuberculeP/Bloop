@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { storeToRefs } from "pinia";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
 import { useUserSamplesStore } from "../../../stores/userSamplesStore";
+import { useResizablePanel } from "../../../composables/useResizablePanel";
 import SamplePreviewButton from "../../shared/SamplePreviewButton.vue";
 import TabBar from "../../shared/TabBar.vue";
 import type { TabItem } from "../../shared/TabBar.vue";
@@ -15,6 +16,17 @@ import type {
 const audioLibraryStore = useAudioLibraryStore();
 const userSamplesStore = useUserSamplesStore();
 const { previewingId } = storeToRefs(audioLibraryStore);
+
+const {
+  width: panelWidth,
+  isResizing,
+  startResize,
+} = useResizablePanel({
+  storageKey: "audio-library-panel-width",
+  defaultWidth: 280,
+  minWidth: 220,
+  maxWidth: 560,
+});
 
 type NavigationLevel = "packs" | "folders" | "samples";
 type LibraryTab = "packs" | "personal" | "search";
@@ -182,7 +194,11 @@ const getSampleCount = (pack: SamplePack): number => {
 </script>
 
 <template>
-  <div class="audio-library-panel">
+  <div
+    class="audio-library-panel"
+    :class="{ 'is-resizing': isResizing }"
+    :style="{ width: panelWidth + 'px' }"
+  >
     <div class="panel-header">
       <h3>Audio Library</h3>
     </div>
@@ -384,17 +400,37 @@ const getSampleCount = (pack: SamplePack): number => {
         </button>
       </div>
     </div>
+
+    <div class="resize-handle" @mousedown="startResize"></div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .audio-library-panel {
-  width: 280px;
+  position: relative;
   height: 100%;
   background: #2a1520;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background-color 0.15s;
+
+  &:hover,
+  .is-resizing & {
+    background: #ff3fb4;
+    opacity: 0.6;
+  }
 }
 
 .panel-header {
