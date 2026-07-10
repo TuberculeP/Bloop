@@ -1,0 +1,50 @@
+.driver-popover {
+  background: var(--color-white);
+  color: var(--color-black);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.driver-popover-title {
+  color: var(--color-primary);
+}
+
+.driver-popover-description {
+  color: var(--color-black);
+}
+
+.driver-popover-progress-text {
+  color: var(--color-accent3);
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: var(--color-white);
+}
+.driver-popover-arrow-side-right {
+  border-left-color: var(--color-white);
+}
+.driver-popover-arrow-side-top {
+  border-bottom-color: var(--color-white);
+}
+.driver-popover-arrow-side-bottom {
+  border-top-color: var(--color-white);
+}
+
+/* La progression du tour est pilotée par l'état de l'app, jamais par un
+   bouton du popover (driver.js affiche Previous/Done même avec
+   showButtons: [], cf. https://github.com/kamranahmedse/driver.js) */
+.driver-popover-footer {
+  display: none;
+}
+
+/* driver.js pose un style inline pointer-events:auto sur le path de
+   l'overlay pour bloquer les clics hors du spotlight. La zone découpée
+   ne s'étend pas aux éléments qui apparaissent dynamiquement (ex: menu
+   déroulant sous un bouton), ce qui les rend alors non cliquables. La
+   progression du tour dépend uniquement de l'état réel de l'app, donc on
+   n'a pas besoin de ce blocage : on le désactive pour laisser passer
+   tous les clics. */
+.driver-overlay path {
+  pointer-events: none !important;
+}
+

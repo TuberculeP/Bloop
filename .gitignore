@@ -52,3 +52,6 @@ logs
 /public/uploads/**
 .env*
 !.env.example
+
+# e2e (playwright)
+/e2e/.output/
