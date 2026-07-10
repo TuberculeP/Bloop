@@ -10,12 +10,14 @@ import {
 } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
+import { vOnClickOutside } from "@vueuse/components";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useProjectStore } from "../../../stores/projectStore";
 import { useDawLoadingStore } from "../../../stores/dawLoadingStore";
 import { useAudioBusStore } from "../../../stores/audioBusStore";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
+import { useTrackHistoryStore } from "../../../stores/trackHistoryStore";
 import type {
   Track,
   InstrumentType,
@@ -25,8 +27,10 @@ import type {
 } from "../../../lib/utils/types";
 import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
+import { useVoiceRecorder } from "../../../composables/useVoiceRecorder";
 import { useSampleFileDrop } from "../../../composables/useSampleFileDrop";
 import { encodeWav, encodeMp3 } from "../../../lib/audio/exportEncoders";
+import { useUserSamplesStore } from "../../../stores/userSamplesStore";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import MasterTrackRow from "./MasterTrackRow.vue";
@@ -64,9 +68,39 @@ const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
 const audioLibraryStore = useAudioLibraryStore();
+const trackHistoryStore = useTrackHistoryStore();
+const userSamplesStore = useUserSamplesStore();
 const { placeFilesOnTrack } = useSampleFileDrop();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
+
+const {
+  isSupported: voiceRecorderSupported,
+  state: voiceRecorderState,
+  elapsedMs: voiceElapsedMs,
+  level: voiceLevel,
+  error: voiceRecorderError,
+  devices: voiceDevices,
+  selectedDeviceId: selectedMicId,
+  start: startVoiceRecording,
+  stop: stopVoiceRecording,
+  requestPermission: requestMicPermission,
+} = useVoiceRecorder();
+
+const isRecordingVoice = computed(
+  () => voiceRecorderState.value === "recording",
+);
+const showMicPicker = ref(false);
+const recordingStartPosition = ref(0);
+
+const voiceRecordedTime = computed(() => {
+  const totalSeconds = Math.floor(voiceElapsedMs.value / 1000);
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+});
 
 const isCloning = ref(false);
 const isSaving = ref(false);
@@ -464,6 +498,10 @@ const stopPlayback = () => {
   stopAllActiveNotes();
   currentPosition.value = checkpointPosition.value;
   stopAllActiveClips();
+
+  if (isRecordingVoice.value) {
+    finishVoiceRecording();
+  }
 };
 
 const togglePlayback = () => {
@@ -491,6 +529,106 @@ const handleAddTrack = (type: InstrumentType) => {
   const config = getDefaultConfigForType(type);
   timelineStore.createTrack(config);
 };
+
+const generateVoiceTrackName = (): string => {
+  const existingNames = new Set(
+    timelineStore.project.tracks.map((t) => t.name),
+  );
+  let counter = 1;
+  let name = `Voice ${counter}`;
+  while (existingNames.has(name)) {
+    counter++;
+    name = `Voice ${counter}`;
+  }
+  return name;
+};
+
+const finishVoiceRecording = async () => {
+  const blob = await stopVoiceRecording();
+  if (!blob) return;
+
+  const trackName = generateVoiceTrackName();
+
+  let audioBuffer: AudioBuffer;
+  try {
+    audioBuffer = await audioBusStore.audioContext.decodeAudioData(
+      await blob.arrayBuffer(),
+    );
+  } catch (error) {
+    console.error("Failed to decode recording:", error);
+    return;
+  }
+  const wavBlob = encodeWav(audioBuffer);
+  const file = new File([wavBlob], `${trackName}.wav`, { type: "audio/wav" });
+
+  const sample = await userSamplesStore.uploadSample(file);
+  if (!sample) return;
+
+  await audioLibraryStore.loadSample(sample.id);
+  const loadedSample = audioLibraryStore.getSample(sample.id);
+  if (!loadedSample) return;
+
+  const config = getDefaultConfigForType("audioTrack");
+  const trackId = timelineStore.createTrack(config, trackName);
+
+  const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+  const durationInSteps = Math.max(
+    1,
+    Math.ceil(loadedSample.duration * stepsPerSecond),
+  );
+
+  trackHistoryStore.recordAddClip(
+    trackId,
+    {
+      sampleId: sample.id,
+      x: Math.round(recordingStartPosition.value),
+      w: durationInSteps,
+      startOffset: 0,
+    },
+    loadedSample,
+  );
+};
+
+const toggleVoiceRecording = async () => {
+  if (!voiceRecorderSupported) return;
+
+  if (isRecordingVoice.value) {
+    stopPlayback();
+    return;
+  }
+
+  recordingStartPosition.value = checkpointPosition.value;
+  await startVoiceRecording();
+  if (voiceRecorderState.value !== "recording") return;
+  if (!isPlaying.value) {
+    startPlayback();
+  }
+};
+
+const toggleMicPicker = async () => {
+  showMicPicker.value = !showMicPicker.value;
+  if (showMicPicker.value) {
+    await requestMicPermission();
+  }
+};
+
+const selectMic = (deviceId: string) => {
+  selectedMicId.value = deviceId;
+  showMicPicker.value = false;
+};
+
+const closeMicPicker = () => {
+  showMicPicker.value = false;
+};
+
+let micErrorTimeout: ReturnType<typeof setTimeout> | null = null;
+watch(voiceRecorderError, (message) => {
+  if (!message) return;
+  if (micErrorTimeout) clearTimeout(micErrorTimeout);
+  micErrorTimeout = setTimeout(() => {
+    voiceRecorderError.value = null;
+  }, 6000);
+});
 
 const isDragOverTimeline = ref(false);
 const tracksContainerRef = ref<HTMLElement | null>(null);
@@ -672,6 +810,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlayback();
   window.removeEventListener("keydown", handleKeydown);
+  if (micErrorTimeout) clearTimeout(micErrorTimeout);
 });
 
 defineExpose({
@@ -795,6 +934,56 @@ defineExpose({
           >
             <i :class="isPlaying ? 'fas fa-stop' : 'fas fa-play'"></i>
           </button>
+
+          <div class="record-control" v-on-click-outside="closeMicPicker">
+            <button
+              class="transport-btn record-btn-transport"
+              :class="{ recording: isRecordingVoice }"
+              :disabled="!voiceRecorderSupported"
+              @click="toggleVoiceRecording"
+              :title="
+                isRecordingVoice
+                  ? 'Arrêter l\'enregistrement'
+                  : 'Enregistrer ma voix'
+              "
+            >
+              <i class="fas fa-circle"></i>
+            </button>
+            <button
+              class="mic-picker-toggle"
+              :disabled="!voiceRecorderSupported"
+              @click.stop="toggleMicPicker"
+              title="Choisir le microphone"
+            >
+              <i class="fas fa-chevron-down"></i>
+            </button>
+
+            <Transition name="fade">
+              <div v-if="showMicPicker" class="mic-picker-dropdown">
+                <div class="mic-picker-header">Microphone</div>
+                <button
+                  v-for="(device, index) in voiceDevices"
+                  :key="device.deviceId"
+                  class="mic-picker-option"
+                  :class="{ active: device.deviceId === selectedMicId }"
+                  @click="selectMic(device.deviceId)"
+                >
+                  {{ device.label || `Microphone ${index + 1}` }}
+                </button>
+                <div v-if="voiceDevices.length === 0" class="mic-picker-empty">
+                  Aucun micro détecté
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <div v-if="isRecordingVoice" class="record-indicator">
+            <span
+              class="record-indicator-dot"
+              :style="{ transform: `scale(${1 + voiceLevel * 0.6})` }"
+            ></span>
+            REC {{ voiceRecordedTime }}
+          </div>
         </div>
         <div class="tempo-control">
           <label>BPM:</label>
@@ -969,6 +1158,13 @@ defineExpose({
       :visible="showMasterSettings"
       @close="showMasterSettings = false"
     />
+
+    <Teleport to="body">
+      <div v-if="voiceRecorderError" class="voice-warning-toast">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ voiceRecorderError }}
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -1166,6 +1362,162 @@ defineExpose({
       background: #ed2aa1;
     }
   }
+}
+
+.record-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.record-btn-transport {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-accent3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    color: #ef4444;
+    font-size: 14px;
+  }
+
+  &:hover:not(:disabled) {
+    background: #9b2458;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.recording {
+    background: #ef4444;
+    animation: record-pulse 1.4s ease-in-out infinite;
+
+    i {
+      color: #fff;
+    }
+  }
+}
+
+@keyframes record-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.mic-picker-toggle {
+  width: 18px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 10px;
+
+  &:hover:not(:disabled) {
+    color: #f2efe8;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.mic-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  background: #2d0f20;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.mic-picker-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  background: #1a0e15;
+  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+}
+
+.mic-picker-option {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: #f2efe8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #3d1528;
+  }
+
+  &.active {
+    color: #ff3fb4;
+    font-weight: 600;
+  }
+}
+
+.mic-picker-empty {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.record-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.record-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  transition: transform 0.05s linear;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 .tempo-control {
@@ -1524,5 +1876,28 @@ defineExpose({
   color: var(--color-text-secondary);
   font-size: 0.85rem;
   margin: 0;
+}
+
+.voice-warning-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d0f20;
+  border: 1px solid var(--color-error);
+  color: var(--color-white);
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+
+  i {
+    color: var(--color-error);
+  }
 }
 </style>
