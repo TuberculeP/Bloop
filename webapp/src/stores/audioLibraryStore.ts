@@ -475,47 +475,9 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     previewSource = source;
   };
 
-<<<<<<< HEAD
-  // Enregistrement vocal live : 100% client, jamais envoyé au serveur.
-  // Le sample vit en mémoire (blob: URL) et disparaît au rechargement de la page.
-  const createLocalSampleFromRecording = async (
-    blob: Blob,
-    name: string,
-  ): Promise<AudioSample | null> => {
-    let audioBuffer: AudioBuffer;
-    try {
-      const arrayBuffer = await blob.arrayBuffer();
-      audioBuffer =
-        await audioBusStore.audioContext.decodeAudioData(arrayBuffer);
-    } catch (error) {
-      console.error("Failed to decode recording:", error);
-      return null;
-    }
-
-    const id = `recording_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    const ext = blob.type.split(";")[0].split("/")[1] ?? "webm";
-
-    const sample: AudioSample = {
-      id,
-      name,
-      packId: "recordings",
-      folder: "voice",
-      filename: `${name}.${ext}`,
-      duration: audioBuffer.duration,
-      waveformData: generateWaveformData(audioBuffer),
-      fullUrl: URL.createObjectURL(blob),
-    };
-
-    samples.value.set(id, sample);
-    buffers.value.set(id, markRaw(audioBuffer));
-    loadingStates.value.set(id, "ready");
-
-    return sample;
-=======
   const getPreviewElapsed = (): number => {
     if (previewStartedAt.value === null) return 0;
     return audioBusStore.audioContext.currentTime - previewStartedAt.value;
->>>>>>> origin/staging
   };
 
   return {
@@ -544,11 +506,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     initialize,
     startPreview,
     stopPreview,
-<<<<<<< HEAD
-    createLocalSampleFromRecording,
-=======
     getPreviewElapsed,
->>>>>>> origin/staging
 
     fetchPacksFromApi,
     fetchPackDetails,

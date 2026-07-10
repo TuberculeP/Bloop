@@ -27,12 +27,10 @@ import type {
 } from "../../../lib/utils/types";
 import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
-<<<<<<< HEAD
 import { useVoiceRecorder } from "../../../composables/useVoiceRecorder";
-=======
 import { useSampleFileDrop } from "../../../composables/useSampleFileDrop";
 import { encodeWav, encodeMp3 } from "../../../lib/audio/exportEncoders";
->>>>>>> origin/staging
+import { useUserSamplesStore } from "../../../stores/userSamplesStore";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import MasterTrackRow from "./MasterTrackRow.vue";
@@ -70,11 +68,9 @@ const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
 const audioLibraryStore = useAudioLibraryStore();
-<<<<<<< HEAD
 const trackHistoryStore = useTrackHistoryStore();
-=======
+const userSamplesStore = useUserSamplesStore();
 const { placeFilesOnTrack } = useSampleFileDrop();
->>>>>>> origin/staging
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
@@ -534,7 +530,6 @@ const handleAddTrack = (type: InstrumentType) => {
   timelineStore.createTrack(config);
 };
 
-<<<<<<< HEAD
 const generateVoiceTrackName = (): string => {
   const existingNames = new Set(
     timelineStore.project.tracks.map((t) => t.name),
@@ -553,11 +548,25 @@ const finishVoiceRecording = async () => {
   if (!blob) return;
 
   const trackName = generateVoiceTrackName();
-  const sample = await audioLibraryStore.createLocalSampleFromRecording(
-    blob,
-    trackName,
-  );
+
+  let audioBuffer: AudioBuffer;
+  try {
+    audioBuffer = await audioBusStore.audioContext.decodeAudioData(
+      await blob.arrayBuffer(),
+    );
+  } catch (error) {
+    console.error("Failed to decode recording:", error);
+    return;
+  }
+  const wavBlob = encodeWav(audioBuffer);
+  const file = new File([wavBlob], `${trackName}.wav`, { type: "audio/wav" });
+
+  const sample = await userSamplesStore.uploadSample(file);
   if (!sample) return;
+
+  await audioLibraryStore.loadSample(sample.id);
+  const loadedSample = audioLibraryStore.getSample(sample.id);
+  if (!loadedSample) return;
 
   const config = getDefaultConfigForType("audioTrack");
   const trackId = timelineStore.createTrack(config, trackName);
@@ -565,7 +574,7 @@ const finishVoiceRecording = async () => {
   const stepsPerSecond = (timelineStore.tempo / 60) * 4;
   const durationInSteps = Math.max(
     1,
-    Math.ceil(sample.duration * stepsPerSecond),
+    Math.ceil(loadedSample.duration * stepsPerSecond),
   );
 
   trackHistoryStore.recordAddClip(
@@ -576,7 +585,7 @@ const finishVoiceRecording = async () => {
       w: durationInSteps,
       startOffset: 0,
     },
-    sample,
+    loadedSample,
   );
 };
 
@@ -621,7 +630,6 @@ watch(voiceRecorderError, (message) => {
   }, 6000);
 });
 
-=======
 const isDragOverTimeline = ref(false);
 const tracksContainerRef = ref<HTMLElement | null>(null);
 
@@ -654,7 +662,6 @@ const handleTracksContainerDrop = async (event: DragEvent): Promise<void> => {
   await placeFilesOnTrack(files, trackId, x);
 };
 
->>>>>>> origin/staging
 const handleToggleMute = (track: Track) => {
   timelineStore.setTrackMuted(track.id, !track.muted);
 };
