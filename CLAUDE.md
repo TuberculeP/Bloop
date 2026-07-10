@@ -80,6 +80,9 @@ RESEND_API_KEY=xxx
 # Admin initial
 DEFAULT_ADMIN_EMAIL=xxx
 DEFAULT_ADMIN_PASSWORD=xxx
+
+# Quota d'upload de samples utilisateur (en Mo, défaut 250)
+USER_SAMPLE_QUOTA_MB=250
 ```
 
 ## Conventions

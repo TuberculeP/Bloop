@@ -1,3 +1,0 @@
-- Ajouter une connexion websocket client-serveur (useServerWebsocket par exemple)
-- Proposer un WebRTC (useServerRTC)
-- Proposer une subscription aux tables Postgres côté front-end

@@ -25,6 +25,7 @@ import type {
 } from "../../../lib/utils/types";
 import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
+import { useSampleFileDrop } from "../../../composables/useSampleFileDrop";
 import { encodeWav, encodeMp3 } from "../../../lib/audio/exportEncoders";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
@@ -63,6 +64,7 @@ const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
 const audioLibraryStore = useAudioLibraryStore();
+const { placeFilesOnTrack } = useSampleFileDrop();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
@@ -453,6 +455,38 @@ const handleAddTrack = (type: InstrumentType) => {
   timelineStore.createTrack(config);
 };
 
+const isDragOverTimeline = ref(false);
+const tracksContainerRef = ref<HTMLElement | null>(null);
+
+const handleTracksContainerDragOver = (event: DragEvent): void => {
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  isDragOverTimeline.value = true;
+};
+
+const handleTracksContainerDragLeave = (): void => {
+  isDragOverTimeline.value = false;
+};
+
+const handleTracksContainerDrop = async (event: DragEvent): Promise<void> => {
+  event.preventDefault();
+  isDragOverTimeline.value = false;
+
+  const files = event.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+
+  const rect = tracksContainerRef.value?.getBoundingClientRect();
+  if (!rect) return;
+  const x = Math.floor(
+    (event.clientX - rect.left - TRACK_HEADER_WIDTH) / COL_WIDTH,
+  );
+
+  const trackId = timelineStore.createTrack(
+    getDefaultConfigForType("audioTrack"),
+  );
+  await placeFilesOnTrack(files, trackId, x);
+};
+
 const handleToggleMute = (track: Track) => {
   timelineStore.setTrackMuted(track.id, !track.muted);
 };
@@ -824,7 +858,14 @@ defineExpose({
           @seek="setCheckpoint"
         />
 
-        <div class="tracks-container">
+        <div
+          ref="tracksContainerRef"
+          class="tracks-container"
+          :class="{ 'drag-over': isDragOverTimeline }"
+          @dragover="handleTracksContainerDragOver"
+          @dragleave="handleTracksContainerDragLeave"
+          @drop="handleTracksContainerDrop"
+        >
           <MasterTrackRow
             :cols="displayCols"
             :col-width="COL_WIDTH"
@@ -1206,6 +1247,13 @@ defineExpose({
   position: relative;
   min-height: calc(100% - 30px);
   background: #1a0e15;
+  transition: background 0.15s;
+
+  &.drag-over {
+    background: rgba(255, 63, 180, 0.08);
+    outline: 2px dashed rgba(255, 63, 180, 0.5);
+    outline-offset: -2px;
+  }
 }
 
 .empty-state {

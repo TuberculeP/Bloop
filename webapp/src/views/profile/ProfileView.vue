@@ -8,14 +8,16 @@ import TabBar from "../../components/shared/TabBar.vue";
 import type { TabItem } from "../../components/shared/TabBar.vue";
 import ProfileSettingsForm from "../../components/profile/ProfileSettingsForm.vue";
 import ProfilePosts from "../../components/profile/ProfilePosts.vue";
+import UserSamplesPanel from "../../components/profile/UserSamplesPanel.vue";
 
-type Tab = "post" | "settings";
+type Tab = "post" | "settings" | "samples";
 
 const activeTab = ref<Tab>("settings");
 
 const profileTabs: TabItem[] = [
   { id: "settings", label: "Profil", icon: "fas fa-user" },
   { id: "post", label: "Mes Posts", icon: "fas fa-newspaper" },
+  { id: "samples", label: "Mes Samples", icon: "fas fa-music" },
 ];
 
 const router = useRouter();
@@ -113,6 +115,8 @@ onMounted(() => {
         />
 
         <ProfileSettingsForm v-show="activeTab === 'settings'" />
+
+        <UserSamplesPanel v-show="activeTab === 'samples'" />
       </main>
     </div>
   </AppLayout>
