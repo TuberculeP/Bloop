@@ -16,6 +16,7 @@ import { useProjectStore } from "../../../stores/projectStore";
 import { useDawLoadingStore } from "../../../stores/dawLoadingStore";
 import { useAudioBusStore } from "../../../stores/audioBusStore";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
+import { useTrackHistoryStore } from "../../../stores/trackHistoryStore";
 import type {
   Track,
   InstrumentType,
@@ -32,6 +33,7 @@ import AddTrackButton from "./AddTrackButton.vue";
 import InstrumentSettings from "../instruments/InstrumentSettings.vue";
 import MasterSettings from "../instruments/MasterSettings.vue";
 import BaseButton from "../../ui/BaseButton.vue";
+import VoiceRecorderModal from "./VoiceRecorderModal.vue";
 
 const emit = defineEmits<{
   (
@@ -62,6 +64,7 @@ const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
 const audioLibraryStore = useAudioLibraryStore();
+const trackHistoryStore = useTrackHistoryStore();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
@@ -453,6 +456,83 @@ const handleAddTrack = (type: InstrumentType) => {
   timelineStore.createTrack(config);
 };
 
+const showVoiceRecorder = ref(false);
+const isCreatingVoiceTrack = ref(false);
+const voiceRecordError = ref<string | null>(null);
+const voiceRecordWarning = ref<string | null>(null);
+let voiceRecordWarningTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const generateVoiceTrackName = (): string => {
+  const existingNames = new Set(
+    timelineStore.project.tracks.map((t) => t.name),
+  );
+  let counter = 1;
+  let name = `Voice ${counter}`;
+  while (existingNames.has(name)) {
+    counter++;
+    name = `Voice ${counter}`;
+  }
+  return name;
+};
+
+const handleRecordVoice = () => {
+  voiceRecordError.value = null;
+  showVoiceRecorder.value = true;
+};
+
+const handleVoiceRecorderClose = () => {
+  if (isCreatingVoiceTrack.value) return;
+  showVoiceRecorder.value = false;
+  voiceRecordError.value = null;
+};
+
+const handleVoiceRecorderConfirm = async (blob: Blob) => {
+  isCreatingVoiceTrack.value = true;
+  voiceRecordError.value = null;
+
+  try {
+    const trackName = generateVoiceTrackName();
+    const result = await audioLibraryStore.createSampleFromRecording(
+      blob,
+      trackName,
+    );
+
+    if (!result) {
+      voiceRecordError.value = "Impossible de traiter l'enregistrement.";
+      return;
+    }
+
+    const { sample, persisted } = result;
+    const config = getDefaultConfigForType("audioTrack");
+    const trackId = timelineStore.createTrack(config, trackName);
+
+    const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+    const durationInSteps = Math.max(
+      1,
+      Math.ceil(sample.duration * stepsPerSecond),
+    );
+
+    trackHistoryStore.recordAddClip(
+      trackId,
+      { sampleId: sample.id, x: 0, w: durationInSteps, startOffset: 0 },
+      sample,
+    );
+
+    showVoiceRecorder.value = false;
+
+    if (!persisted) {
+      if (voiceRecordWarningTimeout) clearTimeout(voiceRecordWarningTimeout);
+      voiceRecordWarning.value =
+        "Piste créée, mais l'enregistrement n'a pas pu être sauvegardé sur le serveur : il disparaîtra si vous rechargez la page.";
+      voiceRecordWarningTimeout = setTimeout(() => {
+        voiceRecordWarning.value = null;
+      }, 8000);
+    }
+  } finally {
+    isCreatingVoiceTrack.value = false;
+  }
+};
+
 const handleToggleMute = (track: Track) => {
   timelineStore.setTrackMuted(track.id, !track.muted);
 };
@@ -601,6 +681,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlayback();
   window.removeEventListener("keydown", handleKeydown);
+  if (voiceRecordWarningTimeout) clearTimeout(voiceRecordWarningTimeout);
 });
 
 defineExpose({
@@ -696,7 +777,10 @@ defineExpose({
         </div>
       </div>
       <div class="header-right">
-        <AddTrackButton @add-track="handleAddTrack" />
+        <AddTrackButton
+          @add-track="handleAddTrack"
+          @record-voice="handleRecordVoice"
+        />
 
         <BaseButton
           @click="startExport"
@@ -829,6 +913,21 @@ defineExpose({
       :visible="showMasterSettings"
       @close="showMasterSettings = false"
     />
+
+    <VoiceRecorderModal
+      v-if="showVoiceRecorder"
+      :submitting="isCreatingVoiceTrack"
+      :submit-error="voiceRecordError"
+      @confirm="handleVoiceRecorderConfirm"
+      @close="handleVoiceRecorderClose"
+    />
+
+    <Teleport to="body">
+      <div v-if="voiceRecordWarning" class="voice-warning-toast">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ voiceRecordWarning }}
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -1286,5 +1385,28 @@ defineExpose({
   color: var(--color-text-secondary);
   font-size: 0.85rem;
   margin: 0;
+}
+
+.voice-warning-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d0f20;
+  border: 1px solid var(--color-error);
+  color: var(--color-white);
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+
+  i {
+    color: var(--color-error);
+  }
 }
 </style>

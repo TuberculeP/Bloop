@@ -391,6 +391,70 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     previewSource = source;
   };
 
+  const EXT_BY_BASE_MIME: Record<string, string> = {
+    "audio/webm": "webm",
+    "audio/ogg": "ogg",
+    "audio/wav": "wav",
+    "audio/mp4": "m4a",
+    "audio/mpeg": "mp3",
+  };
+
+  const createSampleFromRecording = async (
+    blob: Blob,
+    name: string,
+  ): Promise<{ sample: AudioSample; persisted: boolean } | null> => {
+    let audioBuffer: AudioBuffer;
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      audioBuffer =
+        await audioBusStore.audioContext.decodeAudioData(arrayBuffer);
+    } catch (error) {
+      console.error("Failed to decode recording:", error);
+      return null;
+    }
+
+    const id = `recording_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const baseMimeType = blob.type.split(";")[0].trim();
+    const ext = EXT_BY_BASE_MIME[baseMimeType] ?? "webm";
+
+    let fullUrl = URL.createObjectURL(blob);
+    let persisted = false;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, `${id}.${ext}`);
+
+      const result = await apiClient.post<
+        ApiResponse<{ key: string; url: string }>
+      >("/app/recordings", formData);
+
+      if (!result.error && result.data?.body?.url) {
+        URL.revokeObjectURL(fullUrl);
+        fullUrl = result.data.body.url;
+        persisted = true;
+      }
+    } catch (error) {
+      console.error("Failed to upload recording:", error);
+    }
+
+    const sample: AudioSample = {
+      id,
+      name,
+      packId: "recordings",
+      folder: "voice",
+      filename: `${name}.${ext}`,
+      duration: audioBuffer.duration,
+      waveformData: generateWaveformData(audioBuffer),
+      fullUrl,
+    };
+
+    samples.value.set(id, sample);
+    buffers.value.set(id, markRaw(audioBuffer));
+    loadingStates.value.set(id, "ready");
+
+    return { sample, persisted };
+  };
+
   return {
     packs,
     samples,
@@ -414,6 +478,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     initialize,
     startPreview,
     stopPreview,
+    createSampleFromRecording,
 
     fetchPacksFromApi,
     fetchPackDetails,

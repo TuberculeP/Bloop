@@ -6,11 +6,18 @@ import BaseButton from "../../ui/BaseButton.vue";
 
 const emit = defineEmits<{
   (e: "add-track", type: InstrumentType): void;
+  (e: "record-voice"): void;
 }>();
 
 const showMenu = ref(false);
 
 const instruments = [
+  {
+    type: "voiceRecord" as const,
+    name: "Voice Record",
+    icon: "🎤",
+    description: "Enregistrer votre voix au micro",
+  },
   {
     type: "audioTrack" as InstrumentType,
     name: "Audio",
@@ -43,8 +50,12 @@ const instruments = [
   },
 ];
 
-const handleSelect = (type: InstrumentType) => {
-  emit("add-track", type);
+const handleSelect = (type: InstrumentType | "voiceRecord") => {
+  if (type === "voiceRecord") {
+    emit("record-voice");
+  } else {
+    emit("add-track", type);
+  }
   showMenu.value = false;
 };
 
