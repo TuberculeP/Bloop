@@ -192,6 +192,7 @@ const exportProgress = ref(0);
 const isManualExport = ref(false);
 const exportFormat = ref<"wav" | "mp3">("mp3");
 const showExportModal = ref(false);
+const metronomeEnabledBeforeExport = ref(false);
 
 const openExportModal = () => {
   showExportModal.value = true;
@@ -228,6 +229,7 @@ const finishExport = () => {
   URL.revokeObjectURL(url);
   isExporting.value = false;
   isManualExport.value = false;
+  timelineStore.metronomeEnabled = metronomeEnabledBeforeExport.value;
   projectStore.markExportSuccess();
   if (props.exportMode) router.push({ name: "app-main" });
 };
@@ -237,6 +239,10 @@ const startExport = async () => {
   isExporting.value = true;
   isManualExport.value = true;
   exportProgress.value = 0;
+
+  if (isPlaying.value) stopPlayback();
+  metronomeEnabledBeforeExport.value = timelineStore.metronomeEnabled;
+  timelineStore.metronomeEnabled = false;
 
   audioBusStore.startPcmCapture();
 

@@ -25,6 +25,7 @@ import {
   DEFAULT_LIMITER_CONFIG,
 } from "../lib/audio/config";
 import { useProjectStore } from "./projectStore";
+import { useUiLayoutPreference } from "../composables/useUiLayoutStorage";
 
 const STORAGE_KEY = "bloop-timeline-project";
 const DEFAULT_COLS = 128; // 32 mesures
@@ -60,7 +61,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const automationExpandedTrackId = ref<string | null>(null);
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
-  const metronomeEnabled = ref(false);
+  const metronomeEnabled = useUiLayoutPreference("metronome-enabled", false);
 
   // ============================================
   // Computed Properties
