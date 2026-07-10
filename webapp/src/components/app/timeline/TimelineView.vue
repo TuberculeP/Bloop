@@ -27,7 +27,12 @@ import type {
 } from "../../../lib/utils/types";
 import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
+<<<<<<< HEAD
 import { useVoiceRecorder } from "../../../composables/useVoiceRecorder";
+=======
+import { useSampleFileDrop } from "../../../composables/useSampleFileDrop";
+import { encodeWav, encodeMp3 } from "../../../lib/audio/exportEncoders";
+>>>>>>> origin/staging
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import MasterTrackRow from "./MasterTrackRow.vue";
@@ -65,7 +70,11 @@ const projectStore = useProjectStore();
 const dawLoadingStore = useDawLoadingStore();
 const audioBusStore = useAudioBusStore();
 const audioLibraryStore = useAudioLibraryStore();
+<<<<<<< HEAD
 const trackHistoryStore = useTrackHistoryStore();
+=======
+const { placeFilesOnTrack } = useSampleFileDrop();
+>>>>>>> origin/staging
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
@@ -219,8 +228,22 @@ const activeClips = ref<Map<string, { trackId: string; clip: AudioClip }>>(
 const isExporting = ref(false);
 const exportProgress = ref(0);
 const isManualExport = ref(false);
-const mediaRecorderRef = ref<MediaRecorder | null>(null);
-const recordedChunks: Blob[] = [];
+const exportFormat = ref<"wav" | "mp3">("mp3");
+const showExportModal = ref(false);
+const metronomeEnabledBeforeExport = ref(false);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const cancelExportModal = () => {
+  showExportModal.value = false;
+};
+
+const confirmExport = () => {
+  showExportModal.value = false;
+  startExport();
+};
 
 const finishExport = () => {
   stopAllActiveNotes();
@@ -232,7 +255,21 @@ const finishExport = () => {
   }
   currentPosition.value = 0;
   checkpointPosition.value = 0;
-  mediaRecorderRef.value?.stop();
+
+  const buffer = audioBusStore.stopPcmCapture();
+  const blob =
+    exportFormat.value === "wav" ? encodeWav(buffer) : encodeMp3(buffer);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${timelineStore.project.name || "projet"}.${exportFormat.value}`;
+  a.click();
+  URL.revokeObjectURL(url);
+  isExporting.value = false;
+  isManualExport.value = false;
+  timelineStore.metronomeEnabled = metronomeEnabledBeforeExport.value;
+  projectStore.markExportSuccess();
+  if (props.exportMode) router.push({ name: "app-main" });
 };
 
 const startExport = async () => {
@@ -240,36 +277,12 @@ const startExport = async () => {
   isExporting.value = true;
   isManualExport.value = true;
   exportProgress.value = 0;
-  recordedChunks.length = 0;
 
-  const stream = audioBusStore.createCaptureStream();
-  const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-    ? "audio/webm;codecs=opus"
-    : MediaRecorder.isTypeSupported("audio/mp4")
-      ? "audio/mp4"
-      : "";
-  const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+  if (isPlaying.value) stopPlayback();
+  metronomeEnabledBeforeExport.value = timelineStore.metronomeEnabled;
+  timelineStore.metronomeEnabled = false;
 
-  recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) recordedChunks.push(e.data);
-  };
-
-  recorder.onstop = () => {
-    const ext = recorder.mimeType.includes("mp4") ? "m4a" : "webm";
-    const blob = new Blob(recordedChunks, { type: recorder.mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${timelineStore.project.name || "projet"}.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
-    isExporting.value = false;
-    isManualExport.value = false;
-    if (props.exportMode) router.push({ name: "app-main" });
-  };
-
-  recorder.start();
-  mediaRecorderRef.value = recorder;
+  audioBusStore.startPcmCapture();
 
   checkpointPosition.value = 0;
   startPlayback();
@@ -338,6 +351,34 @@ const playClipsAtPosition = (position: number) => {
       }
     }
   }
+};
+
+// Métronome - clic direct sur la destination audio, indépendant du bus master
+// (pas d'EQ/reverb, et non capturé par l'export audio)
+const playMetronomeClick = (accent: boolean) => {
+  const ctx = audioBusStore.audioContext;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = accent ? 1500 : 1000;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.3, now + 0.001);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.06);
+};
+
+// 4 colonnes = 1 temps (noire), 16 colonnes = 1 mesure en 4/4
+const maybePlayMetronomeAt = (position: number) => {
+  if (!timelineStore.metronomeEnabled) return;
+  const intPosition = Math.floor(position);
+  if (intPosition % 4 !== 0) return;
+  playMetronomeClick(intPosition % 16 === 0);
 };
 
 const stopAllActiveNotes = () => {
@@ -410,6 +451,7 @@ const animate = () => {
     playbackStartTime.value =
       performance.now() + (checkpointPosition.value / stepsPerSecond) * 1000;
     triggerNotesAtPosition(newPosition);
+    projectStore.markPlaybackLooped();
   }
 
   const prevIntPosition = Math.floor(currentPosition.value);
@@ -427,6 +469,7 @@ const animate = () => {
   if (newIntPosition !== prevIntPosition) {
     playNotesAtPosition(newPosition);
     playClipsAtPosition(newPosition);
+    maybePlayMetronomeAt(newPosition);
   }
 
   applyAutomationAtPosition(newPosition);
@@ -437,6 +480,7 @@ const animate = () => {
 const startPlayback = () => {
   if (isPlaying.value) return;
   audioLibraryStore.stopPreview();
+  audioBusStore.ensureAudioContextResumed();
 
   currentPosition.value = checkpointPosition.value;
   isPlaying.value = true;
@@ -444,6 +488,7 @@ const startPlayback = () => {
 
   triggerNotesAtPosition(currentPosition.value);
   playClipsAtPosition(currentPosition.value);
+  maybePlayMetronomeAt(currentPosition.value);
 
   animationFrameId.value = requestAnimationFrame(animate);
 };
@@ -489,6 +534,7 @@ const handleAddTrack = (type: InstrumentType) => {
   timelineStore.createTrack(config);
 };
 
+<<<<<<< HEAD
 const generateVoiceTrackName = (): string => {
   const existingNames = new Set(
     timelineStore.project.tracks.map((t) => t.name),
@@ -575,6 +621,40 @@ watch(voiceRecorderError, (message) => {
   }, 6000);
 });
 
+=======
+const isDragOverTimeline = ref(false);
+const tracksContainerRef = ref<HTMLElement | null>(null);
+
+const handleTracksContainerDragOver = (event: DragEvent): void => {
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  isDragOverTimeline.value = true;
+};
+
+const handleTracksContainerDragLeave = (): void => {
+  isDragOverTimeline.value = false;
+};
+
+const handleTracksContainerDrop = async (event: DragEvent): Promise<void> => {
+  event.preventDefault();
+  isDragOverTimeline.value = false;
+
+  const files = event.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+
+  const rect = tracksContainerRef.value?.getBoundingClientRect();
+  if (!rect) return;
+  const x = Math.floor(
+    (event.clientX - rect.left - TRACK_HEADER_WIDTH) / COL_WIDTH,
+  );
+
+  const trackId = timelineStore.createTrack(
+    getDefaultConfigForType("audioTrack"),
+  );
+  await placeFilesOnTrack(files, trackId, x);
+};
+
+>>>>>>> origin/staging
 const handleToggleMute = (track: Track) => {
   timelineStore.setTrackMuted(track.id, !track.muted);
 };
@@ -750,6 +830,52 @@ defineExpose({
         <p class="export-percent">{{ exportProgress }}%</p>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showExportModal"
+        class="modal-overlay"
+        @click="cancelExportModal"
+      >
+        <div class="modal export-format-modal" @click.stop>
+          <h3>Exporter le projet</h3>
+          <p>Choisissez le format du fichier audio à générer.</p>
+          <div class="export-format-options">
+            <label
+              class="export-format-option"
+              :class="{ active: exportFormat === 'mp3' }"
+            >
+              <input v-model="exportFormat" type="radio" value="mp3" />
+              MP3
+            </label>
+            <label
+              class="export-format-option"
+              :class="{ active: exportFormat === 'wav' }"
+            >
+              <input v-model="exportFormat" type="radio" value="wav" />
+              WAV
+            </label>
+          </div>
+          <div class="modal-actions">
+            <BaseButton
+              class="export-cancel-btn"
+              variant="secondary"
+              @click="cancelExportModal"
+            >
+              Annuler
+            </BaseButton>
+            <BaseButton
+              class="export-confirm-btn"
+              variant="accent"
+              @click="confirmExport"
+            >
+              Exporter
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <div class="timeline-header">
       <div class="header-left">
         <BaseButton
@@ -861,6 +987,20 @@ defineExpose({
             max="240"
             step="1"
           />
+          <button
+            class="metronome-toggle"
+            :class="{ active: timelineStore.metronomeEnabled }"
+            @click="
+              timelineStore.metronomeEnabled = !timelineStore.metronomeEnabled
+            "
+            :title="
+              timelineStore.metronomeEnabled
+                ? 'Désactiver le métronome'
+                : 'Activer le métronome'
+            "
+          >
+            <i class="fas fa-stopwatch"></i>
+          </button>
         </div>
         <div class="position-display">
           {{ Math.floor(currentPosition / 4) + 1 }}:{{
@@ -872,7 +1012,8 @@ defineExpose({
         <AddTrackButton @add-track="handleAddTrack" />
 
         <BaseButton
-          @click="startExport"
+          class="export-audio-btn"
+          @click="openExportModal"
           title="Exporter en audio"
           :disabled="isExporting"
           variant="ghost"
@@ -882,6 +1023,7 @@ defineExpose({
         </BaseButton>
 
         <BaseButton
+          class="save-project-btn"
           @click="handleSaveProject"
           :title="
             isReadOnly
@@ -949,7 +1091,14 @@ defineExpose({
           @seek="setCheckpoint"
         />
 
-        <div class="tracks-container">
+        <div
+          ref="tracksContainerRef"
+          class="tracks-container"
+          :class="{ 'drag-over': isDragOverTimeline }"
+          @dragover="handleTracksContainerDragOver"
+          @dragleave="handleTracksContainerDragLeave"
+          @drop="handleTracksContainerDrop"
+        >
           <MasterTrackRow
             :cols="displayCols"
             :col-width="COL_WIDTH"
@@ -1392,6 +1541,97 @@ defineExpose({
   }
 }
 
+.metronome-toggle {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #ff3fb4;
+    color: #f2efe8;
+  }
+
+  &.active {
+    background: #ff3fb4;
+    border-color: #ff3fb4;
+    color: #f2efe8;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+
+  h3 {
+    color: var(--color-white);
+    font-size: 1.25rem;
+    margin: 0 0 12px;
+  }
+
+  p {
+    color: var(--color-white-light);
+    opacity: 0.75;
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.export-format-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.export-format-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 8px;
+  color: #f2efe8;
+  font-size: 14px;
+  cursor: pointer;
+
+  &.active {
+    border-color: #ff3fb4;
+    background-color: rgba(255, 63, 180, 0.1);
+  }
+
+  input {
+    accent-color: #ff3fb4;
+  }
+}
+
 .position-display {
   font-family: monospace;
   font-size: 16px;
@@ -1426,6 +1666,13 @@ defineExpose({
   position: relative;
   min-height: calc(100% - 30px);
   background: #1a0e15;
+  transition: background 0.15s;
+
+  &.drag-over {
+    background: rgba(255, 63, 180, 0.08);
+    outline: 2px dashed rgba(255, 63, 180, 0.5);
+    outline-offset: -2px;
+  }
 }
 
 .empty-state {

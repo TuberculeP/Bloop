@@ -78,6 +78,25 @@ const webappConfig = {
   },
 };
 
+const e2eConfig = {
+  files: ["e2e/**/*.{js,ts}"],
+  languageOptions: {
+    ecmaVersion: 2021,
+    sourceType: "module",
+    globals: globals.node,
+    parser: tseslint.parser,
+  },
+  plugins: {
+    js,
+  },
+  rules: {
+    ...js.configs.recommended.rules,
+    ...tseslint.configs.recommended.rules,
+    "no-console": "off",
+    "no-undef": "off",
+  },
+};
+
 export default [
   {
     ignores: [
@@ -93,6 +112,7 @@ export default [
   },
   serverConfig,
   webappConfig,
+  e2eConfig,
   sharedConfig,
   eslintPluginPrettierRecommended,
 ];

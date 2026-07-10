@@ -35,6 +35,7 @@ pie-poc-2/
 | DAW Timeline | `webapp/src/components/app/CLAUDE.md` | Piano roll, pistes, engines audio |
 | Piano Roll | `webapp/src/components/app/timeline/PianoRoll/CLAUDE.md` | Éditeur de notes |
 | Admin | `webapp/src/views/admin/CLAUDE.md` | Gestion users + samples |
+| Onboarding | `webapp/src/lib/onboarding/CLAUDE.md` | Tour guidé driver.js, gotchas de ciblage dynamique |
 
 ## Commandes
 
@@ -79,6 +80,9 @@ RESEND_API_KEY=xxx
 # Admin initial
 DEFAULT_ADMIN_EMAIL=xxx
 DEFAULT_ADMIN_PASSWORD=xxx
+
+# Quota d'upload de samples utilisateur (en Mo, défaut 250)
+USER_SAMPLE_QUOTA_MB=250
 ```
 
 ## Conventions
@@ -88,6 +92,7 @@ DEFAULT_ADMIN_PASSWORD=xxx
 - **Audio** : Classes TypeScript pures (pas de dépendance Vue)
 - **CSS** : SCSS scoped avec variables CSS (`--color-*`)
 - **API** : REST avec réponses `{ status, message, body }`
+- **Icônes** : pas d'emoji dans le code (UI, commits, logs) — utiliser FontAwesome (`fas fa-*`, déjà chargé dans `webapp/index.html`)
 
 ## Domaines
 
