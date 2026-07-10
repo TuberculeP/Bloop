@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/authStore";
+import { useOnboardingStore } from "../../stores/onboardingStore";
 import { updateUserProfile } from "../../services/users";
 import { resizeImageFile } from "../../lib/utils/imageResize";
 import BaseButton from "../ui/BaseButton.vue";
 
+const router = useRouter();
 const authStore = useAuthStore();
+const onboardingStore = useOnboardingStore();
 const user = computed(() => authStore.user);
+
+const replayOnboarding = async () => {
+  await router.push({ name: "app-main" });
+  onboardingStore.start();
+};
 
 const settingsForm = ref({
   firstName: "",
@@ -160,6 +169,16 @@ onMounted(resetForm);
         </BaseButton>
       </div>
     </form>
+
+    <div class="tutorial-section">
+      <div class="tutorial-info">
+        <h3>Tutoriels</h3>
+        <p>Revoyez le parcours guidé de découverte de l'application.</p>
+      </div>
+      <BaseButton variant="ghost" type="button" @click="replayOnboarding">
+        Revoir le tutoriel de bienvenue
+      </BaseButton>
+    </div>
   </div>
 </template>
 
@@ -269,6 +288,28 @@ onMounted(resetForm);
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+.tutorial-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border-secondary);
+}
+
+.tutorial-info h3 {
+  margin: 0 0 4px;
+  color: var(--color-white);
+  font-size: 1rem;
+}
+
+.tutorial-info p {
+  margin: 0;
+  color: var(--color-white-light);
+  opacity: 0.7;
+  font-size: 0.85rem;
 }
 
 .btn-outline {

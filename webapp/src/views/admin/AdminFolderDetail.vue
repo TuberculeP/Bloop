@@ -102,6 +102,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import AdminLayout from "../../layouts/AdminLayout.vue";
 import { useAdminStore } from "../../stores/adminStore";
+import { formatDuration } from "../../lib/utils/audioFormatter";
 
 const route = useRoute();
 const adminStore = useAdminStore();
@@ -164,12 +165,6 @@ async function confirmDeleteSample(sample: any) {
   if (confirm(`Delete sample "${sample.name}"?`)) {
     await adminStore.deleteSample(sample.id);
   }
-}
-
-function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 </script>
 

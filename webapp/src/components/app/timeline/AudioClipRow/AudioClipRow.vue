@@ -9,6 +9,7 @@ import {
   useAudioClipClipboard,
   useAudioClipKeyboard,
 } from "../../../../composables/audioClip";
+import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
 import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
@@ -22,6 +23,7 @@ const props = defineProps<{
 const timelineStore = useTimelineStore();
 const trackHistoryStore = useTrackHistoryStore();
 const audioLibraryStore = useAudioLibraryStore();
+const { placeFilesOnTrack } = useSampleFileDrop();
 
 const containerRef = ref<HTMLElement | null>(null);
 const isContainerFocused = ref(false);
@@ -140,13 +142,21 @@ const handleClipResize = (
 
 const handleDrop = async (event: DragEvent): Promise<void> => {
   event.preventDefault();
-  const sampleId = event.dataTransfer?.getData("application/x-sample-id");
-  if (!sampleId) return;
+  event.stopPropagation();
 
   const rect = containerRef.value?.getBoundingClientRect();
   if (!rect) return;
 
   const x = Math.floor((event.clientX - rect.left) / props.colWidth);
+
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    await placeFilesOnTrack(files, props.track.id, x);
+    return;
+  }
+
+  const sampleId = event.dataTransfer?.getData("application/x-sample-id");
+  if (!sampleId) return;
 
   const sample = audioLibraryStore.getSample(sampleId);
   if (!sample) return;

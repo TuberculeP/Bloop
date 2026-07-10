@@ -242,7 +242,7 @@ onMounted(() => loadProjects());
         </h1>
         <p class="tagline">Votre bibliothèque de compositions</p>
       </div>
-      <BaseButton @click="emit('new-project')">
+      <BaseButton class="new-project-btn" @click="emit('new-project')">
         <i class="fas fa-plus" />Nouveau projet
       </BaseButton>
     </header>
@@ -270,7 +270,10 @@ onMounted(() => loadProjects());
           <div class="music-note">♪</div>
           <h3>Bibliothèque vide</h3>
           <p>Commencez votre première composition musicale dès maintenant.</p>
-          <button @click="emit('new-project')" class="btn-outline">
+          <button
+            @click="emit('new-project')"
+            class="btn-outline new-project-btn"
+          >
             Créer mon premier projet
           </button>
         </div>

@@ -10,6 +10,8 @@ import { SampleFolder } from "./SampleFolder";
 import { AudioSample } from "./AudioSample";
 import { OAuthToken } from "./OAuthToken";
 import { ProjectFavorite } from "./ProjectFavorite";
+import { UserSample } from "./UserSample";
+import { UserSampleProjectLink } from "./UserSampleProjectLink";
 
 const entities = [
   User,
@@ -24,6 +26,8 @@ const entities = [
   AudioSample,
   OAuthToken,
   ProjectFavorite,
+  UserSample,
+  UserSampleProjectLink,
 ];
 
 export default entities;

@@ -56,6 +56,7 @@ const handleClickOutside = () => {
 <template>
   <div class="add-track-wrapper" v-on-click-outside="handleClickOutside">
     <BaseButton
+      class="add-track-btn"
       variant="error"
       @click="showMenu = !showMenu"
       title="Ajouter une piste"
