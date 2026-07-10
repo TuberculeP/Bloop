@@ -39,35 +39,102 @@
       >
     </div>
 
-    <ul class="samples-list" v-if="userSamplesStore.mySamples.length">
-      <li
-        v-for="sample in userSamplesStore.mySamples"
-        :key="sample.id"
-        class="sample-item"
-      >
-        <span class="sample-name">{{ sample.name }}</span>
-        <span class="sample-size">{{
-          formatSize(userSamplesStore.getSampleSize(sample.id))
-        }}</span>
-        <span class="sample-usage">{{ usageLabel(sample.id) }}</span>
-        <button type="button" class="delete-btn" @click="handleDelete(sample)">
-          Supprimer
-        </button>
-      </li>
-    </ul>
+    <div class="samples-table-wrapper" v-if="userSamplesStore.mySamples.length">
+      <table class="samples-table">
+        <thead>
+          <tr>
+            <th class="col-preview"></th>
+            <th>Nom</th>
+            <th>Taille</th>
+            <th>Utilisation</th>
+            <th>Importé le</th>
+            <th>Dernière utilisation</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="sample in userSamplesStore.mySamples" :key="sample.id">
+            <td class="col-preview">
+              <SamplePreviewButton :sample="sample" />
+            </td>
+            <td class="col-name">{{ sample.name }}</td>
+            <td>{{ formatSize(userSamplesStore.getSampleSize(sample.id)) }}</td>
+            <td>{{ usageLabel(sample.id) }}</td>
+            <td>{{ formatDate(userSamplesStore.getCreatedAt(sample.id)) }}</td>
+            <td>{{ formatDate(userSamplesStore.getLastUsedAt(sample.id)) }}</td>
+            <td class="col-actions">
+              <button
+                type="button"
+                class="delete-btn"
+                @click="handleDelete(sample)"
+              >
+                Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p v-else class="empty-state">Aucun sample uploadé pour le moment.</p>
+
+    <Teleport to="body">
+      <div v-if="pendingDelete" class="modal-overlay" @click="cancelDelete">
+        <div class="modal" @click.stop>
+          <h3>Supprimer « {{ pendingDelete.name }} » ?</h3>
+          <p>
+            Ce sample est utilisé dans {{ pendingUsage.length }} projet{{
+              pendingUsage.length > 1 ? "s" : ""
+            }}
+            :
+          </p>
+          <ul class="usage-list">
+            <li v-for="project in pendingUsage" :key="project.id">
+              {{ project.name }}
+            </li>
+          </ul>
+          <p class="warning-text">
+            La suppression retirera les clips correspondants dans ces projets.
+          </p>
+          <div class="modal-actions">
+            <BaseButton
+              variant="secondary"
+              :disabled="isDeleting"
+              @click="cancelDelete"
+            >
+              Annuler
+            </BaseButton>
+            <BaseButton
+              variant="error"
+              :loading="isDeleting"
+              @click="confirmDelete"
+            >
+              Supprimer
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import type { AudioSample } from "../../lib/utils/types";
-import { useUserSamplesStore } from "../../stores/userSamplesStore";
+import {
+  useUserSamplesStore,
+  type SampleUsageProject,
+} from "../../stores/userSamplesStore";
+import BaseButton from "../ui/BaseButton.vue";
+import SamplePreviewButton from "../shared/SamplePreviewButton.vue";
+import { formatShortDate } from "../../lib/utils/dateFormatter";
 
 const userSamplesStore = useUserSamplesStore();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const isDragOver = ref(false);
+const pendingDelete = ref<AudioSample | null>(null);
+const pendingUsage = ref<SampleUsageProject[]>([]);
+const isDeleting = ref(false);
 
 const usedMb = computed(() =>
   (userSamplesStore.usedBytes / (1024 * 1024)).toFixed(1),
@@ -94,6 +161,9 @@ const usageLabel = (id: string) => {
   return `Utilisé dans ${count} projet${count > 1 ? "s" : ""}`;
 };
 
+const formatDate = (dateString: string | null) =>
+  dateString ? formatShortDate(dateString) : "—";
+
 async function uploadFiles(files: FileList) {
   for (const file of Array.from(files)) {
     await userSamplesStore.uploadSample(file);
@@ -116,14 +186,25 @@ function handleFileSelect(event: Event) {
 
 async function handleDelete(sample: AudioSample) {
   const usage = await userSamplesStore.fetchSampleUsage(sample.id);
-  if (usage.length > 0) {
-    const list = usage.map((p) => `- ${p.name}`).join("\n");
-    const confirmed = confirm(
-      `Ce sample est utilisé dans ${usage.length} projet(s) :\n${list}\n\nLe supprimer retirera les clips correspondants dans ces projets. Continuer ?`,
-    );
-    if (!confirmed) return;
+  if (usage.length === 0) {
+    await userSamplesStore.deleteSample(sample.id);
+    return;
   }
-  await userSamplesStore.deleteSample(sample.id);
+  pendingDelete.value = sample;
+  pendingUsage.value = usage;
+}
+
+function cancelDelete() {
+  pendingDelete.value = null;
+  pendingUsage.value = [];
+}
+
+async function confirmDelete() {
+  if (!pendingDelete.value || isDeleting.value) return;
+  isDeleting.value = true;
+  await userSamplesStore.deleteSample(pendingDelete.value.id);
+  isDeleting.value = false;
+  cancelDelete();
 }
 
 onMounted(() => {
@@ -212,45 +293,58 @@ onMounted(() => {
   opacity: 0.7;
 }
 
-.samples-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.sample-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--color-bg-secondary-dark);
+.samples-table-wrapper {
+  overflow-x: auto;
   border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
 }
 
-.sample-name {
-  flex: 1;
-  color: var(--color-white);
-  font-size: 0.9rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.samples-table {
+  width: 100%;
+  border-collapse: collapse;
   white-space: nowrap;
-}
 
-.sample-size {
-  font-size: 0.8rem;
-  color: var(--color-white-light);
-  opacity: 0.7;
-}
+  th,
+  td {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.85rem;
+  }
 
-.sample-usage {
-  font-size: 0.8rem;
-  color: var(--color-white-light);
-  opacity: 0.7;
-  white-space: nowrap;
+  thead th {
+    color: var(--color-white-light);
+    opacity: 0.6;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--color-border-secondary);
+  }
+
+  tbody tr {
+    background: var(--color-bg-secondary-dark);
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--color-border-secondary);
+    }
+  }
+
+  td {
+    color: var(--color-white-light);
+  }
+
+  .col-preview,
+  .col-actions {
+    width: 1%;
+  }
+
+  .col-name {
+    color: var(--color-white);
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .delete-btn {
@@ -266,5 +360,61 @@ onMounted(() => {
   color: var(--color-white-light);
   opacity: 0.6;
   font-size: 0.9rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+
+  h3 {
+    color: var(--color-white);
+    font-size: 1.25rem;
+    margin: 0 0 12px;
+  }
+
+  p {
+    color: var(--color-white-light);
+    opacity: 0.75;
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .warning-text {
+    margin: 0 0 24px;
+  }
+}
+
+.usage-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  max-height: 160px;
+  overflow-y: auto;
+
+  li {
+    color: var(--color-white);
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
+import SamplePreviewButton from "../../shared/SamplePreviewButton.vue";
 import type {
   SamplePack,
   SampleFolder,
@@ -110,17 +111,6 @@ const handlePreview = (sample: AudioSample): void => {
   }
 };
 
-const getLoadingState = (sampleId: string): string => {
-  return audioLibraryStore.getLoadingState(sampleId);
-};
-
-const formatDuration = (seconds: number): string => {
-  if (seconds === 0) return "--:--";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
 const getSampleCount = (pack: SamplePack): number => {
   return pack.folders.reduce((acc, f) => acc + f.samples.length, 0);
 };
@@ -226,18 +216,9 @@ const getSampleCount = (pack: SamplePack): number => {
           @dragstart="handleDragStart($event, sample.id)"
           @click="handlePreview(sample)"
         >
-          <div class="sample-icon">
-            <span v-if="getLoadingState(sample.id) === 'loading'">⏳</span>
-            <span v-else-if="previewingId === sample.id" class="stop-icon"
-              >■</span
-            >
-            <span v-else>🔊</span>
-          </div>
+          <SamplePreviewButton :sample="sample" />
           <div class="sample-info">
             <span class="sample-name">{{ sample.name }}</span>
-            <span class="sample-duration">{{
-              formatDuration(sample.duration)
-            }}</span>
           </div>
           <div class="drag-hint">⋮⋮</div>
         </div>
@@ -513,22 +494,6 @@ const getSampleCount = (pack: SamplePack): number => {
   }
 }
 
-.sample-icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(122, 15, 62, 0.3);
-  border-radius: 4px;
-  font-size: 16px;
-
-  .stop-icon {
-    color: #ff3fb4;
-    font-size: 14px;
-  }
-}
-
 .sample-info {
   flex: 1;
   min-width: 0;
@@ -543,11 +508,6 @@ const getSampleCount = (pack: SamplePack): number => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sample-duration {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
 }
 
 .drag-hint {

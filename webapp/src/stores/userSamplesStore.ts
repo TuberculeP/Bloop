@@ -24,7 +24,9 @@ interface ApiUserSample {
   duration: number;
   waveform: number[] | null;
   fullUrl: string;
+  createdAt: string;
   usageCount?: number;
+  lastUsedAt?: string | null;
 }
 
 interface StorageResponse {
@@ -69,26 +71,42 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
   const mySamples = ref<AudioSample[]>([]);
   const sampleSizes = ref<Map<string, number>>(new Map());
   const usageCounts = ref<Map<string, number>>(new Map());
+  const createdAtById = ref<Map<string, string>>(new Map());
+  const lastUsedAtById = ref<Map<string, string | null>>(new Map());
   const usedBytes = ref(0);
   const quotaBytes = ref(0);
   const uploading = ref(false);
 
   const getSampleSize = (id: string): number => sampleSizes.value.get(id) ?? 0;
   const getUsageCount = (id: string): number => usageCounts.value.get(id) ?? 0;
+  const getCreatedAt = (id: string): string | null =>
+    createdAtById.value.get(id) ?? null;
+  const getLastUsedAt = (id: string): string | null =>
+    lastUsedAtById.value.get(id) ?? null;
 
   const fetchMySamples = async (): Promise<void> => {
     const result = await apiClient.get<{ samples: ApiUserSample[] }>(
       "/user/samples",
     );
     if (result.error || !result.data) return;
-    mySamples.value = result.data.samples.map(toAudioSample);
-    for (const apiSample of result.data.samples) {
+
+    // Réutilise l'instance déjà enregistrée dans audioLibraryStore si elle
+    // existe (ex: déjà décodée, avec sa vraie durée) au lieu d'en recréer une
+    // copie déconnectée : sinon la preview met à jour un objet que personne
+    // n'affiche.
+    mySamples.value = result.data.samples.map((apiSample) => {
       sampleSizes.value.set(apiSample.id, apiSample.size);
       usageCounts.value.set(apiSample.id, apiSample.usageCount ?? 0);
-      audioLibraryStore.restoreSamples({
-        [apiSample.id]: toAudioSample(apiSample),
-      });
-    }
+      createdAtById.value.set(apiSample.id, apiSample.createdAt);
+      lastUsedAtById.value.set(apiSample.id, apiSample.lastUsedAt ?? null);
+
+      const existing = audioLibraryStore.getSample(apiSample.id);
+      if (existing) return existing;
+
+      const sample = toAudioSample(apiSample);
+      audioLibraryStore.restoreSamples({ [sample.id]: sample });
+      return sample;
+    });
   };
 
   const fetchStorageUsage = async (): Promise<void> => {
@@ -134,6 +152,9 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
       const sample = toAudioSample(result.data.sample);
       mySamples.value.unshift(sample);
       sampleSizes.value.set(sample.id, result.data.sample.size);
+      usageCounts.value.set(sample.id, 0);
+      createdAtById.value.set(sample.id, result.data.sample.createdAt);
+      lastUsedAtById.value.set(sample.id, null);
       usedBytes.value = result.data.usedBytes;
       quotaBytes.value = result.data.quotaBytes;
       audioLibraryStore.restoreSamples({ [sample.id]: sample });
@@ -162,6 +183,8 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
     mySamples.value = mySamples.value.filter((s) => s.id !== id);
     sampleSizes.value.delete(id);
     usageCounts.value.delete(id);
+    createdAtById.value.delete(id);
+    lastUsedAtById.value.delete(id);
     if (result.data) {
       usedBytes.value = result.data.usedBytes;
       quotaBytes.value = result.data.quotaBytes;
@@ -176,6 +199,8 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
 
     getSampleSize,
     getUsageCount,
+    getCreatedAt,
+    getLastUsedAt,
     fetchMySamples,
     fetchStorageUsage,
     uploadSample,

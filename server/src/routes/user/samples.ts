@@ -30,9 +30,14 @@ async function findProjectsUsingSample(sampleId: string): Promise<Project[]> {
     .filter((project) => project.deletedAt === null);
 }
 
-async function getUsageCounts(
+interface SampleUsageStats {
+  count: number;
+  lastUsedAt: Date | null;
+}
+
+async function getSampleUsageStats(
   sampleIds: string[],
-): Promise<Map<string, number>> {
+): Promise<Map<string, SampleUsageStats>> {
   if (sampleIds.length === 0) return new Map();
 
   const rows = await pg
@@ -41,12 +46,21 @@ async function getUsageCounts(
     .innerJoin("link.project", "project")
     .select("link.sampleId", "sampleId")
     .addSelect("COUNT(*)", "count")
+    .addSelect("MAX(project.updatedAt)", "lastUsedAt")
     .where("link.sampleId IN (:...ids)", { ids: sampleIds })
     .andWhere("project.deletedAt IS NULL")
     .groupBy("link.sampleId")
     .getRawMany();
 
-  return new Map(rows.map((r) => [r.sampleId, Number(r.count)]));
+  return new Map(
+    rows.map((r) => [
+      r.sampleId,
+      {
+        count: Number(r.count),
+        lastUsedAt: r.lastUsedAt ? new Date(r.lastUsedAt) : null,
+      },
+    ]),
+  );
 }
 
 function removeSampleFromProject(project: Project, sampleId: string): boolean {
@@ -111,13 +125,14 @@ userSamplesRouter.get("/", async (req, res) => {
     order: { createdAt: "DESC" },
   });
 
-  const usageCounts = await getUsageCounts(samples.map((s) => s.id));
+  const usageStats = await getSampleUsageStats(samples.map((s) => s.id));
 
   res.status(200).json({
     status: 200,
     samples: samples.map((sample) => ({
       ...sample,
-      usageCount: usageCounts.get(sample.id) ?? 0,
+      usageCount: usageStats.get(sample.id)?.count ?? 0,
+      lastUsedAt: usageStats.get(sample.id)?.lastUsedAt ?? null,
     })),
   });
 });

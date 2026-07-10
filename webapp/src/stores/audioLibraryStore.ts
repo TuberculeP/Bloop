@@ -357,6 +357,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
   };
 
   const previewingId = ref<string | null>(null);
+  const previewStartedAt = ref<number | null>(null);
   let previewSource: AudioBufferSourceNode | null = null;
 
   const stopPreview = (): void => {
@@ -369,6 +370,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
       }
       previewSource = null;
       previewingId.value = null;
+      previewStartedAt.value = null;
     }
   };
 
@@ -383,12 +385,19 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     source.onended = () => {
       if (previewingId.value === sample.id) {
         previewingId.value = null;
+        previewStartedAt.value = null;
         previewSource = null;
       }
     };
     source.start();
     previewingId.value = sample.id;
+    previewStartedAt.value = audioBusStore.audioContext.currentTime;
     previewSource = source;
+  };
+
+  const getPreviewElapsed = (): number => {
+    if (previewStartedAt.value === null) return 0;
+    return audioBusStore.audioContext.currentTime - previewStartedAt.value;
   };
 
   return {
@@ -414,6 +423,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     initialize,
     startPreview,
     stopPreview,
+    getPreviewElapsed,
 
     fetchPacksFromApi,
     fetchPackDetails,
