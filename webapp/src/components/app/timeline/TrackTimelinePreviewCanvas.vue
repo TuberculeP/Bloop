@@ -63,15 +63,21 @@ const render = () => {
   ctx.fillStyle = isHovered.value ? "#1f1119" : "#1a0e15";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "rgba(122, 15, 62, 0.5)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
+  // Une ligne toutes les 4 colonnes = 1 temps. 1 ligne sur 4
+  // (= toutes les 4 temps = 1 mesure en 4/4) est marquée en rose clair.
   for (let i = 0; i <= Math.ceil(props.cols / 4); i++) {
     const x = i * 4 * props.colWidth - 0.5;
+    const isBeatMarker = i % 4 === 0;
+
+    ctx.beginPath();
+    ctx.strokeStyle = isBeatMarker
+      ? "rgba(170, 27, 86, 0.7)"
+      : "rgba(122, 15, 62, 0.5)";
+    ctx.lineWidth = 1;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, height);
+    ctx.stroke();
   }
-  ctx.stroke();
 
   if (props.notes.length === 0) return;
 

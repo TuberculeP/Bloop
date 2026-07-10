@@ -39,6 +39,7 @@ const COLORS = {
   cellBorderVertical: "rgba(122, 15, 62, 0.2)",
   cellBorderHorizontal: "rgba(122, 15, 62, 0.15)",
   measureLine: "rgba(122, 15, 62, 0.5)",
+  metronomeBeatLine: "rgba(170, 27, 86, 0.7)",
   noteSelectedOutline: "#fff7ab",
   noteSelectedShadow: "rgba(255, 247, 171, 0.4)",
   noteDraggingOutline: "#fff7ab",
@@ -160,19 +161,24 @@ export class PianoGridRenderer {
     ctx.stroke();
   }
 
+  // Une ligne toutes les 4 colonnes = 1 temps. 1 ligne sur 4
+  // (= toutes les 4 temps = 1 mesure en 4/4) est marquée en rose clair.
   private drawMeasureLines() {
     const { ctx, config } = this;
 
-    ctx.strokeStyle = COLORS.measureLine;
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
     for (let measure = 0; measure <= Math.ceil(config.cols / 4); measure++) {
       const x = measure * 4 * config.colWidth - 0.5;
+      const isBeatMarker = measure % 4 === 0;
+
+      ctx.beginPath();
+      ctx.strokeStyle = isBeatMarker
+        ? COLORS.metronomeBeatLine
+        : COLORS.measureLine;
+      ctx.lineWidth = 1;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
+      ctx.stroke();
     }
-    ctx.stroke();
   }
 
   private drawNotes(notes: NoteRenderData[]) {

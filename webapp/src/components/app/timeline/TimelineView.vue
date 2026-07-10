@@ -192,6 +192,7 @@ const exportProgress = ref(0);
 const isManualExport = ref(false);
 const exportFormat = ref<"wav" | "mp3">("mp3");
 const showExportModal = ref(false);
+const metronomeEnabledBeforeExport = ref(false);
 
 const openExportModal = () => {
   showExportModal.value = true;
@@ -228,6 +229,7 @@ const finishExport = () => {
   URL.revokeObjectURL(url);
   isExporting.value = false;
   isManualExport.value = false;
+  timelineStore.metronomeEnabled = metronomeEnabledBeforeExport.value;
   projectStore.markExportSuccess();
   if (props.exportMode) router.push({ name: "app-main" });
 };
@@ -237,6 +239,10 @@ const startExport = async () => {
   isExporting.value = true;
   isManualExport.value = true;
   exportProgress.value = 0;
+
+  if (isPlaying.value) stopPlayback();
+  metronomeEnabledBeforeExport.value = timelineStore.metronomeEnabled;
+  timelineStore.metronomeEnabled = false;
 
   audioBusStore.startPcmCapture();
 
@@ -307,6 +313,34 @@ const playClipsAtPosition = (position: number) => {
       }
     }
   }
+};
+
+// Métronome - clic direct sur la destination audio, indépendant du bus master
+// (pas d'EQ/reverb, et non capturé par l'export audio)
+const playMetronomeClick = (accent: boolean) => {
+  const ctx = audioBusStore.audioContext;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = accent ? 1500 : 1000;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.3, now + 0.001);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.06);
+};
+
+// 4 colonnes = 1 temps (noire), 16 colonnes = 1 mesure en 4/4
+const maybePlayMetronomeAt = (position: number) => {
+  if (!timelineStore.metronomeEnabled) return;
+  const intPosition = Math.floor(position);
+  if (intPosition % 4 !== 0) return;
+  playMetronomeClick(intPosition % 16 === 0);
 };
 
 const stopAllActiveNotes = () => {
@@ -397,6 +431,7 @@ const animate = () => {
   if (newIntPosition !== prevIntPosition) {
     playNotesAtPosition(newPosition);
     playClipsAtPosition(newPosition);
+    maybePlayMetronomeAt(newPosition);
   }
 
   applyAutomationAtPosition(newPosition);
@@ -407,6 +442,7 @@ const animate = () => {
 const startPlayback = () => {
   if (isPlaying.value) return;
   audioLibraryStore.stopPreview();
+  audioBusStore.ensureAudioContextResumed();
 
   currentPosition.value = checkpointPosition.value;
   isPlaying.value = true;
@@ -414,6 +450,7 @@ const startPlayback = () => {
 
   triggerNotesAtPosition(currentPosition.value);
   playClipsAtPosition(currentPosition.value);
+  maybePlayMetronomeAt(currentPosition.value);
 
   animationFrameId.value = requestAnimationFrame(animate);
 };
@@ -768,6 +805,20 @@ defineExpose({
             max="240"
             step="1"
           />
+          <button
+            class="metronome-toggle"
+            :class="{ active: timelineStore.metronomeEnabled }"
+            @click="
+              timelineStore.metronomeEnabled = !timelineStore.metronomeEnabled
+            "
+            :title="
+              timelineStore.metronomeEnabled
+                ? 'Désactiver le métronome'
+                : 'Activer le métronome'
+            "
+          >
+            <i class="fas fa-stopwatch"></i>
+          </button>
         </div>
         <div class="position-display">
           {{ Math.floor(currentPosition / 4) + 1 }}:{{
@@ -1142,6 +1193,29 @@ defineExpose({
       outline: none;
       border-color: #ff3fb4;
     }
+  }
+}
+
+.metronome-toggle {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #ff3fb4;
+    color: #f2efe8;
+  }
+
+  &.active {
+    background: #ff3fb4;
+    border-color: #ff3fb4;
+    color: #f2efe8;
   }
 }
 

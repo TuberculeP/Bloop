@@ -92,6 +92,7 @@ USER_SAMPLE_QUOTA_MB=250
 - **Audio** : Classes TypeScript pures (pas de dépendance Vue)
 - **CSS** : SCSS scoped avec variables CSS (`--color-*`)
 - **API** : REST avec réponses `{ status, message, body }`
+- **Icônes** : pas d'emoji dans le code (UI, commits, logs) — utiliser FontAwesome (`fas fa-*`, déjà chargé dans `webapp/index.html`)
 
 ## Domaines
 
