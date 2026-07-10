@@ -91,7 +91,7 @@ function handleAction(action: () => void) {
           S
         </button>
         <button
-          class="control-btn settings-btn"
+          class="control-btn settings-btn track-settings-btn"
           @click.stop="emit('open-settings')"
           title="Paramètres"
         >
