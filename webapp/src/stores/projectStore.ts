@@ -29,6 +29,9 @@ export const useProjectStore = defineStore("project", () => {
     firstName: string;
     lastName: string;
   } | null>(null);
+  const lastSavedAt = ref<number | null>(null);
+  const lastExportedAt = ref<number | null>(null);
+  const lastPlaybackLoopedAt = ref<number | null>(null);
 
   const saveProjectOnline = async (
     project: TimelineProject,
@@ -83,6 +86,7 @@ export const useProjectStore = defineStore("project", () => {
 
       hasUnsavedChanges.value = false;
       lastSavedState.value = JSON.stringify(stripTimestamps(project));
+      lastSavedAt.value = Date.now();
 
       return {
         success: true,
@@ -373,6 +377,14 @@ export const useProjectStore = defineStore("project", () => {
     currentProjectId.value = id;
   };
 
+  const markExportSuccess = () => {
+    lastExportedAt.value = Date.now();
+  };
+
+  const markPlaybackLooped = () => {
+    lastPlaybackLoopedAt.value = Date.now();
+  };
+
   return {
     isSaving,
     isLoading,
@@ -380,7 +392,12 @@ export const useProjectStore = defineStore("project", () => {
     hasUnsavedChanges,
     isReadOnly,
     currentProjectOwner,
+    lastSavedAt,
+    lastExportedAt,
+    lastPlaybackLoopedAt,
     saveProjectOnline,
+    markExportSuccess,
+    markPlaybackLooped,
     getProjects,
     getProject,
     getPublicProjects,

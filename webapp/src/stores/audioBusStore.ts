@@ -148,10 +148,68 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     if (audioContext.state === "suspended") await audioContext.resume();
   };
 
-  const createCaptureStream = (): MediaStream => {
-    const dest = audioContext.createMediaStreamDestination();
-    limiter.connect(dest);
-    return dest.stream;
+  // Capture PCM brute pour l'export : on tape le signal juste après le limiter
+  // plutôt que de passer par un MediaRecorder (qui ré-encoderait en Opus/AAC,
+  // empilant une compression lossy inutile avant l'encodage WAV/MP3 final).
+  const PCM_CAPTURE_BUFFER_SIZE = 4096;
+  const PCM_CAPTURE_CHANNELS = 2;
+  let captureProcessor: ScriptProcessorNode | null = null;
+  let captureSilentGain: GainNode | null = null;
+  let captureChunks: Float32Array[][] = [];
+
+  const startPcmCapture = (): void => {
+    captureChunks = Array.from({ length: PCM_CAPTURE_CHANNELS }, () => []);
+    captureProcessor = audioContext.createScriptProcessor(
+      PCM_CAPTURE_BUFFER_SIZE,
+      PCM_CAPTURE_CHANNELS,
+      PCM_CAPTURE_CHANNELS,
+    );
+    captureProcessor.onaudioprocess = (event) => {
+      for (let ch = 0; ch < PCM_CAPTURE_CHANNELS; ch++) {
+        captureChunks[ch].push(
+          new Float32Array(event.inputBuffer.getChannelData(ch)),
+        );
+      }
+    };
+
+    // ScriptProcessorNode ne déclenche onaudioprocess que s'il est connecté
+    // à une destination : on le branche via un gain à 0 pour ne pas dupliquer
+    // le son en sortie audible.
+    captureSilentGain = audioContext.createGain();
+    captureSilentGain.gain.value = 0;
+    limiter.connect(captureProcessor);
+    captureProcessor.connect(captureSilentGain);
+    captureSilentGain.connect(audioContext.destination);
+  };
+
+  const stopPcmCapture = (): AudioBuffer => {
+    if (captureProcessor) {
+      limiter.disconnect(captureProcessor);
+      captureProcessor.disconnect();
+    }
+    captureSilentGain?.disconnect();
+    captureProcessor = null;
+    captureSilentGain = null;
+
+    const totalLength =
+      captureChunks[0]?.reduce((sum, chunk) => sum + chunk.length, 0) ?? 0;
+    const buffer = audioContext.createBuffer(
+      PCM_CAPTURE_CHANNELS,
+      Math.max(totalLength, 1),
+      audioContext.sampleRate,
+    );
+
+    for (let ch = 0; ch < PCM_CAPTURE_CHANNELS; ch++) {
+      const channelData = buffer.getChannelData(ch);
+      let offset = 0;
+      for (const chunk of captureChunks[ch] ?? []) {
+        channelData.set(chunk, offset);
+        offset += chunk.length;
+      }
+    }
+
+    captureChunks = [];
+    return buffer;
   };
 
   // Channel virtuel du bus master, au même format que les TrackChannel par piste,
@@ -177,7 +235,8 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     inputBus,
     isInitialized,
     ensureAudioContextResumed,
-    createCaptureStream,
+    startPcmCapture,
+    stopPcmCapture,
     applyMasterAutomation,
   };
 });
