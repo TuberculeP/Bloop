@@ -2,7 +2,10 @@
 import { ref, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
+import { useUserSamplesStore } from "../../../stores/userSamplesStore";
 import SamplePreviewButton from "../../shared/SamplePreviewButton.vue";
+import TabBar from "../../shared/TabBar.vue";
+import type { TabItem } from "../../shared/TabBar.vue";
 import type {
   SamplePack,
   SampleFolder,
@@ -10,19 +13,30 @@ import type {
 } from "../../../lib/utils/types";
 
 const audioLibraryStore = useAudioLibraryStore();
+const userSamplesStore = useUserSamplesStore();
 const { previewingId } = storeToRefs(audioLibraryStore);
 
 type NavigationLevel = "packs" | "folders" | "samples";
+type LibraryTab = "packs" | "personal";
+
+const activeTab = ref<LibraryTab>("packs");
+const libraryTabs: TabItem[] = [
+  { id: "packs", label: "Packs", icon: "fas fa-box" },
+  { id: "personal", label: "Mes Samples", icon: "fas fa-user" },
+];
 
 const currentLevel = ref<NavigationLevel>("packs");
 const selectedPack = ref<SamplePack | null>(null);
 const selectedFolder = ref<SampleFolder | null>(null);
 const isLoading = ref(false);
 
+const personalSamples = computed(() => userSamplesStore.mySamples);
+
 onMounted(async () => {
   isLoading.value = true;
   await audioLibraryStore.initialize();
   isLoading.value = false;
+  userSamplesStore.fetchMySamples();
 });
 
 const packs = computed(() => audioLibraryStore.getAllPacks());
@@ -122,93 +136,127 @@ const getSampleCount = (pack: SamplePack): number => {
       <h3>Audio Library</h3>
     </div>
 
-    <div class="breadcrumb">
-      <template v-for="(part, index) in breadcrumb" :key="part.level">
-        <span
-          class="breadcrumb-item"
-          :class="{ active: index === breadcrumb.length - 1 }"
-          @click="navigateTo(part.level)"
-        >
-          {{ part.label }}
-        </span>
-        <span v-if="index < breadcrumb.length - 1" class="breadcrumb-sep"
-          >/</span
-        >
-      </template>
-    </div>
+    <TabBar class="library-tabs" :tabs="libraryTabs" v-model="activeTab" />
 
-    <div v-if="isLoading" class="loading-state">
-      <span class="loading-icon">⏳</span>
-      <span>Chargement...</span>
-    </div>
+    <template v-if="activeTab === 'packs'">
+      <div class="breadcrumb">
+        <template v-for="(part, index) in breadcrumb" :key="part.level">
+          <span
+            class="breadcrumb-item"
+            :class="{ active: index === breadcrumb.length - 1 }"
+            @click="navigateTo(part.level)"
+          >
+            {{ part.label }}
+          </span>
+          <span v-if="index < breadcrumb.length - 1" class="breadcrumb-sep"
+            >/</span
+          >
+        </template>
+      </div>
 
-    <div v-else-if="packs.length === 0" class="empty-state">
-      <p>No sample packs available</p>
-      <p class="hint">Add packs to /public/samples/packs/</p>
-    </div>
+      <div v-if="isLoading" class="loading-state">
+        <span class="loading-icon">⏳</span>
+        <span>Chargement...</span>
+      </div>
+
+      <div v-else-if="packs.length === 0" class="empty-state">
+        <p>No sample packs available</p>
+        <p class="hint">Add packs to /public/samples/packs/</p>
+      </div>
+
+      <div v-else class="content-area">
+        <!-- Packs List -->
+        <div v-if="currentLevel === 'packs'" class="packs-list">
+          <div
+            v-for="pack in packs"
+            :key="pack.id"
+            class="pack-item"
+            :class="{ featured: pack.featured }"
+            @click="openPack(pack)"
+          >
+            <div class="pack-cover">
+              <img
+                v-if="pack.cover"
+                :src="`/samples/packs/${pack.id}/${pack.cover}`"
+                :alt="pack.name"
+              />
+              <div v-else class="pack-cover-placeholder">
+                <span>{{ pack.name.charAt(0).toUpperCase() }}</span>
+              </div>
+            </div>
+            <div class="pack-info">
+              <span class="pack-name">{{ pack.name }}</span>
+              <span class="pack-meta">
+                <span v-if="pack.author" class="pack-author">{{
+                  pack.author
+                }}</span>
+                <span class="pack-count"
+                  >{{ getSampleCount(pack) }} samples</span
+                >
+              </span>
+            </div>
+            <div class="nav-arrow">›</div>
+          </div>
+        </div>
+
+        <!-- Folders List -->
+        <div
+          v-else-if="currentLevel === 'folders' && selectedPack"
+          class="folders-list"
+        >
+          <div
+            v-for="folder in selectedPack.folders"
+            :key="folder.name"
+            class="folder-item"
+            @click="openFolder(folder)"
+          >
+            <div class="folder-icon">📁</div>
+            <div class="folder-info">
+              <span class="folder-name">{{ folder.name }}</span>
+              <span class="folder-count"
+                >{{ folder.samples.length }} samples</span
+              >
+            </div>
+            <div class="nav-arrow">›</div>
+          </div>
+        </div>
+
+        <!-- Samples List -->
+        <div
+          v-else-if="currentLevel === 'samples' && selectedFolder"
+          class="samples-list"
+        >
+          <div
+            v-for="sample in selectedFolder.samples"
+            :key="sample.id"
+            class="sample-item"
+            :class="{ previewing: previewingId === sample.id }"
+            draggable="true"
+            @dragstart="handleDragStart($event, sample.id)"
+            @click="handlePreview(sample)"
+          >
+            <SamplePreviewButton :sample="sample" />
+            <div class="sample-info">
+              <span class="sample-name">{{ sample.name }}</span>
+            </div>
+            <div class="drag-hint">⋮⋮</div>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <div v-else class="content-area">
-      <!-- Packs List -->
-      <div v-if="currentLevel === 'packs'" class="packs-list">
-        <div
-          v-for="pack in packs"
-          :key="pack.id"
-          class="pack-item"
-          :class="{ featured: pack.featured }"
-          @click="openPack(pack)"
-        >
-          <div class="pack-cover">
-            <img
-              v-if="pack.cover"
-              :src="`/samples/packs/${pack.id}/${pack.cover}`"
-              :alt="pack.name"
-            />
-            <div v-else class="pack-cover-placeholder">
-              <span>{{ pack.name.charAt(0).toUpperCase() }}</span>
-            </div>
-          </div>
-          <div class="pack-info">
-            <span class="pack-name">{{ pack.name }}</span>
-            <span class="pack-meta">
-              <span v-if="pack.author" class="pack-author">{{
-                pack.author
-              }}</span>
-              <span class="pack-count">{{ getSampleCount(pack) }} samples</span>
-            </span>
-          </div>
-          <div class="nav-arrow">›</div>
-        </div>
+      <!-- Mes Samples -->
+      <div v-if="personalSamples.length === 0" class="empty-state">
+        <p>Aucun sample personnel</p>
+        <p class="hint">
+          Uploade des samples depuis ton profil pour les retrouver ici
+        </p>
       </div>
 
-      <!-- Folders List -->
-      <div
-        v-else-if="currentLevel === 'folders' && selectedPack"
-        class="folders-list"
-      >
+      <div v-else class="samples-list">
         <div
-          v-for="folder in selectedPack.folders"
-          :key="folder.name"
-          class="folder-item"
-          @click="openFolder(folder)"
-        >
-          <div class="folder-icon">📁</div>
-          <div class="folder-info">
-            <span class="folder-name">{{ folder.name }}</span>
-            <span class="folder-count"
-              >{{ folder.samples.length }} samples</span
-            >
-          </div>
-          <div class="nav-arrow">›</div>
-        </div>
-      </div>
-
-      <!-- Samples List -->
-      <div
-        v-else-if="currentLevel === 'samples' && selectedFolder"
-        class="samples-list"
-      >
-        <div
-          v-for="sample in selectedFolder.samples"
+          v-for="sample in personalSamples"
           :key="sample.id"
           class="sample-item"
           :class="{ previewing: previewingId === sample.id }"
@@ -248,6 +296,20 @@ const getSampleCount = (pack: SamplePack): number => {
     color: #f2efe8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+  }
+}
+
+.library-tabs {
+  :deep(.tab-bar) {
+    margin-bottom: 0;
+    padding: 4px 8px 0;
+    border-bottom: 1px solid rgba(122, 15, 62, 0.3);
+  }
+
+  :deep(.tab-btn) {
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 6px;
   }
 }
 
