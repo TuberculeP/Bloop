@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { storeToRefs } from "pinia";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
 import { useUserSamplesStore } from "../../../stores/userSamplesStore";
@@ -17,12 +17,13 @@ const userSamplesStore = useUserSamplesStore();
 const { previewingId } = storeToRefs(audioLibraryStore);
 
 type NavigationLevel = "packs" | "folders" | "samples";
-type LibraryTab = "packs" | "personal";
+type LibraryTab = "packs" | "personal" | "search";
 
 const activeTab = ref<LibraryTab>("packs");
 const libraryTabs: TabItem[] = [
   { id: "packs", label: "Packs", icon: "fas fa-box" },
   { id: "personal", label: "Mes Samples", icon: "fas fa-user" },
+  { id: "search", label: "Rechercher", icon: "fas fa-search" },
 ];
 
 const currentLevel = ref<NavigationLevel>("packs");
@@ -31,6 +32,56 @@ const selectedFolder = ref<SampleFolder | null>(null);
 const isLoading = ref(false);
 
 const personalSamples = computed(() => userSamplesStore.mySamples);
+
+interface SearchResultItem {
+  sample: AudioSample;
+  origin: string;
+}
+
+const searchQuery = ref("");
+let searchTimeout: ReturnType<typeof setTimeout>;
+
+const debouncedSearch = (): void => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    audioLibraryStore.searchSamples(searchQuery.value);
+  }, 300);
+};
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimeout);
+});
+
+const searchResultItems = computed<SearchResultItem[]>(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (query.length < 2) return [];
+
+  const personal: SearchResultItem[] = personalSamples.value
+    .filter((s) => s.name.toLowerCase().includes(query))
+    .map((sample) => ({ sample, origin: "Perso" }));
+
+  const packResults: SearchResultItem[] = audioLibraryStore.searchResults.map(
+    (sample) => ({
+      sample,
+      origin: audioLibraryStore.getPack(sample.packId)?.name ?? sample.packId,
+    }),
+  );
+
+  return [...personal, ...packResults];
+});
+
+const hasMoreResults = computed(
+  () =>
+    audioLibraryStore.searchPagination.page <
+    audioLibraryStore.searchPagination.pages,
+);
+
+const loadMoreResults = (): void => {
+  audioLibraryStore.searchSamples(
+    searchQuery.value,
+    audioLibraryStore.searchPagination.page + 1,
+  );
+};
 
 onMounted(async () => {
   isLoading.value = true;
@@ -245,7 +296,7 @@ const getSampleCount = (pack: SamplePack): number => {
       </div>
     </template>
 
-    <div v-else class="content-area">
+    <div v-else-if="activeTab === 'personal'" class="content-area">
       <!-- Mes Samples -->
       <div v-if="personalSamples.length === 0" class="empty-state">
         <p>Aucun sample personnel</p>
@@ -270,6 +321,67 @@ const getSampleCount = (pack: SamplePack): number => {
           </div>
           <div class="drag-hint">⋮⋮</div>
         </div>
+      </div>
+    </div>
+
+    <div v-else class="content-area search-area">
+      <!-- Rechercher -->
+      <div class="search-input-wrapper">
+        <i class="fas fa-search search-icon" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Nom d'un sample..."
+          class="search-input"
+          @input="debouncedSearch"
+        />
+      </div>
+
+      <div v-if="searchQuery.trim().length < 2" class="empty-state">
+        <p>Tape au moins 2 caractères pour rechercher</p>
+      </div>
+
+      <div
+        v-else-if="
+          audioLibraryStore.isSearching && searchResultItems.length === 0
+        "
+        class="loading-state"
+      >
+        <span class="loading-icon">⏳</span>
+        <span>Recherche...</span>
+      </div>
+
+      <div v-else-if="searchResultItems.length === 0" class="empty-state">
+        <p>Aucun résultat</p>
+      </div>
+
+      <div v-else class="samples-list">
+        <div
+          v-for="item in searchResultItems"
+          :key="item.sample.id"
+          class="sample-item"
+          :class="{ previewing: previewingId === item.sample.id }"
+          draggable="true"
+          @dragstart="handleDragStart($event, item.sample.id)"
+          @click="handlePreview(item.sample)"
+        >
+          <SamplePreviewButton :sample="item.sample" />
+          <div class="sample-info">
+            <span class="sample-name">{{ item.sample.name }}</span>
+            <span class="sample-origin">{{ item.origin }}</span>
+          </div>
+          <div class="drag-hint">⋮⋮</div>
+        </div>
+
+        <button
+          v-if="hasMoreResults"
+          type="button"
+          class="load-more-btn"
+          :disabled="audioLibraryStore.isSearching"
+          @click="loadMoreResults"
+        >
+          {{ audioLibraryStore.isSearching ? "Chargement..." : "Charger plus" }}
+        </button>
       </div>
     </div>
   </div>
@@ -572,10 +684,80 @@ const getSampleCount = (pack: SamplePack): number => {
   text-overflow: ellipsis;
 }
 
+.sample-origin {
+  font-size: 11px;
+  color: rgba(255, 63, 180, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-input-wrapper {
+  position: relative;
+  padding: 8px;
+
+  .search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+  }
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 10px 8px 30px;
+  background: #1a0e15;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 6px;
+  color: #f2efe8;
+  font-size: 13px;
+
+  &:focus {
+    outline: none;
+    border-color: #ff3fb4;
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+}
+
 .drag-hint {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.3);
   opacity: 0;
   transition: opacity 0.15s;
+}
+
+.load-more-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  background: #1a0e15;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #3d1528;
+    color: #f2efe8;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
 }
 </style>

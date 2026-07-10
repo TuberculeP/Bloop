@@ -37,20 +37,45 @@ interface ApiSample {
   fullUrl: string | null;
 }
 
+interface ApiSearchSample {
+  id: string;
+  name: string;
+  filename: string;
+  duration: number;
+  waveform: number[] | null;
+  fullUrl: string | null;
+  folder?: {
+    id: string;
+    name: string;
+    pack?: {
+      id: string;
+      slug: string;
+      name: string;
+    };
+  };
+}
+
 interface ApiResponse<T> {
   status: number;
   message: string;
   body: T;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
 interface PaginatedPacksResponse {
   packs: ApiPack[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  pagination: PaginationInfo;
+}
+
+interface PaginatedSearchResponse {
+  samples: ApiSearchSample[];
+  pagination: PaginationInfo;
 }
 
 export const useAudioLibraryStore = defineStore("audioLibrary", () => {
@@ -66,6 +91,15 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
   const currentPackSlug = ref<string | null>(null);
   const currentFolderId = ref<string | null>(null);
   const pagination = ref({ page: 1, limit: 20, total: 0, pages: 0 });
+
+  const searchResults = ref<AudioSample[]>([]);
+  const isSearching = ref(false);
+  const searchPagination = ref<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  });
 
   const getSample = (sampleId: string): AudioSample | undefined => {
     return samples.value.get(sampleId);
@@ -328,6 +362,52 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     return fetchedSamples;
   };
 
+  let latestSearchQuery = "";
+
+  const searchSamples = async (query: string, page = 1): Promise<void> => {
+    latestSearchQuery = query;
+
+    if (query.trim().length < 2) {
+      searchResults.value = [];
+      searchPagination.value = { page: 1, limit: 20, total: 0, pages: 0 };
+      return;
+    }
+
+    isSearching.value = true;
+    const result = await apiClient.get<ApiResponse<PaginatedSearchResponse>>(
+      `/samples/search?q=${encodeURIComponent(query)}&page=${page}&limit=20`,
+    );
+
+    // Une recherche plus récente a été lancée entre-temps : cette réponse
+    // (potentiellement arrivée dans le désordre) ne doit pas écraser la sienne.
+    if (latestSearchQuery !== query) return;
+
+    isSearching.value = false;
+
+    if (result.error || !result.data?.body) {
+      if (page === 1) searchResults.value = [];
+      return;
+    }
+
+    const { samples: apiSamples, pagination: pag } = result.data.body;
+    searchPagination.value = pag;
+
+    const mapped: AudioSample[] = apiSamples.map((as) => ({
+      id: as.id,
+      name: as.name,
+      packId: as.folder?.pack?.slug ?? "",
+      folder: as.folder?.name ?? "",
+      filename: as.filename,
+      duration: as.duration,
+      waveformData: as.waveform ?? undefined,
+      fullUrl: as.fullUrl ?? "",
+    }));
+
+    restoreSamples(Object.fromEntries(mapped.map((s) => [s.id, s])));
+    searchResults.value =
+      page === 1 ? mapped : [...searchResults.value, ...mapped];
+  };
+
   const initializeFromApi = async (): Promise<boolean> => {
     try {
       const fetchedPacks = await fetchPacksFromApi(1, 50);
@@ -408,6 +488,9 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     currentPackSlug,
     currentFolderId,
     previewingId,
+    searchResults,
+    isSearching,
+    searchPagination,
 
     getSample,
     getSampleBuffer,
@@ -428,6 +511,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     fetchPacksFromApi,
     fetchPackDetails,
     fetchFolderSamples,
+    searchSamples,
     restoreSamples,
   };
 });
