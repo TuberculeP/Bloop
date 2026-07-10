@@ -233,6 +233,7 @@ const startExport = async () => {
     URL.revokeObjectURL(url);
     isExporting.value = false;
     isManualExport.value = false;
+    projectStore.markExportSuccess();
     if (props.exportMode) router.push({ name: "app-main" });
   };
 
@@ -378,6 +379,7 @@ const animate = () => {
     playbackStartTime.value =
       performance.now() + (checkpointPosition.value / stepsPerSecond) * 1000;
     triggerNotesAtPosition(newPosition);
+    projectStore.markPlaybackLooped();
   }
 
   const prevIntPosition = Math.floor(currentPosition.value);
@@ -699,6 +701,7 @@ defineExpose({
         <AddTrackButton @add-track="handleAddTrack" />
 
         <BaseButton
+          class="export-audio-btn"
           @click="startExport"
           title="Exporter en audio"
           :disabled="isExporting"
@@ -709,6 +712,7 @@ defineExpose({
         </BaseButton>
 
         <BaseButton
+          class="save-project-btn"
           @click="handleSaveProject"
           :title="
             isReadOnly

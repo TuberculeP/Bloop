@@ -35,6 +35,7 @@ pie-poc-2/
 | DAW Timeline | `webapp/src/components/app/CLAUDE.md` | Piano roll, pistes, engines audio |
 | Piano Roll | `webapp/src/components/app/timeline/PianoRoll/CLAUDE.md` | Éditeur de notes |
 | Admin | `webapp/src/views/admin/CLAUDE.md` | Gestion users + samples |
+| Onboarding | `webapp/src/lib/onboarding/CLAUDE.md` | Tour guidé driver.js, gotchas de ciblage dynamique |
 
 ## Commandes
 

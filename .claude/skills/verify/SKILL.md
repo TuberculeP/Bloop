@@ -35,6 +35,14 @@ Si un clic Playwright normal échoue avec "element intercepts pointer events" al
 
 Un script qui clique trop vite peut faire passer des bugs de cycle de vie (destroy/recreate, animations d'entrée) inaperçus. Ajouter des `waitForTimeout(500-800ms)` entre les actions qui déclenchent une transition d'état pour se rapprocher d'un rythme humain plutôt que d'enchaîner les clics instantanément.
 
+## Gotcha : `boundingBox()` hors viewport sur les éléments larges/scrollés
+
+Le piano roll (`.piano-grid-canvas`) peut être bien plus large que le viewport et scrollé horizontalement : `boundingBox()` renvoie alors des coordonnées dont `x` peut être **négatif**, et cliquer via `page.mouse.click(box.x + dx, box.y + dy)` clique hors écran silencieusement (aucune erreur, mais rien ne se passe). Préférer `locator.click({ position: { x, y } })` (coordonnées relatives à l'élément) — Playwright scrolle l'élément dans le viewport automatiquement avant de cliquer.
+
+## Gotcha : la boucle de playback peut se terminer très vite
+
+Le bouton Play (`.play-btn`/`.play-btn.playing`) boucle automatiquement sur `loopEndPosition` (fin de la dernière note). Avec une mélodie courte (ex: 3 notes proches du début, comme dans le tuto d'onboarding), la boucle se termine en ~1s — un `waitForTimeout` suivi d'un clic pour "arrêter manuellement" peut tomber après un rebouclage déjà survenu (l'UI a alors déjà avancé). Vérifier l'état réel (ex: titre du popover, classe `.playing`) avant de supposer qu'on est encore dans le même état.
+
 ## Nettoyage
 
 Les screenshots/sorties de scripts ad hoc vont dans `e2e/.output/` (gitignoré) plutôt que `/tmp` ou le scratchpad, pour rester dans le repo entre les sessions.
