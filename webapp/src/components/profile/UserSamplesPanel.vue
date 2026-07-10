@@ -49,6 +49,7 @@
         <span class="sample-size">{{
           formatSize(userSamplesStore.getSampleSize(sample.id))
         }}</span>
+        <span class="sample-usage">{{ usageLabel(sample.id) }}</span>
         <button type="button" class="delete-btn" @click="handleDelete(sample)">
           Supprimer
         </button>
@@ -86,6 +87,12 @@ const quotaPercent = computed(() => {
 
 const formatSize = (bytes: number) =>
   `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+
+const usageLabel = (id: string) => {
+  const count = userSamplesStore.getUsageCount(id);
+  if (count === 0) return "Inutilisé";
+  return `Utilisé dans ${count} projet${count > 1 ? "s" : ""}`;
+};
 
 async function uploadFiles(files: FileList) {
   for (const file of Array.from(files)) {
@@ -237,6 +244,13 @@ onMounted(() => {
   font-size: 0.8rem;
   color: var(--color-white-light);
   opacity: 0.7;
+}
+
+.sample-usage {
+  font-size: 0.8rem;
+  color: var(--color-white-light);
+  opacity: 0.7;
+  white-space: nowrap;
 }
 
 .delete-btn {

@@ -1,11 +1,11 @@
 import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
-import { IsNull } from "typeorm";
 import pg from "../../config/db.config";
 import { User } from "../../config/entities/User";
 import { UserSample } from "../../config/entities/UserSample";
 import { Project } from "../../config/entities/Project";
+import { UserSampleProjectLink } from "../../config/entities/UserSampleProjectLink";
 import {
   uploadToR2,
   deleteFromR2,
@@ -20,16 +20,33 @@ import {
 const userSamplesRouter = Router();
 
 async function findProjectsUsingSample(sampleId: string): Promise<Project[]> {
-  const projects = await pg.getRepository(Project).find({
-    where: { deletedAt: IsNull() },
-    relations: ["user"],
+  const links = await pg.getRepository(UserSampleProjectLink).find({
+    where: { sampleId },
+    relations: ["project", "project.user"],
   });
 
-  return projects.filter((project) =>
-    project.data?.data?.tracks?.some((track: any) =>
-      track.clips?.some((clip: any) => clip.sampleId === sampleId),
-    ),
-  );
+  return links
+    .map((link) => link.project)
+    .filter((project) => project.deletedAt === null);
+}
+
+async function getUsageCounts(
+  sampleIds: string[],
+): Promise<Map<string, number>> {
+  if (sampleIds.length === 0) return new Map();
+
+  const rows = await pg
+    .getRepository(UserSampleProjectLink)
+    .createQueryBuilder("link")
+    .innerJoin("link.project", "project")
+    .select("link.sampleId", "sampleId")
+    .addSelect("COUNT(*)", "count")
+    .where("link.sampleId IN (:...ids)", { ids: sampleIds })
+    .andWhere("project.deletedAt IS NULL")
+    .groupBy("link.sampleId")
+    .getRawMany();
+
+  return new Map(rows.map((r) => [r.sampleId, Number(r.count)]));
 }
 
 function removeSampleFromProject(project: Project, sampleId: string): boolean {
@@ -94,7 +111,15 @@ userSamplesRouter.get("/", async (req, res) => {
     order: { createdAt: "DESC" },
   });
 
-  res.status(200).json({ status: 200, samples });
+  const usageCounts = await getUsageCounts(samples.map((s) => s.id));
+
+  res.status(200).json({
+    status: 200,
+    samples: samples.map((sample) => ({
+      ...sample,
+      usageCount: usageCounts.get(sample.id) ?? 0,
+    })),
+  });
 });
 
 // GET /api/user/samples/storage
@@ -274,6 +299,10 @@ userSamplesRouter.delete("/:id", async (req, res) => {
     const sampleSize = sample.size;
     const key = sample.fullUrl?.split("/").slice(-3).join("/");
 
+    // Doit être lu AVANT la suppression : le cascade onDelete efface les
+    // lignes de UserSampleProjectLink dès que le UserSample est supprimé.
+    const affectedProjects = await findProjectsUsingSample(sampleId);
+
     await sampleRepository.remove(sample);
 
     if (key) {
@@ -287,7 +316,6 @@ userSamplesRouter.delete("/:id", async (req, res) => {
     user.storageUsedBytes = Math.max(0, user.storageUsedBytes - sampleSize);
     await userRepository.save(user);
 
-    const affectedProjects = await findProjectsUsingSample(sampleId);
     let cleanedProjects = 0;
     const projectRepository = pg.getRepository(Project);
     for (const project of affectedProjects) {

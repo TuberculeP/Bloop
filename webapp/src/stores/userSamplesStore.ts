@@ -24,6 +24,7 @@ interface ApiUserSample {
   duration: number;
   waveform: number[] | null;
   fullUrl: string;
+  usageCount?: number;
 }
 
 interface StorageResponse {
@@ -67,11 +68,13 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
 
   const mySamples = ref<AudioSample[]>([]);
   const sampleSizes = ref<Map<string, number>>(new Map());
+  const usageCounts = ref<Map<string, number>>(new Map());
   const usedBytes = ref(0);
   const quotaBytes = ref(0);
   const uploading = ref(false);
 
   const getSampleSize = (id: string): number => sampleSizes.value.get(id) ?? 0;
+  const getUsageCount = (id: string): number => usageCounts.value.get(id) ?? 0;
 
   const fetchMySamples = async (): Promise<void> => {
     const result = await apiClient.get<{ samples: ApiUserSample[] }>(
@@ -81,6 +84,7 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
     mySamples.value = result.data.samples.map(toAudioSample);
     for (const apiSample of result.data.samples) {
       sampleSizes.value.set(apiSample.id, apiSample.size);
+      usageCounts.value.set(apiSample.id, apiSample.usageCount ?? 0);
       audioLibraryStore.restoreSamples({
         [apiSample.id]: toAudioSample(apiSample),
       });
@@ -157,6 +161,7 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
     if (result.error) return;
     mySamples.value = mySamples.value.filter((s) => s.id !== id);
     sampleSizes.value.delete(id);
+    usageCounts.value.delete(id);
     if (result.data) {
       usedBytes.value = result.data.usedBytes;
       quotaBytes.value = result.data.quotaBytes;
@@ -170,6 +175,7 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
     uploading,
 
     getSampleSize,
+    getUsageCount,
     fetchMySamples,
     fetchStorageUsage,
     uploadSample,

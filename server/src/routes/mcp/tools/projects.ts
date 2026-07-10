@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import pg from "../../../config/db.config";
 import { Project } from "../../../config/entities/Project";
 import { User } from "../../../config/entities/User";
+import { syncSampleLinksForProject } from "../../../services/sampleProjectLinks.service";
 
 const TRACK_COLORS = [
   "#ef4444",
@@ -33,7 +34,9 @@ async function saveProject(project: Project, name: string, timeline: any) {
     data: timeline,
   };
   const repo = pg.getRepository(Project);
-  return repo.save(project);
+  const saved = await repo.save(project);
+  await syncSampleLinksForProject(saved.id, timeline);
+  return saved;
 }
 
 export const listProjectsTool = {
