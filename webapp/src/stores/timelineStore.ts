@@ -60,6 +60,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const automationExpandedTrackId = ref<string | null>(null);
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
+  const metronomeEnabled = ref(false);
 
   // ============================================
   // Computed Properties
@@ -1026,6 +1027,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     expandedTrackId,
     expandedTrack,
     automationExpandedMaster,
+    metronomeEnabled,
 
     // Actions - Tracks
     createTrack,

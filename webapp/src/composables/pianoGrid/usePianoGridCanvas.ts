@@ -38,6 +38,7 @@ interface UsePianoGridCanvasConfig {
   resizingState: Ref<ResizingState | null>;
   resizePreviewDelta: Ref<number | null>;
   selectionRect: Ref<SelectionRect | null>;
+  metronomeEnabled: () => boolean;
 }
 
 export function usePianoGridCanvas(
@@ -176,7 +177,12 @@ export function usePianoGridCanvas(
       };
     }
 
-    renderer.value.render(noteData, activeRows, selRect);
+    renderer.value.render(
+      noteData,
+      activeRows,
+      selRect,
+      config.metronomeEnabled(),
+    );
   };
 
   watch(
@@ -189,6 +195,7 @@ export function usePianoGridCanvas(
       config.resizingState,
       config.resizePreviewDelta,
       config.selectionRect,
+      () => config.metronomeEnabled(),
     ],
     scheduleRender,
     { deep: true },

@@ -198,6 +198,7 @@ onBeforeUnmount(() => {
         :color="track.color"
         :active-notes="allActiveNotes"
         :track-id="track.id"
+        :metronome-enabled="timelineStore.metronomeEnabled"
         @add-note="handleAddNote"
         @remove-note="handleRemoveNote"
         @update-notes="handleUpdateNotes"

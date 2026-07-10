@@ -39,6 +39,7 @@ const COLORS = {
   cellBorderVertical: "rgba(122, 15, 62, 0.2)",
   cellBorderHorizontal: "rgba(122, 15, 62, 0.15)",
   measureLine: "rgba(122, 15, 62, 0.5)",
+  metronomeBeatLine: "rgba(255, 255, 255, 0.9)",
   noteSelectedOutline: "#fff7ab",
   noteSelectedShadow: "rgba(255, 247, 171, 0.4)",
   noteDraggingOutline: "#fff7ab",
@@ -75,6 +76,7 @@ export class PianoGridRenderer {
     notes: NoteRenderData[],
     activeRows: Set<number>,
     selectionRect: SelectionRectData | null,
+    metronomeEnabled = false,
   ) {
     const { ctx } = this;
 
@@ -84,7 +86,7 @@ export class PianoGridRenderer {
     this.drawActiveRowHighlights(activeRows);
     this.drawGridLines();
     this.drawOctaveLines();
-    this.drawMeasureLines();
+    this.drawMeasureLines(metronomeEnabled);
     this.drawNotes(notes);
 
     if (selectionRect) {
@@ -160,19 +162,28 @@ export class PianoGridRenderer {
     ctx.stroke();
   }
 
-  private drawMeasureLines() {
+  // Une ligne toutes les 4 colonnes = 1 temps. Quand le métronome est actif,
+  // 1 ligne sur 4 (= toutes les 4 temps = 1 mesure en 4/4) est marquée en blanc,
+  // en permanence (pas d'animation liée à la lecture).
+  private drawMeasureLines(metronomeEnabled: boolean) {
     const { ctx, config } = this;
 
-    ctx.strokeStyle = COLORS.measureLine;
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
     for (let measure = 0; measure <= Math.ceil(config.cols / 4); measure++) {
       const x = measure * 4 * config.colWidth - 0.5;
+      const isBeatMarker = metronomeEnabled && measure % 4 === 0;
+
+      ctx.beginPath();
+      if (isBeatMarker) {
+        ctx.strokeStyle = COLORS.metronomeBeatLine;
+        ctx.lineWidth = 2;
+      } else {
+        ctx.strokeStyle = COLORS.measureLine;
+        ctx.lineWidth = 1;
+      }
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
+      ctx.stroke();
     }
-    ctx.stroke();
   }
 
   private drawNotes(notes: NoteRenderData[]) {
