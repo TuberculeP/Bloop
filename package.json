@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.997.0",
+    "@breezystack/lamejs": "^1.2.7",
     "@elemaudio/core": "^4.0.1",
     "@elemaudio/web-renderer": "^4.0.3",
     "@modelcontextprotocol/sdk": "^1.29.0",

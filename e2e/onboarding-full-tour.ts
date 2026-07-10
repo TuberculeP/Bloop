@@ -1,5 +1,6 @@
 // Vérifie le tour guidé complet : création projet -> piste Sampler ->
-// réglages (flûte) -> notes -> renommage -> play -> save -> export.
+// réglages (flûte) -> notes -> renommage -> play -> save -> export
+// (choix du format dans la modale) -> confirm-export.
 // Usage : npx tsx e2e/onboarding-full-tour.ts
 import { launchBrowser, loginAsAdmin, BASE_URL } from "./helpers";
 import type { Page } from "playwright";
@@ -121,6 +122,11 @@ const run = async () => {
 
   await wait(page);
   await page.click(".export-audio-btn");
+  await page.waitForSelector(".export-format-modal", { timeout: 10000 });
+  console.log("11. confirm-export ->", await popoverTitle(page));
+
+  await wait(page);
+  await page.click(".export-confirm-btn");
   await page.waitForSelector(".export-overlay", {
     state: "detached",
     timeout: 30000,

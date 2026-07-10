@@ -122,7 +122,8 @@ export function useOnboardingTour() {
     if (step.id === "close-settings") waitForSettingsClose();
     if (step.id === "play") waitForPlayed();
     if (step.id === "rename-project") waitForRenameInput();
-    if (step.id === "export") waitForExportSettled();
+    if (step.id === "export") waitForExportModalOpen();
+    if (step.id === "confirm-export") waitForExportModalClose();
   };
 
   const waitForInstrumentMenu = async () => {
@@ -196,24 +197,52 @@ export function useOnboardingTour() {
     onboardingStore.advance();
   };
 
-  const waitForExportSettled = async () => {
+  const waitForExportModalOpen = async () => {
+    // Le bouton Sauvegarder juste avant dans le header change de largeur
+    // ("Sauvegarder" -> "Projet sauvegardé" pendant 3s), ce qui décale son
+    // voisin .export-audio-btn : on attend que ça se stabilise avant de
+    // recaler le spotlight, comme pour l'ancien flow (voir waitForPositionSettle).
     const el = document.querySelector(".export-audio-btn");
-    if (!el) return;
-    const initialX = el.getBoundingClientRect().x;
-    await waitForPositionSettle(".export-audio-btn", initialX);
+    if (el) {
+      const initialX = el.getBoundingClientRect().x;
+      await waitForPositionSettle(".export-audio-btn", initialX);
+      if (
+        onboardingStore.isActive &&
+        onboardingStore.currentStepIndex === stepIndex("export")
+      ) {
+        const step = ONBOARDING_STEPS[stepIndex("export")];
+        highlight(".export-audio-btn", {
+          title: step.title,
+          description: step.description,
+          side: step.side,
+        });
+      }
+    }
+
+    // Le clic sur le bouton header ouvre la modale de choix de format : une
+    // fois affichée, on passe à l'étape suivante qui la highlight elle-même.
+    await waitForElement(".export-format-modal");
     if (
       !onboardingStore.isActive ||
       onboardingStore.currentStepIndex !== stepIndex("export")
     )
       return;
-    // Recale le spotlight une seule fois à la position finale, sans repasser
-    // par renderStep() (qui réarmerait cette même attente indéfiniment).
-    const step = ONBOARDING_STEPS[stepIndex("export")];
-    highlight(".export-audio-btn", {
-      title: step.title,
-      description: step.description,
-      side: step.side,
-    });
+    onboardingStore.advance();
+  };
+
+  const waitForExportModalClose = async () => {
+    // La modale se ferme aussi bien quand l'export est confirmé (elle
+    // disparaît dès le clic, avant même la fin du rendu) que sur "Annuler" :
+    // on distingue les deux via l'overlay de progression, qui n'apparaît que
+    // dans le premier cas.
+    await waitForElementGone(".export-format-modal");
+    if (
+      !onboardingStore.isActive ||
+      onboardingStore.currentStepIndex !== stepIndex("confirm-export")
+    )
+      return;
+    if (document.querySelector(".export-overlay")) return;
+    onboardingStore.currentStepIndex = stepIndex("export");
   };
 
   const waitForRenameInput = async () => {
@@ -384,7 +413,7 @@ export function useOnboardingTour() {
       (exportedAt) => {
         if (
           !onboardingStore.isActive ||
-          onboardingStore.currentStepIndex !== stepIndex("export") ||
+          onboardingStore.currentStepIndex !== stepIndex("confirm-export") ||
           !exportedAt
         )
           return;

@@ -25,6 +25,7 @@ import type {
 } from "../../../lib/utils/types";
 import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
+import { encodeWav, encodeMp3 } from "../../../lib/audio/exportEncoders";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import MasterTrackRow from "./MasterTrackRow.vue";
@@ -187,8 +188,21 @@ const activeClips = ref<Map<string, { trackId: string; clip: AudioClip }>>(
 const isExporting = ref(false);
 const exportProgress = ref(0);
 const isManualExport = ref(false);
-const mediaRecorderRef = ref<MediaRecorder | null>(null);
-const recordedChunks: Blob[] = [];
+const exportFormat = ref<"wav" | "mp3">("mp3");
+const showExportModal = ref(false);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const cancelExportModal = () => {
+  showExportModal.value = false;
+};
+
+const confirmExport = () => {
+  showExportModal.value = false;
+  startExport();
+};
 
 const finishExport = () => {
   stopAllActiveNotes();
@@ -200,7 +214,20 @@ const finishExport = () => {
   }
   currentPosition.value = 0;
   checkpointPosition.value = 0;
-  mediaRecorderRef.value?.stop();
+
+  const buffer = audioBusStore.stopPcmCapture();
+  const blob =
+    exportFormat.value === "wav" ? encodeWav(buffer) : encodeMp3(buffer);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${timelineStore.project.name || "projet"}.${exportFormat.value}`;
+  a.click();
+  URL.revokeObjectURL(url);
+  isExporting.value = false;
+  isManualExport.value = false;
+  projectStore.markExportSuccess();
+  if (props.exportMode) router.push({ name: "app-main" });
 };
 
 const startExport = async () => {
@@ -208,37 +235,8 @@ const startExport = async () => {
   isExporting.value = true;
   isManualExport.value = true;
   exportProgress.value = 0;
-  recordedChunks.length = 0;
 
-  const stream = audioBusStore.createCaptureStream();
-  const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-    ? "audio/webm;codecs=opus"
-    : MediaRecorder.isTypeSupported("audio/mp4")
-      ? "audio/mp4"
-      : "";
-  const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
-
-  recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) recordedChunks.push(e.data);
-  };
-
-  recorder.onstop = () => {
-    const ext = recorder.mimeType.includes("mp4") ? "m4a" : "webm";
-    const blob = new Blob(recordedChunks, { type: recorder.mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${timelineStore.project.name || "projet"}.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
-    isExporting.value = false;
-    isManualExport.value = false;
-    projectStore.markExportSuccess();
-    if (props.exportMode) router.push({ name: "app-main" });
-  };
-
-  recorder.start();
-  mediaRecorderRef.value = recorder;
+  audioBusStore.startPcmCapture();
 
   checkpointPosition.value = 0;
   startPlayback();
@@ -629,6 +627,52 @@ defineExpose({
         <p class="export-percent">{{ exportProgress }}%</p>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showExportModal"
+        class="modal-overlay"
+        @click="cancelExportModal"
+      >
+        <div class="modal export-format-modal" @click.stop>
+          <h3>Exporter le projet</h3>
+          <p>Choisissez le format du fichier audio à générer.</p>
+          <div class="export-format-options">
+            <label
+              class="export-format-option"
+              :class="{ active: exportFormat === 'mp3' }"
+            >
+              <input v-model="exportFormat" type="radio" value="mp3" />
+              MP3
+            </label>
+            <label
+              class="export-format-option"
+              :class="{ active: exportFormat === 'wav' }"
+            >
+              <input v-model="exportFormat" type="radio" value="wav" />
+              WAV
+            </label>
+          </div>
+          <div class="modal-actions">
+            <BaseButton
+              class="export-cancel-btn"
+              variant="secondary"
+              @click="cancelExportModal"
+            >
+              Annuler
+            </BaseButton>
+            <BaseButton
+              class="export-confirm-btn"
+              variant="accent"
+              @click="confirmExport"
+            >
+              Exporter
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <div class="timeline-header">
       <div class="header-left">
         <BaseButton
@@ -702,7 +746,7 @@ defineExpose({
 
         <BaseButton
           class="export-audio-btn"
-          @click="startExport"
+          @click="openExportModal"
           title="Exporter en audio"
           :disabled="isExporting"
           variant="ghost"
@@ -1057,6 +1101,74 @@ defineExpose({
       outline: none;
       border-color: #ff3fb4;
     }
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+
+  h3 {
+    color: var(--color-white);
+    font-size: 1.25rem;
+    margin: 0 0 12px;
+  }
+
+  p {
+    color: var(--color-white-light);
+    opacity: 0.75;
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.export-format-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.export-format-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(122, 15, 62, 0.5);
+  border-radius: 8px;
+  color: #f2efe8;
+  font-size: 14px;
+  cursor: pointer;
+
+  &.active {
+    border-color: #ff3fb4;
+    background-color: rgba(255, 63, 180, 0.1);
+  }
+
+  input {
+    accent-color: #ff3fb4;
   }
 }
 

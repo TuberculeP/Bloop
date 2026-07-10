@@ -9,7 +9,8 @@ export type OnboardingStepId =
   | "rename-project"
   | "play"
   | "save"
-  | "export";
+  | "export"
+  | "confirm-export";
 
 export interface OnboardingStep {
   id: OnboardingStepId;
@@ -113,7 +114,17 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     route: "app-sequencer",
     selector: ".export-audio-btn",
     title: "Exportez votre morceau",
-    description: "Cliquez sur Exporter pour générer le fichier audio final.",
+    description:
+      "Cliquez sur Exporter pour choisir le format de votre fichier.",
     side: "bottom",
+  },
+  {
+    id: "confirm-export",
+    route: "app-sequencer",
+    selector: ".export-format-modal",
+    title: "Choisissez votre format",
+    description:
+      "Sélectionnez WAV ou MP3, puis cliquez sur Exporter pour générer le fichier final.",
+    side: "right",
   },
 ];
