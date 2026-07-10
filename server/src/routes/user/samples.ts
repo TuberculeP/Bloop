@@ -1,9 +1,11 @@
 import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
+import { IsNull } from "typeorm";
 import pg from "../../config/db.config";
 import { User } from "../../config/entities/User";
 import { UserSample } from "../../config/entities/UserSample";
+import { Project } from "../../config/entities/Project";
 import {
   uploadToR2,
   deleteFromR2,
@@ -16,6 +18,41 @@ import {
 } from "../../config/quota.config";
 
 const userSamplesRouter = Router();
+
+async function findProjectsUsingSample(sampleId: string): Promise<Project[]> {
+  const projects = await pg.getRepository(Project).find({
+    where: { deletedAt: IsNull() },
+    relations: ["user"],
+  });
+
+  return projects.filter((project) =>
+    project.data?.data?.tracks?.some((track: any) =>
+      track.clips?.some((clip: any) => clip.sampleId === sampleId),
+    ),
+  );
+}
+
+function removeSampleFromProject(project: Project, sampleId: string): boolean {
+  const timeline = project.data?.data;
+  if (!timeline?.tracks) return false;
+
+  let changed = false;
+  for (const track of timeline.tracks) {
+    if (!track.clips) continue;
+    const filtered = track.clips.filter((c: any) => c.sampleId !== sampleId);
+    if (filtered.length !== track.clips.length) {
+      track.clips = filtered;
+      changed = true;
+    }
+  }
+
+  if (timeline.usedSamples && sampleId in timeline.usedSamples) {
+    delete timeline.usedSamples[sampleId];
+    changed = true;
+  }
+
+  return changed;
+}
 
 const ALLOWED_AUDIO_MIMES = [
   "audio/mpeg",
@@ -79,6 +116,39 @@ userSamplesRouter.get("/storage", async (req, res) => {
     status: 200,
     usedBytes: user.storageUsedBytes,
     quotaBytes: USER_SAMPLE_QUOTA_BYTES,
+  });
+});
+
+// GET /api/user/samples/:id/usage
+userSamplesRouter.get("/:id/usage", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ status: 401, message: "User not logged in" });
+    return;
+  }
+
+  const sample = await pg
+    .getRepository(UserSample)
+    .findOne({ where: { id: req.params.id } });
+
+  if (!sample) {
+    res.status(404).json({ status: 404, message: "Sample not found" });
+    return;
+  }
+
+  if (sample.userId !== req.user.id) {
+    res.status(403).json({ status: 403, message: "Forbidden" });
+    return;
+  }
+
+  const projects = await findProjectsUsingSample(sample.id);
+
+  res.status(200).json({
+    status: 200,
+    projects: projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      ownerName: `${project.user.firstName} ${project.user.lastName}`,
+    })),
   });
 });
 
@@ -200,6 +270,8 @@ userSamplesRouter.delete("/:id", async (req, res) => {
       return;
     }
 
+    const sampleId = sample.id;
+    const sampleSize = sample.size;
     const key = sample.fullUrl?.split("/").slice(-3).join("/");
 
     await sampleRepository.remove(sample);
@@ -212,13 +284,31 @@ userSamplesRouter.delete("/:id", async (req, res) => {
       }
     }
 
-    user.storageUsedBytes = Math.max(0, user.storageUsedBytes - sample.size);
+    user.storageUsedBytes = Math.max(0, user.storageUsedBytes - sampleSize);
     await userRepository.save(user);
+
+    const affectedProjects = await findProjectsUsingSample(sampleId);
+    let cleanedProjects = 0;
+    const projectRepository = pg.getRepository(Project);
+    for (const project of affectedProjects) {
+      try {
+        if (removeSampleFromProject(project, sampleId)) {
+          await projectRepository.save(project);
+          cleanedProjects++;
+        }
+      } catch (error) {
+        console.error(
+          `Failed to clean sample from project ${project.id}:`,
+          error,
+        );
+      }
+    }
 
     res.status(200).json({
       status: 200,
       usedBytes: user.storageUsedBytes,
       quotaBytes: USER_SAMPLE_QUOTA_BYTES,
+      cleanedProjects,
     });
   } catch (error) {
     console.error("User sample delete error:", error);

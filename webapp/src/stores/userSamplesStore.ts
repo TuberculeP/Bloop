@@ -40,6 +40,17 @@ interface UploadResponse {
   quotaBytes: number;
 }
 
+export interface SampleUsageProject {
+  id: string;
+  name: string;
+  ownerName: string;
+}
+
+interface UsageResponse {
+  status: number;
+  projects: SampleUsageProject[];
+}
+
 const toAudioSample = (s: ApiUserSample): AudioSample => ({
   id: s.id,
   name: s.name,
@@ -129,6 +140,16 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
     }
   };
 
+  const fetchSampleUsage = async (
+    id: string,
+  ): Promise<SampleUsageProject[]> => {
+    const result = await apiClient.get<UsageResponse>(
+      `/user/samples/${id}/usage`,
+    );
+    if (result.error || !result.data) return [];
+    return result.data.projects;
+  };
+
   const deleteSample = async (id: string): Promise<void> => {
     const result = await apiClient.delete<StorageResponse>(
       `/user/samples/${id}`,
@@ -152,6 +173,7 @@ export const useUserSamplesStore = defineStore("userSamples", () => {
     fetchMySamples,
     fetchStorageUsage,
     uploadSample,
+    fetchSampleUsage,
     deleteSample,
   };
 });

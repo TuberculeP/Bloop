@@ -49,11 +49,7 @@
         <span class="sample-size">{{
           formatSize(userSamplesStore.getSampleSize(sample.id))
         }}</span>
-        <button
-          type="button"
-          class="delete-btn"
-          @click="userSamplesStore.deleteSample(sample.id)"
-        >
+        <button type="button" class="delete-btn" @click="handleDelete(sample)">
           Supprimer
         </button>
       </li>
@@ -64,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import type { AudioSample } from "../../lib/utils/types";
 import { useUserSamplesStore } from "../../stores/userSamplesStore";
 
 const userSamplesStore = useUserSamplesStore();
@@ -108,6 +105,18 @@ function handleFileSelect(event: Event) {
     uploadFiles(input.files);
     input.value = "";
   }
+}
+
+async function handleDelete(sample: AudioSample) {
+  const usage = await userSamplesStore.fetchSampleUsage(sample.id);
+  if (usage.length > 0) {
+    const list = usage.map((p) => `- ${p.name}`).join("\n");
+    const confirmed = confirm(
+      `Ce sample est utilisé dans ${usage.length} projet(s) :\n${list}\n\nLe supprimer retirera les clips correspondants dans ces projets. Continuer ?`,
+    );
+    if (!confirmed) return;
+  }
+  await userSamplesStore.deleteSample(sample.id);
 }
 
 onMounted(() => {
