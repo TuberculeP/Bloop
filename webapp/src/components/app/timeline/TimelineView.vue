@@ -5,32 +5,24 @@ import {
   onMounted,
   onBeforeUnmount,
   inject,
-  watch,
   type Ref,
 } from "vue";
 import { storeToRefs } from "pinia";
-import { useRoute, useRouter } from "vue-router";
 import { vOnClickOutside } from "@vueuse/components";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useProjectStore } from "../../../stores/projectStore";
-import { useDawLoadingStore } from "../../../stores/dawLoadingStore";
-import { useAudioBusStore } from "../../../stores/audioBusStore";
-import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
-import { useTrackHistoryStore } from "../../../stores/trackHistoryStore";
 import type {
   Track,
   InstrumentType,
   MidiNote,
-  AudioClip,
   NoteName,
 } from "../../../lib/utils/types";
-import { getAutomationValueAt } from "../../../lib/audio/automation";
 import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
-import { useVoiceRecorder } from "../../../composables/useVoiceRecorder";
-import { useSampleFileDrop } from "../../../composables/useSampleFileDrop";
-import { encodeWav, encodeMp3 } from "../../../lib/audio/exportEncoders";
-import { useUserSamplesStore } from "../../../stores/userSamplesStore";
+import { useTimelinePlaybackEngine } from "../../../composables/timelineView/useTimelinePlaybackEngine";
+import { useTimelineExport } from "../../../composables/timelineView/useTimelineExport";
+import { useTimelineVoiceRecording } from "../../../composables/timelineView/useTimelineVoiceRecording";
+import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
+import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import MasterTrackRow from "./MasterTrackRow.vue";
@@ -60,93 +52,25 @@ const props = defineProps<{
   exportMode?: boolean;
 }>();
 
-const router = useRouter();
-const route = useRoute();
 const timelineStore = useTimelineStore();
-const trackAudioStore = useTrackAudioStore();
 const projectStore = useProjectStore();
-const dawLoadingStore = useDawLoadingStore();
-const audioBusStore = useAudioBusStore();
-const audioLibraryStore = useAudioLibraryStore();
-const trackHistoryStore = useTrackHistoryStore();
-const userSamplesStore = useUserSamplesStore();
-const { placeFilesOnTrack } = useSampleFileDrop();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
-const {
-  isSupported: voiceRecorderSupported,
-  state: voiceRecorderState,
-  elapsedMs: voiceElapsedMs,
-  level: voiceLevel,
-  error: voiceRecorderError,
-  devices: voiceDevices,
-  selectedDeviceId: selectedMicId,
-  start: startVoiceRecording,
-  stop: stopVoiceRecording,
-  requestPermission: requestMicPermission,
-} = useVoiceRecorder();
-
-const isRecordingVoice = computed(
-  () => voiceRecorderState.value === "recording",
-);
-const showMicPicker = ref(false);
-const recordingStartPosition = ref(0);
-
-const voiceRecordedTime = computed(() => {
-  const totalSeconds = Math.floor(voiceElapsedMs.value / 1000);
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
-});
-
-const isCloning = ref(false);
-const isSaving = ref(false);
-const saveMessage = ref<{ type: "success" | "error"; text: string } | null>(
-  null,
-);
-
 const COL_WIDTH = 20;
 const ROW_HEIGHT = 75;
+const TRACK_HEADER_WIDTH = 180;
+const TRAILING_COLS = 16;
 
 const scrollLeft = ref(0);
 const scrollContainerRef = ref<HTMLElement | null>(null);
-
-const isPlaying = ref(false);
-const currentPosition = ref(0);
-const checkpointPosition = ref(0);
-const playbackStartTime = ref(0);
-const animationFrameId = ref<number | null>(null);
 
 const settingsTrack = ref<Track | null>(null);
 const showSettings = ref(false);
 const showMasterSettings = ref(false);
 const showAudioLibrary = inject<Ref<boolean>>("showAudioLibrary", ref(false));
 
-const isEditingProjectName = ref(false);
-const editedProjectName = ref("");
-const projectNameInputRef = ref<HTMLInputElement | null>(null);
-
 const sortedTracks = computed(() => timelineStore.sortedTracks);
-
-const TRACK_HEADER_WIDTH = 180;
-const TRAILING_COLS = 16;
-
-watch(
-  () => route.query.projectId,
-  async (newId) => {
-    if (
-      newId &&
-      typeof newId === "string" &&
-      newId !== timelineStore.project.id
-    ) {
-      await projectStore.loadProjectToTimeline(newId, timelineStore);
-      await dawLoadingStore.preloadProject(timelineStore.project);
-    }
-  },
-);
 
 const displayCols = computed(() => {
   let lastEnd = 0;
@@ -162,504 +86,101 @@ const displayCols = computed(() => {
   return Math.max(timelineStore.project.cols, minCols);
 });
 
-const cursorStyle = computed(() => ({
-  transform: `translateX(${currentPosition.value * COL_WIDTH + TRACK_HEADER_WIDTH}px)`,
-}));
+const exportModeProp = computed(() => props.exportMode);
 
-const checkpointStyle = computed(() => ({
-  left: `${checkpointPosition.value * COL_WIDTH + TRACK_HEADER_WIDTH}px`,
-}));
+// Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre
+// (l'export doit interrompre la boucle de playback, arrêter le playback doit
+// finaliser un enregistrement en cours) : on casse le cycle avec ces deux
+// callbacks, câblés dès que les 3 composables existent.
+let exportFeature!: ReturnType<typeof useTimelineExport>;
+let voiceRecording!: ReturnType<typeof useTimelineVoiceRecording>;
 
-const loopEndPosition = computed(() => {
-  let lastEnd = 0;
-
-  for (const track of timelineStore.getPlayableTracks()) {
-    // Notes (tracks MIDI)
-    for (const note of track.notes) {
-      const noteEnd = note.x + note.w;
-      if (noteEnd > lastEnd) lastEnd = noteEnd;
-    }
-
-    // Clips (audio tracks)
-    for (const clip of track.clips ?? []) {
-      const clipEnd = clip.x + clip.w;
-      if (clipEnd > lastEnd) lastEnd = clipEnd;
-    }
+const onLoopEnd = () => {
+  if (props.exportMode || exportFeature.isManualExport.value) {
+    exportFeature.finishExport();
+    return true;
   }
-
-  if (lastEnd === 0) return timelineStore.project.cols;
-  return Math.ceil(lastEnd / 4) * 4;
-});
-
-const noteNamesDescending = [
-  "B",
-  "A#",
-  "A",
-  "G#",
-  "G",
-  "F#",
-  "F",
-  "E",
-  "D#",
-  "D",
-  "C#",
-  "C",
-];
-
-const noteIndexToName = (index: number): NoteName => {
-  const octave = 7 - Math.floor(index / 12);
-  const noteIndex = index % 12;
-  return `${noteNamesDescending[noteIndex]}${octave}` as NoteName;
+  return false;
 };
 
-const activeNotes = ref<Map<string, { trackId: string; noteId: string }>>(
-  new Map(),
+const onStop = () => {
+  if (voiceRecording.isRecordingVoice.value) {
+    voiceRecording.finishVoiceRecording();
+  }
+};
+
+const playback = useTimelinePlaybackEngine(
+  emit,
+  COL_WIDTH,
+  TRACK_HEADER_WIDTH,
+  onLoopEnd,
+  onStop,
 );
+const {
+  isPlaying,
+  currentPosition,
+  cursorStyle,
+  checkpointStyle,
+  startPlayback,
+  stopPlayback,
+  togglePlayback,
+  setCheckpoint,
+} = playback;
 
-const activeClips = ref<Map<string, { trackId: string; clip: AudioClip }>>(
-  new Map(),
-);
+exportFeature = useTimelineExport(playback, exportModeProp);
+const {
+  isExporting,
+  exportProgress,
+  showExportModal,
+  exportFormat,
+  openExportModal,
+  cancelExportModal,
+  confirmExport,
+} = exportFeature;
 
-// Export audio
-const isExporting = ref(false);
-const exportProgress = ref(0);
-const isManualExport = ref(false);
-const exportFormat = ref<"wav" | "mp3">("mp3");
-const showExportModal = ref(false);
-const metronomeEnabledBeforeExport = ref(false);
+voiceRecording = useTimelineVoiceRecording(playback);
+const {
+  voiceRecorderSupported,
+  voiceLevel,
+  voiceRecorderError,
+  voiceDevices,
+  selectedMicId,
+  isRecordingVoice,
+  showMicPicker,
+  voiceRecordedTime,
+  toggleVoiceRecording,
+  toggleMicPicker,
+  selectMic,
+  closeMicPicker,
+} = voiceRecording;
 
-const openExportModal = () => {
-  showExportModal.value = true;
-};
+const {
+  isDragOverTimeline,
+  tracksContainerRef,
+  handleTracksContainerDragOver,
+  handleTracksContainerDragLeave,
+  handleTracksContainerDrop,
+} = useTimelineFileDrop(COL_WIDTH, TRACK_HEADER_WIDTH);
 
-const cancelExportModal = () => {
-  showExportModal.value = false;
-};
-
-const confirmExport = () => {
-  showExportModal.value = false;
-  startExport();
-};
-
-const finishExport = () => {
-  stopAllActiveNotes();
-  stopAllActiveClips();
-  isPlaying.value = false;
-  if (animationFrameId.value) {
-    cancelAnimationFrame(animationFrameId.value);
-    animationFrameId.value = null;
-  }
-  currentPosition.value = 0;
-  checkpointPosition.value = 0;
-
-  const buffer = audioBusStore.stopPcmCapture();
-  const blob =
-    exportFormat.value === "wav" ? encodeWav(buffer) : encodeMp3(buffer);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${timelineStore.project.name || "projet"}.${exportFormat.value}`;
-  a.click();
-  URL.revokeObjectURL(url);
-  isExporting.value = false;
-  isManualExport.value = false;
-  timelineStore.metronomeEnabled = metronomeEnabledBeforeExport.value;
-  projectStore.markExportSuccess();
-  if (props.exportMode) router.push({ name: "app-main" });
-};
-
-const startExport = async () => {
-  await audioBusStore.ensureAudioContextResumed();
-  isExporting.value = true;
-  isManualExport.value = true;
-  exportProgress.value = 0;
-
-  if (isPlaying.value) stopPlayback();
-  metronomeEnabledBeforeExport.value = timelineStore.metronomeEnabled;
-  timelineStore.metronomeEnabled = false;
-
-  audioBusStore.startPcmCapture();
-
-  checkpointPosition.value = 0;
-  startPlayback();
-};
-
-watch(
-  () => dawLoadingStore.isComplete,
-  (complete) => {
-    if (complete && props.exportMode && !isExporting.value) {
-      startExport();
-    }
-  },
-);
-
-// Playback - lit directement les notes des tracks (plus de clips)
-const playNotesAtPosition = (position: number) => {
-  const intPosition = Math.floor(position);
-
-  for (const track of timelineStore.getPlayableTracks()) {
-    for (const note of track.notes) {
-      const noteKey = `${track.id}_${note.i}`;
-      const noteStart = note.x;
-      const noteEnd = note.x + note.w;
-
-      // Déclencher la note au début
-      if (intPosition === noteStart && !activeNotes.value.has(noteKey)) {
-        const noteName = noteIndexToName(note.y);
-        trackAudioStore.playNoteOnTrack(track.id, noteName, note.i);
-        activeNotes.value.set(noteKey, { trackId: track.id, noteId: note.i });
-        emit("note-start", note, noteName, intPosition, track.id);
-      }
-
-      // Arrêter la note à la fin
-      if (intPosition >= noteEnd && activeNotes.value.has(noteKey)) {
-        const noteName = noteIndexToName(note.y);
-        trackAudioStore.stopNoteOnTrack(track.id, note.i);
-        activeNotes.value.delete(noteKey);
-        emit("note-end", note, noteName, intPosition, track.id);
-      }
-    }
-  }
-};
-
-const playClipsAtPosition = (position: number) => {
-  const intPosition = Math.floor(position);
-
-  for (const track of timelineStore.getPlayableTracks()) {
-    if (track.instrument.type !== "audioTrack") continue;
-
-    for (const clip of track.clips ?? []) {
-      const clipKey = `${track.id}_${clip.id}`;
-      const clipStart = clip.x;
-      const clipEnd = clip.x + clip.w;
-
-      if (intPosition >= clipStart && intPosition < clipEnd) {
-        if (!activeClips.value.has(clipKey)) {
-          const offsetInClip = intPosition - clipStart;
-          trackAudioStore.playClipOnTrack(track.id, clip, offsetInClip);
-          activeClips.value.set(clipKey, { trackId: track.id, clip });
-        }
-      }
-
-      if (intPosition >= clipEnd && activeClips.value.has(clipKey)) {
-        trackAudioStore.stopClipOnTrack(track.id, clip.id);
-        activeClips.value.delete(clipKey);
-      }
-    }
-  }
-};
-
-// Métronome - clic direct sur la destination audio, indépendant du bus master
-// (pas d'EQ/reverb, et non capturé par l'export audio)
-const playMetronomeClick = (accent: boolean) => {
-  const ctx = audioBusStore.audioContext;
-  const now = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  osc.type = "sine";
-  osc.frequency.value = accent ? 1500 : 1000;
-
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.3, now + 0.001);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + 0.06);
-};
-
-// 4 colonnes = 1 temps (noire), 16 colonnes = 1 mesure en 4/4
-const maybePlayMetronomeAt = (position: number) => {
-  if (!timelineStore.metronomeEnabled) return;
-  const intPosition = Math.floor(position);
-  if (intPosition % 4 !== 0) return;
-  playMetronomeClick(intPosition % 16 === 0);
-};
-
-const stopAllActiveNotes = () => {
-  for (const [_, { trackId, noteId }] of activeNotes.value) {
-    trackAudioStore.stopNoteOnTrack(trackId, noteId);
-  }
-  activeNotes.value.clear();
-};
-
-const triggerNotesAtPosition = (position: number) => {
-  const intPosition = Math.floor(position);
-
-  for (const track of timelineStore.getPlayableTracks()) {
-    for (const note of track.notes) {
-      const noteKey = `${track.id}_${note.i}`;
-      const noteStart = note.x;
-      const noteEnd = note.x + note.w;
-
-      if (
-        intPosition >= noteStart &&
-        intPosition < noteEnd &&
-        !activeNotes.value.has(noteKey)
-      ) {
-        const noteName = noteIndexToName(note.y);
-        trackAudioStore.playNoteOnTrack(track.id, noteName, note.i);
-        activeNotes.value.set(noteKey, { trackId: track.id, noteId: note.i });
-        emit("note-start", note, noteName, intPosition, track.id);
-      }
-    }
-  }
-};
-
-const stopAllActiveClips = () => {
-  for (const [_, { trackId, clip }] of activeClips.value) {
-    trackAudioStore.stopClipOnTrack(trackId, clip.id);
-  }
-  activeClips.value.clear();
-};
-
-const applyAutomationAtPosition = (position: number) => {
-  for (const track of timelineStore.getPlayableTracks()) {
-    for (const lane of track.automationLanes ?? []) {
-      if (lane.points.length === 0) continue;
-      const value = getAutomationValueAt(lane.points, position);
-      trackAudioStore.applyAutomation(track.id, lane.parameter, value);
-    }
-  }
-  for (const lane of timelineStore.masterAutomationLanes) {
-    if (lane.points.length === 0) continue;
-    const value = getAutomationValueAt(lane.points, position);
-    audioBusStore.applyMasterAutomation(lane.parameter, value);
-  }
-};
-
-const animate = () => {
-  if (!isPlaying.value) return;
-
-  const elapsed = (performance.now() - playbackStartTime.value) / 1000;
-  const stepsPerSecond = (timelineStore.tempo / 60) * 4;
-  let newPosition = checkpointPosition.value + elapsed * stepsPerSecond;
-
-  if (newPosition >= loopEndPosition.value) {
-    if (props.exportMode || isManualExport.value) {
-      finishExport();
-      return;
-    }
-    stopAllActiveNotes();
-    stopAllActiveClips();
-    newPosition = 0;
-    playbackStartTime.value =
-      performance.now() + (checkpointPosition.value / stepsPerSecond) * 1000;
-    triggerNotesAtPosition(newPosition);
-    projectStore.markPlaybackLooped();
-  }
-
-  const prevIntPosition = Math.floor(currentPosition.value);
-  const newIntPosition = Math.floor(newPosition);
-
-  currentPosition.value = newPosition;
-
-  if ((props.exportMode || isManualExport.value) && loopEndPosition.value > 0) {
-    exportProgress.value = Math.min(
-      100,
-      Math.round((newPosition / loopEndPosition.value) * 100),
-    );
-  }
-
-  if (newIntPosition !== prevIntPosition) {
-    playNotesAtPosition(newPosition);
-    playClipsAtPosition(newPosition);
-    maybePlayMetronomeAt(newPosition);
-  }
-
-  applyAutomationAtPosition(newPosition);
-
-  animationFrameId.value = requestAnimationFrame(animate);
-};
-
-const startPlayback = () => {
-  if (isPlaying.value) return;
-  audioLibraryStore.stopPreview();
-  audioBusStore.ensureAudioContextResumed();
-
-  currentPosition.value = checkpointPosition.value;
-  isPlaying.value = true;
-  playbackStartTime.value = performance.now();
-
-  triggerNotesAtPosition(currentPosition.value);
-  playClipsAtPosition(currentPosition.value);
-  maybePlayMetronomeAt(currentPosition.value);
-
-  animationFrameId.value = requestAnimationFrame(animate);
-};
-
-const stopPlayback = () => {
-  isPlaying.value = false;
-  if (animationFrameId.value) {
-    cancelAnimationFrame(animationFrameId.value);
-    animationFrameId.value = null;
-  }
-  stopAllActiveNotes();
-  currentPosition.value = checkpointPosition.value;
-  stopAllActiveClips();
-
-  if (isRecordingVoice.value) {
-    finishVoiceRecording();
-  }
-};
-
-const togglePlayback = () => {
-  if (isPlaying.value) {
-    stopPlayback();
-  } else {
-    startPlayback();
-  }
-};
-
-const setCheckpoint = (position: number) => {
-  checkpointPosition.value = position;
-  if (isPlaying.value) {
-    stopAllActiveNotes();
-    stopAllActiveClips();
-    currentPosition.value = position;
-    playbackStartTime.value = performance.now();
-    triggerNotesAtPosition(position);
-  } else {
-    currentPosition.value = position;
-  }
-};
+const {
+  isCloning,
+  isSaving,
+  saveMessage,
+  isEditingProjectName,
+  editedProjectName,
+  projectNameInputRef,
+  startEditProjectName,
+  saveProjectName,
+  cancelEditProjectName,
+  handleSaveProject,
+  handleBackToProjects,
+  handleResetReadOnly,
+  handleCloneProject,
+} = useTimelineProjectMeta();
 
 const handleAddTrack = (type: InstrumentType) => {
   const config = getDefaultConfigForType(type);
   timelineStore.createTrack(config);
-};
-
-const generateVoiceTrackName = (): string => {
-  const existingNames = new Set(
-    timelineStore.project.tracks.map((t) => t.name),
-  );
-  let counter = 1;
-  let name = `Voice ${counter}`;
-  while (existingNames.has(name)) {
-    counter++;
-    name = `Voice ${counter}`;
-  }
-  return name;
-};
-
-const finishVoiceRecording = async () => {
-  const blob = await stopVoiceRecording();
-  if (!blob) return;
-
-  const trackName = generateVoiceTrackName();
-
-  let audioBuffer: AudioBuffer;
-  try {
-    audioBuffer = await audioBusStore.audioContext.decodeAudioData(
-      await blob.arrayBuffer(),
-    );
-  } catch (error) {
-    console.error("Failed to decode recording:", error);
-    return;
-  }
-  const wavBlob = encodeWav(audioBuffer);
-  const file = new File([wavBlob], `${trackName}.wav`, { type: "audio/wav" });
-
-  const sample = await userSamplesStore.uploadSample(file);
-  if (!sample) return;
-
-  await audioLibraryStore.loadSample(sample.id);
-  const loadedSample = audioLibraryStore.getSample(sample.id);
-  if (!loadedSample) return;
-
-  const config = getDefaultConfigForType("audioTrack");
-  const trackId = timelineStore.createTrack(config, trackName);
-
-  const stepsPerSecond = (timelineStore.tempo / 60) * 4;
-  const durationInSteps = Math.max(
-    1,
-    Math.ceil(loadedSample.duration * stepsPerSecond),
-  );
-
-  trackHistoryStore.recordAddClip(
-    trackId,
-    {
-      sampleId: sample.id,
-      x: Math.round(recordingStartPosition.value),
-      w: durationInSteps,
-      startOffset: 0,
-    },
-    loadedSample,
-  );
-};
-
-const toggleVoiceRecording = async () => {
-  if (!voiceRecorderSupported) return;
-
-  if (isRecordingVoice.value) {
-    stopPlayback();
-    return;
-  }
-
-  recordingStartPosition.value = checkpointPosition.value;
-  await startVoiceRecording();
-  if (voiceRecorderState.value !== "recording") return;
-  if (!isPlaying.value) {
-    startPlayback();
-  }
-};
-
-const toggleMicPicker = async () => {
-  showMicPicker.value = !showMicPicker.value;
-  if (showMicPicker.value) {
-    await requestMicPermission();
-  }
-};
-
-const selectMic = (deviceId: string) => {
-  selectedMicId.value = deviceId;
-  showMicPicker.value = false;
-};
-
-const closeMicPicker = () => {
-  showMicPicker.value = false;
-};
-
-let micErrorTimeout: ReturnType<typeof setTimeout> | null = null;
-watch(voiceRecorderError, (message) => {
-  if (!message) return;
-  if (micErrorTimeout) clearTimeout(micErrorTimeout);
-  micErrorTimeout = setTimeout(() => {
-    voiceRecorderError.value = null;
-  }, 6000);
-});
-
-const isDragOverTimeline = ref(false);
-const tracksContainerRef = ref<HTMLElement | null>(null);
-
-const handleTracksContainerDragOver = (event: DragEvent): void => {
-  event.preventDefault();
-  if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
-  isDragOverTimeline.value = true;
-};
-
-const handleTracksContainerDragLeave = (): void => {
-  isDragOverTimeline.value = false;
-};
-
-const handleTracksContainerDrop = async (event: DragEvent): Promise<void> => {
-  event.preventDefault();
-  isDragOverTimeline.value = false;
-
-  const files = event.dataTransfer?.files;
-  if (!files || files.length === 0) return;
-
-  const rect = tracksContainerRef.value?.getBoundingClientRect();
-  if (!rect) return;
-  const x = Math.floor(
-    (event.clientX - rect.left - TRACK_HEADER_WIDTH) / COL_WIDTH,
-  );
-
-  const trackId = timelineStore.createTrack(
-    getDefaultConfigForType("audioTrack"),
-  );
-  await placeFilesOnTrack(files, trackId, x);
 };
 
 const handleToggleMute = (track: Track) => {
@@ -694,85 +215,10 @@ const handleToggleExpand = (track: Track) => {
   timelineStore.toggleTrackExpanded(track.id);
 };
 
-const startEditProjectName = () => {
-  editedProjectName.value = timelineStore.project.name;
-  isEditingProjectName.value = true;
-  setTimeout(() => projectNameInputRef.value?.select(), 0);
-};
-
-const saveProjectName = () => {
-  const trimmed = editedProjectName.value.trim();
-  if (trimmed && trimmed !== timelineStore.project.name) {
-    timelineStore.renameProject(trimmed);
-  }
-  isEditingProjectName.value = false;
-};
-
-const cancelEditProjectName = () => {
-  isEditingProjectName.value = false;
-};
-
 const handleRenameTrack = (track: Track) => {
   const newName = prompt("Nouveau nom de la piste :", track.name);
   if (newName && newName.trim() && newName.trim() !== track.name) {
     timelineStore.renameTrack(track.id, newName.trim());
-  }
-};
-
-const handleSaveProject = async () => {
-  if (isSaving.value) return;
-
-  isSaving.value = true;
-  saveMessage.value = null;
-
-  try {
-    const result = await projectStore.saveProjectOnline(timelineStore.project);
-
-    if (result.success && result.projectId) {
-      saveMessage.value = { type: "success", text: "Projet sauvegardé" };
-      router.replace({
-        name: "app-sequencer",
-        query: { projectId: result.projectId },
-      });
-    } else {
-      saveMessage.value = {
-        type: "error",
-        text: result.error || "Erreur de sauvegarde",
-      };
-    }
-  } catch {
-    saveMessage.value = { type: "error", text: "Erreur de sauvegarde" };
-  } finally {
-    isSaving.value = false;
-    setTimeout(() => {
-      saveMessage.value = null;
-    }, 3000);
-  }
-};
-
-const handleBackToProjects = () => {
-  router.push({ name: "app-main" });
-};
-
-const handleResetReadOnly = async () => {
-  if (!projectStore.currentProjectId) return;
-  await projectStore.loadProjectToTimeline(
-    projectStore.currentProjectId,
-    timelineStore,
-  );
-  await dawLoadingStore.preloadProject(timelineStore.project);
-};
-
-const handleCloneProject = async () => {
-  if (!projectStore.currentProjectId || isCloning.value) return;
-  isCloning.value = true;
-  const result = await projectStore.cloneProject(projectStore.currentProjectId);
-  isCloning.value = false;
-  if (result.success && result.projectId) {
-    router.replace({
-      name: "app-sequencer",
-      query: { projectId: result.projectId },
-    });
   }
 };
 
@@ -810,7 +256,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlayback();
   window.removeEventListener("keydown", handleKeydown);
-  if (micErrorTimeout) clearTimeout(micErrorTimeout);
 });
 
 defineExpose({
