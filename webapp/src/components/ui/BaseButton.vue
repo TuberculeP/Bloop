@@ -29,7 +29,9 @@ export interface ButtonProps {
     | "ghost"
     | "lightghost"
     | "lightlink"
-    | "outline";
+    | "outline"
+    | "danger"
+    | "success";
   size?: "small" | "normal" | "large";
   disabled?: boolean;
   loading?: boolean;
@@ -164,6 +166,26 @@ const handleClick = (event: MouseEvent) => {
 .base-button--outline:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
+}
+
+.base-button--danger {
+  background: color-mix(in srgb, var(--color-status-error) 20%, transparent);
+  color: var(--color-status-error);
+  border: 1px solid transparent;
+}
+
+.base-button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-status-error) 30%, transparent);
+}
+
+.base-button--success {
+  background: color-mix(in srgb, var(--color-status-success) 20%, transparent);
+  color: var(--color-status-success);
+  border: 1px solid transparent;
+}
+
+.base-button--success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-status-success) 30%, transparent);
 }
 
 .base-button--link {

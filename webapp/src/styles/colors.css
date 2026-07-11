@@ -89,6 +89,19 @@
   --color-accent3-rgb: 122, 15, 62;
   --color-error-rgb: 215, 38, 109;
 
+  /* Status indicators (booléens actif/inactif, feedback positif/négatif) :
+     vert/rouge littéraux, distincts de --color-success/--color-error qui
+     sont des teintes de la palette de marque (violet/rose), pas des couleurs
+     de statut. Valeurs reprises telles quelles depuis leur usage déjà répété
+     (admin, DAW, profil) plutôt que réinventées. */
+  --color-status-success: #22c55e;
+  --color-status-error: #ef4444;
+
+  /* Surface de l'admin panel (fond des cards/tables/inputs), utilisée telle
+     quelle dans AdminLayout et toutes les vues admin - distincte de
+     --color-bg-secondary-dark (nuance légèrement différente utilisée côté DAW). */
+  --color-bg-admin-surface: #2a1520;
+
   /* Radius tokens */
   --radius-sm: 4px;
   --radius-md: 8px;

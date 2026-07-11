@@ -46,8 +46,8 @@ withDefaults(defineProps<BadgeProps>(), {
 }
 
 .base-badge--active {
-  background: color-mix(in srgb, var(--color-success) 20%, transparent);
-  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-status-success) 20%, transparent);
+  color: var(--color-status-success);
 }
 
 .base-badge--featured {
@@ -56,8 +56,8 @@ withDefaults(defineProps<BadgeProps>(), {
 }
 
 .base-badge--inactive {
-  background: color-mix(in srgb, var(--color-error) 20%, transparent);
-  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-status-error) 20%, transparent);
+  color: var(--color-status-error);
 }
 
 .base-badge--owner {
