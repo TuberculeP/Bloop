@@ -112,6 +112,12 @@
   --color-piano-key-black: #2a2a2a; /* touches noires du piano roll */
   --color-audio-clip-selected: #fbbf24; /* bordure clip audio sélectionné/survolé */
 
+  /* Fond "navy" de la landing page, distinct de la palette prune de l'app -
+     identité visuelle propre au marketing, répétée telle quelle (hex + rgba)
+     dans LandingLayout/LandingHeader/LandingContain/BaseTooltip. */
+  --color-landing-bg: #060b17;
+  --color-landing-bg-rgb: 6, 11, 23;
+
   /* Radius tokens */
   --radius-sm: 4px;
   --radius-md: 8px;

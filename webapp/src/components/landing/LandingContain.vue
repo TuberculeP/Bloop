@@ -36,21 +36,19 @@
           </div>
 
           <div class="hero-actions" ref="heroActionsRef">
-            <router-link to="/app" class="btn-cta primary">
-              <span class="btn-content">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                <span>Commencer gratuitement</span>
-              </span>
-            </router-link>
+            <LandingCtaButton to="/app">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Commencer gratuitement</span>
+            </LandingCtaButton>
             <button class="btn-cta secondary" @click="scrollToFeatures">
               <span class="btn-content">
                 <span>Découvrir</span>
@@ -425,23 +423,20 @@
             >
           </div>
           <div class="cta-actions">
-            <router-link to="/app" class="btn-cta primary medium">
-              <span class="btn-shine"></span>
-              <span class="btn-content">
-                <span>Lancer le studio</span>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </span>
-            </router-link>
+            <LandingCtaButton to="/app">
+              <span>Lancer le studio</span>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </LandingCtaButton>
           </div>
         </div>
       </div>
@@ -462,6 +457,7 @@ import {
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LandingIncluded from "./LandingIncluded.vue";
+import LandingCtaButton from "./LandingCtaButton.vue";
 import SplitText from "./effects/SplitText.vue";
 import CountUp from "./effects/CountUp.vue";
 import MorphShape from "./effects/MorphShape.vue";
@@ -1288,20 +1284,6 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.btn-cta.primary {
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent2) 100%
-  );
-  color: var(--color-black);
-}
-
-.btn-cta.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(255, 210, 105, 0.4);
-}
-
 .btn-cta.secondary {
   background: rgba(255, 255, 255, 0.05);
   color: var(--color-white);
@@ -1344,7 +1326,7 @@ onUnmounted(() => {
   background: linear-gradient(
     145deg,
     rgba(15, 23, 42, 0.9) 0%,
-    rgba(6, 11, 23, 0.95) 100%
+    rgba(var(--color-landing-bg-rgb), 0.95) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
@@ -2225,7 +2207,8 @@ onUnmounted(() => {
     align-items: center;
   }
 
-  .btn-cta {
+  .btn-cta,
+  :deep(.landing-cta-button) {
     width: 100%;
     max-width: 300px;
     justify-content: center;

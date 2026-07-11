@@ -19,16 +19,15 @@
             professionnel. La musique sans limites.
           </p>
           <div class="social-links">
-            <a
-              href="#"
-              class="social-link"
+            <BaseTooltip
               v-for="social in socials"
               :key="social.name"
-              :aria-label="social.name"
+              :text="social.name"
             >
-              <component :is="social.icon" />
-              <span class="social-tooltip">{{ social.name }}</span>
-            </a>
+              <a href="#" class="social-link" :aria-label="social.name">
+                <component :is="social.icon" />
+              </a>
+            </BaseTooltip>
           </div>
         </div>
 
@@ -169,6 +168,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, h, inject } from "vue";
+import BaseTooltip from "../ui/BaseTooltip.vue";
 
 const footerRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
@@ -435,28 +435,6 @@ onUnmounted(() => {
   border-color: rgba(255, 210, 105, 0.3);
   color: var(--color-accent);
   transform: translateY(-3px);
-}
-
-.social-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.9);
-  padding: 0.4rem 0.75rem;
-  background: rgba(6, 11, 23, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  color: var(--color-white);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.2s ease;
-}
-
-.social-link:hover .social-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
 }
 
 /* Footer links */
