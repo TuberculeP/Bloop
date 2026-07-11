@@ -79,6 +79,27 @@
   --color-bg-validate-dark: #1a1a0a;
   --color-bg-error-dark: #2d0f1a;
   --color-bg-warning-dark: #2a1a08;
+
+  /* RGB triplets (for rgba() usage in box-shadow/backgrounds) */
+  --color-primary-rgb: 68, 3, 25;
+  --color-primary-hover-rgb: 96, 17, 44;
+  --color-secondary-rgb: 255, 178, 174;
+  --color-accent-rgb: 255, 247, 171;
+  --color-accent2-rgb: 255, 63, 180;
+  --color-accent3-rgb: 122, 15, 62;
+  --color-error-rgb: 215, 38, 109;
+
+  /* Radius tokens */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 50%;
+
+  /* Shadow tokens */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.4);
 }
 
 /* Utility classes for quick usage */

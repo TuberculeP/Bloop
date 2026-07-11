@@ -97,7 +97,7 @@ const handleClick = (event: MouseEvent) => {
   background: var(--color-primary);
   border-color: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-hover), 0.3);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-hover-rgb), 0.3);
 }
 
 .base-button--secondary {

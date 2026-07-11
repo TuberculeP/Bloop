@@ -1,1 +1,75 @@
 @import "tailwindcss";
+
+/* Mappe les tokens définis dans colors.css vers l'espace de nommage Tailwind
+   (@theme inline requis car ce sont des références vers des variables
+   définies ailleurs, pas des valeurs littérales - voir docs Tailwind v4) */
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-active: var(--color-primary-active);
+
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+  --color-secondary-active: var(--color-secondary-active);
+
+  --color-black: var(--color-black);
+  --color-black-hover: var(--color-black-hover);
+  --color-black-active: var(--color-black-active);
+
+  --color-white: var(--color-white);
+  --color-white-hover: var(--color-white-hover);
+  --color-white-active: var(--color-white-active);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-active: var(--color-accent-active);
+
+  --color-accent2: var(--color-accent2);
+  --color-accent2-hover: var(--color-accent2-hover);
+  --color-accent2-active: var(--color-accent2-active);
+
+  --color-accent3: var(--color-accent3);
+  --color-accent3-hover: var(--color-accent3-hover);
+  --color-accent3-active: var(--color-accent3-active);
+
+  --color-success: var(--color-success);
+  --color-validate: var(--color-validate);
+  --color-error: var(--color-error);
+  --color-warning: var(--color-warning);
+
+  --color-bg-primary: var(--color-bg-primary);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-accent: var(--color-bg-accent);
+  --color-bg-accent2: var(--color-bg-accent2);
+  --color-bg-accent3: var(--color-bg-accent3);
+  --color-bg-error: var(--color-bg-error);
+  --color-bg-warning: var(--color-bg-warning);
+  --color-bg-success: var(--color-bg-success);
+
+  --color-bg-primary-dark: var(--color-bg-primary-dark);
+  --color-bg-secondary-dark: var(--color-bg-secondary-dark);
+  --color-bg-accent-dark: var(--color-bg-accent-dark);
+  --color-bg-accent2-dark: var(--color-bg-accent2-dark);
+  --color-bg-accent3-dark: var(--color-bg-accent3-dark);
+  --color-bg-error-dark: var(--color-bg-error-dark);
+  --color-bg-warning-dark: var(--color-bg-warning-dark);
+  --color-bg-success-dark: var(--color-bg-success-dark);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+/* Breakpoints custom cohérents (remplacent les valeurs hardcodées
+   768/480/1024/640/600/1200/975px dispersées dans les composants) */
+@theme {
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
