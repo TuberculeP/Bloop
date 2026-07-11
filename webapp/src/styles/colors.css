@@ -303,3 +303,18 @@
 .btn-accent:active {
   background-color: var(--color-accent-active);
 }
+
+/* Card utility: radius/shadow uniformes, à ajouter en complément
+   des classes de carte existantes (.project-card, .pack-card, etc.) */
+.ui-card {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}

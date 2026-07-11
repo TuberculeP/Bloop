@@ -5,6 +5,7 @@ import { useAuthStore } from "./stores/authStore";
 import apiClient from "./lib/utils/apiClient";
 import type { User } from "./lib/utils/types";
 import SessionExpiredModal from "./components/ui/SessionExpiredModal.vue";
+import ToastContainer from "./components/ui/ToastContainer.vue";
 import { useOnboardingTour } from "./composables/useOnboardingTour";
 
 const authStore = useAuthStore();
@@ -26,6 +27,7 @@ onSocketConnected((socket) => {
 
 <template>
   <SessionExpiredModal />
+  <ToastContainer />
   <RouterView />
 </template>
 

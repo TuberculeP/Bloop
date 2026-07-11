@@ -23,11 +23,13 @@ export interface ButtonProps {
     | "primary"
     | "secondary"
     | "accent"
+    | "accent2"
     | "error"
     | "link"
     | "ghost"
     | "lightghost"
-    | "lightlink";
+    | "lightlink"
+    | "outline";
   size?: "small" | "normal" | "large";
   disabled?: boolean;
   loading?: boolean;
@@ -138,6 +140,30 @@ const handleClick = (event: MouseEvent) => {
   border-color: var(--color-error-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(var(--color-error-rgb), 0.3);
+}
+
+.base-button--accent2 {
+  background: var(--color-accent2);
+  color: var(--color-white);
+  border: 1px solid var(--color-accent2);
+}
+
+.base-button--accent2:hover:not(:disabled) {
+  background: var(--color-accent2-hover);
+  border-color: var(--color-accent2-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--color-accent2-rgb), 0.3);
+}
+
+.base-button--outline {
+  background: transparent;
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.base-button--outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .base-button--link {

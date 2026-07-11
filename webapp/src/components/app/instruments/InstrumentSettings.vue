@@ -9,6 +9,7 @@ import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
 import TrackEqualizer from "./TrackEqualizer.vue";
+import RangeSlider from "../../ui/RangeSlider.vue";
 
 const props = defineProps<{
   track: Track;
@@ -165,24 +166,14 @@ const handleClose = () => {
                   >AUTO</span
                 >
               </label>
-              <div
-                class="slider-control"
-                :class="{ automated: hasAutomation('volume') }"
-              >
-                <input
-                  type="range"
-                  :value="track.volume"
-                  min="0"
-                  max="100"
-                  :disabled="hasAutomation('volume')"
-                  @input="
-                    handleVolumeChange(
-                      Number(($event.target as HTMLInputElement).value),
-                    )
-                  "
-                />
-                <span class="slider-value">{{ track.volume }}%</span>
-              </div>
+              <RangeSlider
+                :model-value="track.volume"
+                :min="0"
+                :max="100"
+                unit="%"
+                :disabled="hasAutomation('volume')"
+                @update:model-value="handleVolumeChange"
+              />
             </div>
 
             <div class="setting-group">
@@ -192,24 +183,14 @@ const handleClose = () => {
                   >AUTO</span
                 >
               </label>
-              <div
-                class="slider-control"
-                :class="{ automated: hasAutomation('reverb') }"
-              >
-                <input
-                  type="range"
-                  :value="track.reverb ?? 0"
-                  min="0"
-                  max="100"
-                  :disabled="hasAutomation('reverb')"
-                  @input="
-                    handleReverbChange(
-                      Number(($event.target as HTMLInputElement).value),
-                    )
-                  "
-                />
-                <span class="slider-value">{{ track.reverb ?? 0 }}%</span>
-              </div>
+              <RangeSlider
+                :model-value="track.reverb ?? 0"
+                :min="0"
+                :max="100"
+                unit="%"
+                :disabled="hasAutomation('reverb')"
+                @update:model-value="handleReverbChange"
+              />
             </div>
 
             <div class="setting-group">
@@ -294,79 +275,59 @@ const handleClose = () => {
                 <div class="adsr-controls">
                   <div class="adsr-slider">
                     <span class="adsr-label">A</span>
-                    <input
-                      type="range"
-                      :value="undertaleAttack"
-                      min="0"
-                      max="2"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'attack',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleAttack"
+                      :min="0"
+                      :max="2"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${undertaleAttack.toFixed(2)}s`"
+                      @update:model-value="
+                        (value) => handleADSRChange('attack', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ undertaleAttack.toFixed(2) }}s</span
-                    >
                   </div>
                   <div class="adsr-slider">
                     <span class="adsr-label">D</span>
-                    <input
-                      type="range"
-                      :value="undertaleDecay"
-                      min="0"
-                      max="2"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'decay',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleDecay"
+                      :min="0"
+                      :max="2"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${undertaleDecay.toFixed(2)}s`"
+                      @update:model-value="
+                        (value) => handleADSRChange('decay', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ undertaleDecay.toFixed(2) }}s</span
-                    >
                   </div>
                   <div class="adsr-slider">
                     <span class="adsr-label">S</span>
-                    <input
-                      type="range"
-                      :value="undertaleSustain"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'sustain',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleSustain"
+                      :min="0"
+                      :max="1"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${(undertaleSustain * 100).toFixed(0)}%`"
+                      @update:model-value="
+                        (value) => handleADSRChange('sustain', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ (undertaleSustain * 100).toFixed(0) }}%</span
-                    >
                   </div>
                   <div class="adsr-slider">
                     <span class="adsr-label">R</span>
-                    <input
-                      type="range"
-                      :value="undertaleRelease"
-                      min="0"
-                      max="3"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'release',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleRelease"
+                      :min="0"
+                      :max="3"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${undertaleRelease.toFixed(2)}s`"
+                      @update:model-value="
+                        (value) => handleADSRChange('release', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ undertaleRelease.toFixed(2) }}s</span
-                    >
                   </div>
                 </div>
               </div>
@@ -467,41 +428,6 @@ const handleClose = () => {
   letter-spacing: 0.05em;
 }
 
-.slider-control {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  &.automated {
-    opacity: 0.4;
-    pointer-events: none;
-  }
-
-  input[type="range"] {
-    flex: 1;
-    height: 6px;
-    -webkit-appearance: none;
-    background: #7a0f3e;
-    border-radius: 3px;
-
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: #ff3fb4;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-  }
-
-  .slider-value {
-    font-size: 13px;
-    color: #f2efe8;
-    min-width: 45px;
-    text-align: right;
-  }
-}
-
 .waveform-selector {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -582,30 +508,6 @@ const handleClose = () => {
     font-weight: 700;
     color: #ff3fb4;
     text-align: center;
-  }
-
-  input[type="range"] {
-    flex: 1;
-    height: 6px;
-    -webkit-appearance: none;
-    background: #7a0f3e;
-    border-radius: 3px;
-
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      background: #ff3fb4;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-  }
-
-  .adsr-value {
-    min-width: 50px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-    text-align: right;
   }
 }
 

@@ -3,29 +3,25 @@
     <h2 v-if="showTitle">{{ title }}</h2>
     <p v-if="description" class="form-description">{{ description }}</p>
 
-    <div class="form-group">
-      <label for="login-email">Email</label>
-      <input
+    <FormField label="Email" html-for="login-email">
+      <BaseInput
         id="login-email"
-        type="email"
         v-model="form.email"
+        type="email"
         placeholder="Entrez votre email"
-        class="form-input"
         required
       />
-    </div>
+    </FormField>
 
-    <div class="form-group">
-      <label for="login-password">Mot de passe</label>
-      <input
+    <FormField label="Mot de passe" html-for="login-password">
+      <BaseInput
         id="login-password"
-        type="password"
         v-model="form.password"
+        type="password"
         placeholder="Entrez votre mot de passe"
-        class="form-input"
         required
       />
-    </div>
+    </FormField>
 
     <div v-if="error" class="error-message">{{ error }}</div>
 
@@ -76,6 +72,8 @@ import { reactive, ref, computed } from "vue";
 import apiClient from "../../lib/utils/apiClient";
 import { useAuthStore } from "../../stores/authStore";
 import type { User } from "../../lib/utils/types";
+import FormField from "../ui/FormField.vue";
+import BaseInput from "../ui/BaseInput.vue";
 
 const props = withDefaults(
   defineProps<{
