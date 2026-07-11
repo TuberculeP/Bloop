@@ -728,7 +728,7 @@ onMounted(() => loadProjects());
 }
 
 .badge {
-  background: rgba(122, 15, 62, 0.3);
+  background: rgba(var(--color-accent3-rgb), 0.3);
   color: var(--color-secondary);
   padding: 4px 8px;
   border-radius: 4px;
@@ -811,7 +811,7 @@ onMounted(() => loadProjects());
     opacity: 1;
     border-color: var(--color-accent3-hover);
     color: var(--color-accent3-hover);
-    background: rgba(122, 15, 62, 0.2);
+    background: rgba(var(--color-accent3-rgb), 0.2);
   }
 
   &:disabled {

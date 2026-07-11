@@ -7,6 +7,8 @@ import { useResizablePanel } from "../../../composables/useResizablePanel";
 import SamplePreviewButton from "../../shared/SamplePreviewButton.vue";
 import TabBar from "../../shared/TabBar.vue";
 import type { TabItem } from "../../shared/TabBar.vue";
+import BaseSpinner from "../../ui/BaseSpinner.vue";
+import EmptyState from "../../ui/EmptyState.vue";
 import type {
   SamplePack,
   SampleFolder,
@@ -222,14 +224,15 @@ const getSampleCount = (pack: SamplePack): number => {
       </div>
 
       <div v-if="isLoading" class="loading-state">
-        <span class="loading-icon">⏳</span>
+        <BaseSpinner color="accent2" />
         <span>Chargement...</span>
       </div>
 
-      <div v-else-if="packs.length === 0" class="empty-state">
-        <p>No sample packs available</p>
-        <p class="hint">Add packs to /public/samples/packs/</p>
-      </div>
+      <EmptyState
+        v-else-if="packs.length === 0"
+        title="No sample packs available"
+        message="Add packs to /public/samples/packs/"
+      />
 
       <div v-else class="content-area">
         <!-- Packs List -->
@@ -314,12 +317,11 @@ const getSampleCount = (pack: SamplePack): number => {
 
     <div v-else-if="activeTab === 'personal'" class="content-area">
       <!-- Mes Samples -->
-      <div v-if="personalSamples.length === 0" class="empty-state">
-        <p>Aucun sample personnel</p>
-        <p class="hint">
-          Uploade des samples depuis ton profil pour les retrouver ici
-        </p>
-      </div>
+      <EmptyState
+        v-if="personalSamples.length === 0"
+        title="Aucun sample personnel"
+        message="Uploade des samples depuis ton profil pour les retrouver ici"
+      />
 
       <div v-else class="samples-list">
         <div
@@ -353,9 +355,10 @@ const getSampleCount = (pack: SamplePack): number => {
         />
       </div>
 
-      <div v-if="searchQuery.trim().length < 2" class="empty-state">
-        <p>Tape au moins 2 caractères pour rechercher</p>
-      </div>
+      <EmptyState
+        v-if="searchQuery.trim().length < 2"
+        title="Tape au moins 2 caractères pour rechercher"
+      />
 
       <div
         v-else-if="
@@ -363,13 +366,14 @@ const getSampleCount = (pack: SamplePack): number => {
         "
         class="loading-state"
       >
-        <span class="loading-icon">⏳</span>
+        <BaseSpinner color="accent2" />
         <span>Recherche...</span>
       </div>
 
-      <div v-else-if="searchResultItems.length === 0" class="empty-state">
-        <p>Aucun résultat</p>
-      </div>
+      <EmptyState
+        v-else-if="searchResultItems.length === 0"
+        title="Aucun résultat"
+      />
 
       <div v-else class="samples-list">
         <div
@@ -409,7 +413,7 @@ const getSampleCount = (pack: SamplePack): number => {
 .audio-library-panel {
   position: relative;
   height: 100%;
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -428,20 +432,20 @@ const getSampleCount = (pack: SamplePack): number => {
 
   &:hover,
   .is-resizing & {
-    background: #ff3fb4;
+    background: var(--color-accent2);
     opacity: 0.6;
   }
 }
 
 .panel-header {
   padding: 16px;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  border-bottom: 1px solid var(--color-border-secondary);
 
   h3 {
     margin: 0;
     font-size: 14px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -451,7 +455,7 @@ const getSampleCount = (pack: SamplePack): number => {
   :deep(.tab-bar) {
     margin-bottom: 0;
     padding: 4px 8px 0;
-    border-bottom: 1px solid rgba(122, 15, 62, 0.3);
+    border-bottom: 1px solid rgba(var(--color-accent3-rgb), 0.3);
   }
 
   :deep(.tab-btn) {
@@ -466,8 +470,8 @@ const getSampleCount = (pack: SamplePack): number => {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: #1a0e15;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.3);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid rgba(var(--color-accent3-rgb), 0.3);
   font-size: 12px;
 }
 
@@ -477,11 +481,11 @@ const getSampleCount = (pack: SamplePack): number => {
   transition: color 0.15s;
 
   &:hover:not(.active) {
-    color: #ff3fb4;
+    color: var(--color-accent2);
   }
 
   &.active {
-    color: #f2efe8;
+    color: var(--color-white);
     cursor: default;
   }
 }
@@ -498,43 +502,13 @@ const getSampleCount = (pack: SamplePack): number => {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-
-  .loading-icon {
-    font-size: 24px;
-    animation: pulse 1s ease-in-out infinite;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.empty-state {
-  padding: 24px 16px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-
-  p {
-    margin: 0 0 8px;
-  }
-
-  .hint {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.3);
-  }
 }
 
 .content-area {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(122, 15, 62, 0.5) transparent;
+  scrollbar-color: var(--color-border-secondary) transparent;
 }
 
 .packs-list,
@@ -548,14 +522,14 @@ const getSampleCount = (pack: SamplePack): number => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   border-radius: 8px;
   margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
 
     .nav-arrow {
       opacity: 1;
@@ -585,7 +559,11 @@ const getSampleCount = (pack: SamplePack): number => {
 .pack-cover-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #ff3fb4 0%, #7a0f3e 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent2) 0%,
+    var(--color-accent3) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -608,7 +586,7 @@ const getSampleCount = (pack: SamplePack): number => {
 .pack-name {
   font-size: 14px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -637,14 +615,14 @@ const getSampleCount = (pack: SamplePack): number => {
   align-items: center;
   gap: 12px;
   padding: 14px 12px;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   border-radius: 6px;
   margin-bottom: 6px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
 
     .nav-arrow {
       opacity: 1;
@@ -667,7 +645,7 @@ const getSampleCount = (pack: SamplePack): number => {
 
 .folder-name {
   font-size: 14px;
-  color: #f2efe8;
+  color: var(--color-white);
 }
 
 .folder-count {
@@ -680,14 +658,14 @@ const getSampleCount = (pack: SamplePack): number => {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   border-radius: 6px;
   margin-bottom: 6px;
   cursor: grab;
   transition: all 0.15s;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
 
     .drag-hint {
       opacity: 1;
@@ -695,8 +673,8 @@ const getSampleCount = (pack: SamplePack): number => {
   }
 
   &.previewing {
-    background: #3d1528;
-    border: 1px solid #ff3fb4;
+    background: var(--color-bg-daw-active);
+    border: 1px solid var(--color-accent2);
   }
 
   &:active {
@@ -714,7 +692,7 @@ const getSampleCount = (pack: SamplePack): number => {
 
 .sample-name {
   font-size: 13px;
-  color: #f2efe8;
+  color: var(--color-white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -751,15 +729,15 @@ const getSampleCount = (pack: SamplePack): number => {
 .search-input {
   width: 100%;
   padding: 8px 10px 8px 30px;
-  background: #1a0e15;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
-  color: #f2efe8;
+  color: var(--color-white);
   font-size: 13px;
 
   &:focus {
     outline: none;
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 
   &::placeholder {
@@ -778,8 +756,8 @@ const getSampleCount = (pack: SamplePack): number => {
   width: 100%;
   margin-top: 4px;
   padding: 10px;
-  background: #1a0e15;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
@@ -787,8 +765,8 @@ const getSampleCount = (pack: SamplePack): number => {
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
-    background: #3d1528;
-    color: #f2efe8;
+    background: var(--color-bg-daw-active);
+    color: var(--color-white);
   }
 
   &:disabled {

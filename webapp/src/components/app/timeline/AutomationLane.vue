@@ -171,8 +171,8 @@ onBeforeUnmount(() => {
 .automation-lane-wrapper {
   display: grid;
   grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.3);
-  background: #160b12;
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
+  background: var(--color-bg-daw-deep);
 }
 
 .lane-header {
@@ -180,8 +180,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 8px 0 16px;
-  background: #160b12;
-  border-right: 1px solid rgba(122, 15, 62, 0.3);
+  background: var(--color-bg-daw-deep);
+  border-right: 1px solid rgba(var(--color-accent3-rgb), 0.3);
   height: 160px;
 }
 
@@ -212,8 +212,8 @@ onBeforeUnmount(() => {
     background 0.1s;
 
   &:hover {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-status-error);
+    background: rgba(var(--color-status-error-rgb), 0.1);
   }
 }
 

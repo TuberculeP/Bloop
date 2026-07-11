@@ -358,7 +358,7 @@ const handleClose = () => {
 .settings-panel {
   width: 320px;
   height: 100%;
-  background: #2d0f20;
+  background: var(--color-bg-secondary-dark);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
@@ -369,13 +369,13 @@ const handleClose = () => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  border-bottom: 1px solid var(--color-border-secondary);
 
   h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -390,8 +390,8 @@ const handleClose = () => {
   cursor: pointer;
 
   &:hover {
-    background: #7a0f3e;
-    color: #f2efe8;
+    background: var(--color-accent3);
+    color: var(--color-white);
   }
 }
 
@@ -423,7 +423,7 @@ const handleClose = () => {
   padding: 1px 5px;
   border-radius: 3px;
   background: rgba(255, 63, 180, 0.2);
-  color: #ff3fb4;
+  color: var(--color-accent2);
   border: 1px solid rgba(255, 63, 180, 0.4);
   letter-spacing: 0.05em;
 }
@@ -436,45 +436,45 @@ const handleClose = () => {
 
 .waveform-btn {
   padding: 10px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
-  background: #1a0e15;
-  color: #f2efe8;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
   font-size: 13px;
   text-transform: capitalize;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background: #3d1528;
-    border-color: rgba(122, 15, 62, 0.7);
+    background: var(--color-bg-daw-active);
+    border-color: rgba(var(--color-accent3-rgb), 0.7);
   }
 
   &.active {
-    background: #ff3fb4;
-    border-color: #ff3fb4;
-    color: #1a0e15;
+    background: var(--color-accent2);
+    border-color: var(--color-accent2);
+    color: var(--color-bg-primary-dark);
   }
 }
 
 .soundfont-select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
-  background: #1a0e15;
-  color: #f2efe8;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   color-scheme: dark;
 
   &:focus {
     outline: none;
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 
   option {
-    background: #2d0f20;
+    background: var(--color-bg-secondary-dark);
     text-transform: capitalize;
   }
 }
@@ -487,7 +487,7 @@ const handleClose = () => {
 
 .loading-text {
   font-size: 13px;
-  color: #ff3fb4;
+  color: var(--color-accent2);
   font-style: italic;
 }
 
@@ -506,7 +506,7 @@ const handleClose = () => {
     width: 16px;
     font-size: 12px;
     font-weight: 700;
-    color: #ff3fb4;
+    color: var(--color-accent2);
     text-align: center;
   }
 }

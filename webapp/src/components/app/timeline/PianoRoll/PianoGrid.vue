@@ -391,13 +391,13 @@ onBeforeUnmount(() => {
   }
 
   &.preview-highlight {
-    background: rgba(215, 38, 109, 0.15) !important;
+    background: rgba(var(--color-error-rgb), 0.15);
   }
 }
 
 .grid-cell {
-  border-right: 1px solid rgba(122, 15, 62, 0.2);
-  border-bottom: 1px solid rgba(122, 15, 62, 0.15);
+  border-right: 1px solid rgba(var(--color-accent3-rgb), 0.2);
+  border-bottom: 1px solid rgba(var(--color-accent3-rgb), 0.15);
   box-sizing: border-box;
 }
 
@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(122, 15, 62, 0.5);
+  background: var(--color-border-secondary);
 }
 
 .note-block {
@@ -439,8 +439,8 @@ onBeforeUnmount(() => {
   }
 
   &.selected {
-    outline: 2px solid #fff7ab;
-    box-shadow: 0 0 12px rgba(255, 247, 171, 0.4);
+    outline: 2px solid var(--color-accent);
+    box-shadow: 0 0 12px rgba(var(--color-accent-rgb), 0.4);
     z-index: 10;
 
     .resize-handle {
@@ -455,7 +455,7 @@ onBeforeUnmount(() => {
   &.is-resizing,
   &.is-dragging {
     opacity: 0.7;
-    outline: 2px dashed #fff7ab;
+    outline: 2px dashed var(--color-accent);
     cursor: grabbing;
   }
 }
@@ -494,8 +494,8 @@ onBeforeUnmount(() => {
 
 .selection-rect {
   position: absolute;
-  border: 2px dashed #fff7ab;
-  background: rgba(255, 247, 171, 0.1);
+  border: 2px dashed var(--color-accent);
+  background: rgba(var(--color-accent-rgb), 0.1);
   pointer-events: none;
   z-index: 20;
 }

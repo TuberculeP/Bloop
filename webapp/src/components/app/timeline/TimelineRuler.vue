@@ -52,8 +52,8 @@ const handleClick = (event: MouseEvent) => {
 .timeline-ruler {
   height: 30px;
   display: flex;
-  background: #1a0e15;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .ruler-header {
@@ -67,8 +67,8 @@ const handleClick = (event: MouseEvent) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
-  background: #2d0f20;
-  border-right: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-secondary-dark);
+  border-right: 1px solid var(--color-border-secondary);
   position: sticky;
   left: 0;
   z-index: 10;
@@ -79,10 +79,10 @@ const handleClick = (event: MouseEvent) => {
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  background: #2d0f20;
+  background: var(--color-bg-secondary-dark);
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
   }
 }
 
@@ -95,7 +95,7 @@ const handleClick = (event: MouseEvent) => {
   position: absolute;
   top: 0;
   height: 100%;
-  border-left: 1px solid rgba(122, 15, 62, 0.5);
+  border-left: 1px solid var(--color-border-secondary);
   padding-left: 6px;
   display: flex;
   align-items: center;

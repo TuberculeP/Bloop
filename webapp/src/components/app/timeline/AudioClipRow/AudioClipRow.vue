@@ -290,13 +290,13 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .audio-clip-row-wrapper {
   display: flex;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   overflow: visible;
 }
 
 .audio-clip-container {
   position: relative;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   outline: none;
 
   &:focus {
@@ -315,7 +315,7 @@ onBeforeUnmount(() => {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(122, 15, 62, 0.3);
+  background: rgba(var(--color-accent3-rgb), 0.3);
 }
 
 .playback-cursor {
@@ -323,14 +323,14 @@ onBeforeUnmount(() => {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #ef4444;
+  background: var(--color-status-error);
   z-index: 100;
   pointer-events: none;
 }
 
 .selection-rect {
   position: absolute;
-  border: 1px solid #fbbf24;
+  border: 1px solid var(--color-audio-clip-selected);
   background: rgba(251, 191, 36, 0.1);
   pointer-events: none;
   z-index: 50;

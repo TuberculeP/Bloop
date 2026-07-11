@@ -96,8 +96,8 @@ const handleClickOutside = () => {
   top: calc(100% + 8px);
   left: 0;
   min-width: 280px;
-  background: #2d0f20;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
@@ -111,8 +111,8 @@ const handleClickOutside = () => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
-  background: #1a0e15;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .instrument-option {
@@ -128,11 +128,11 @@ const handleClickOutside = () => {
   transition: background 0.15s ease;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid rgba(122, 15, 62, 0.3);
+    border-bottom: 1px solid rgba(var(--color-accent3-rgb), 0.3);
   }
 }
 
@@ -143,7 +143,7 @@ const handleClickOutside = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   border-radius: 8px;
 }
 
@@ -156,7 +156,7 @@ const handleClickOutside = () => {
 .inst-name {
   font-size: 14px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
 }
 
 .inst-desc {

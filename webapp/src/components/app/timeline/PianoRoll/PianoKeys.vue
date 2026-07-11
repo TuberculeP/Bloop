@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
   width: 180px;
   min-width: 180px;
   flex-shrink: 0;
-  background: #2a2a2a;
+  background: var(--color-piano-key-black);
   border-right: 2px solid #333;
   box-sizing: border-box;
   position: sticky;
@@ -192,13 +192,18 @@ onBeforeUnmount(() => {
   }
 
   &.preview-active {
-    background: #d7266d !important;
-    color: white !important;
+    background: var(--color-error);
+    color: white;
   }
 }
 
 .piano-key.black-key {
-  background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 60%, #0a0a0a 100%);
+  background: linear-gradient(
+    to bottom,
+    var(--color-piano-key-black) 0%,
+    #1a1a1a 60%,
+    #0a0a0a 100%
+  );
   color: rgba(255, 255, 255, 0.25);
   border-radius: 0 0 2px 2px;
   box-shadow:
@@ -211,14 +216,14 @@ onBeforeUnmount(() => {
     background: linear-gradient(
       to bottom,
       #3a3a3a 0%,
-      #2a2a2a 60%,
+      var(--color-piano-key-black) 60%,
       #1a1a1a 100%
     );
   }
 
   &.preview-active {
-    background: #9b2458 !important;
-    color: white !important;
+    background: var(--color-accent3-hover);
+    color: white;
   }
 }
 

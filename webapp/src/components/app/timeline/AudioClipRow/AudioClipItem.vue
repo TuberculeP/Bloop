@@ -188,7 +188,7 @@ onBeforeUnmount(() => {
   transition: border-color 0.1s;
 
   &.selected {
-    border-color: #fbbf24;
+    border-color: var(--color-audio-clip-selected);
   }
 
   &.dragging {

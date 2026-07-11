@@ -3,6 +3,7 @@ import { computed } from "vue";
 import type { Conversation, MessageUser } from "../../services/messages";
 import ConversationItem from "./ConversationItem.vue";
 import UserSearchList from "./UserSearchList.vue";
+import BaseSpinner from "../ui/BaseSpinner.vue";
 
 const props = defineProps<{
   conversations: Conversation[];
@@ -66,7 +67,7 @@ const handleStartNewConversation = (user: MessageUser) => {
     />
 
     <div v-if="loading" class="loading-state">
-      <div class="loading-spinner"></div>
+      <BaseSpinner size="large" color="accent3" />
     </div>
     <div v-else class="conversations-list">
       <ConversationItem
@@ -125,7 +126,7 @@ const handleStartNewConversation = (user: MessageUser) => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
+  box-shadow: 0 4px 15px rgba(var(--color-accent3-rgb), 0.4);
 }
 
 .btn-create--small {
@@ -170,9 +171,9 @@ const handleStartNewConversation = (user: MessageUser) => {
 
 .hint {
   font-size: 0.875rem;
-  margin-top: 0.5rem !important;
-  font-weight: 400 !important;
-  color: var(--color-white-light) !important;
+  margin-top: 0.5rem;
+  font-weight: 400;
+  color: var(--color-white-light);
   opacity: 0.6;
 }
 
@@ -180,21 +181,6 @@ const handleStartNewConversation = (user: MessageUser) => {
   display: flex;
   justify-content: center;
   padding: 2rem;
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-border-secondary);
-  border-top-color: var(--color-accent3-hover);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 768px) {

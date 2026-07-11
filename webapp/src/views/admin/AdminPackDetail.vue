@@ -293,7 +293,7 @@ async function executeDeleteFolder() {
 .pack-info-card {
   display: flex;
   gap: 20px;
-  background: var(--color-bg-admin-surface);
+  background: var(--color-bg-surface-deep);
   border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid rgba(122, 15, 62, 0.3);
@@ -358,7 +358,7 @@ async function executeDeleteFolder() {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: var(--color-bg-admin-surface);
+  background: var(--color-bg-surface-deep);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s;

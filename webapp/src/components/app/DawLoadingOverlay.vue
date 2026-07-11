@@ -104,7 +104,7 @@ function statusIcon(status: string): string {
   background: rgba(26, 14, 21, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 16px;
   padding: 40px;
   min-width: 360px;
@@ -122,7 +122,7 @@ function statusIcon(status: string): string {
 .logo-text {
   font-size: 32px;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff3fb4 0%, #ff6f91 100%);
+  background: linear-gradient(135deg, var(--color-accent2) 0%, #ff6f91 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -155,7 +155,7 @@ function statusIcon(status: string): string {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff3fb4, #ff6f91);
+  background: linear-gradient(90deg, var(--color-accent2), #ff6f91);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -203,7 +203,7 @@ function statusIcon(status: string): string {
 .debug-section {
   margin-top: 8px;
   padding-top: 16px;
-  border-top: 1px solid rgba(122, 15, 62, 0.3);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
 
   summary {
     cursor: pointer;
@@ -233,15 +233,15 @@ function statusIcon(status: string): string {
   color: rgba(255, 255, 255, 0.5);
 
   &.complete {
-    color: #22c55e;
+    color: var(--color-status-success);
   }
 
   &.loading {
-    color: #ff3fb4;
+    color: var(--color-accent2);
   }
 
   &.error {
-    color: #ef4444;
+    color: var(--color-status-error);
   }
 }
 
@@ -259,14 +259,14 @@ function statusIcon(status: string): string {
 
 .error-section {
   padding: 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(var(--color-status-error-rgb), 0.1);
+  border: 1px solid rgba(var(--color-status-error-rgb), 0.3);
   border-radius: 8px;
 }
 
 .error-text {
   font-size: 13px;
-  color: #ef4444;
+  color: var(--color-status-error);
 }
 
 // Transitions

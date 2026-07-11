@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed } from "vue";
+import { vOnClickOutside } from "@vueuse/components";
 import type { AutomatableParam } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
@@ -50,16 +51,9 @@ const handleToggleAutomation = () => {
   showAddLaneMenu.value = false;
 };
 
-const closeMenuOnOutsideClick = (e: MouseEvent) => {
-  if (!(e.target as Element).closest(".add-lane-wrapper")) {
-    showAddLaneMenu.value = false;
-  }
+const closeAddLaneMenu = () => {
+  showAddLaneMenu.value = false;
 };
-
-onMounted(() => document.addEventListener("click", closeMenuOnOutsideClick));
-onBeforeUnmount(() =>
-  document.removeEventListener("click", closeMenuOnOutsideClick),
-);
 </script>
 
 <template>
@@ -85,7 +79,7 @@ onBeforeUnmount(() =>
         @remove="handleRemoveLane(lane.id)"
       />
       <div class="drawer-add-bar">
-        <div class="add-lane-wrapper">
+        <div class="add-lane-wrapper" v-on-click-outside="closeAddLaneMenu">
           <button
             class="add-lane-btn"
             :disabled="availableParams.length === 0"
@@ -166,7 +160,7 @@ onBeforeUnmount(() =>
   position: sticky;
   top: 0;
   z-index: 60;
-  border-bottom: 2px solid #ff3fb4;
+  border-bottom: 2px solid var(--color-accent2);
 }
 
 .master-track-zone {
@@ -174,13 +168,13 @@ onBeforeUnmount(() =>
 }
 
 .automation-drawer {
-  border-top: 1px solid rgba(122, 15, 62, 0.3);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
 }
 
 .drawer-add-bar {
   display: grid;
   grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.15);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.15);
 }
 
 .drawer-add-bar > :first-child {
@@ -190,13 +184,13 @@ onBeforeUnmount(() =>
 }
 
 .drawer-add-spacer {
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
 }
 
 .automation-toggle-row {
   display: grid;
   grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.15);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.15);
 }
 
 .automation-toggle-btn {
@@ -205,7 +199,7 @@ onBeforeUnmount(() =>
   gap: 5px;
   margin: 3px 8px;
   padding: 2px 7px;
-  border: 1px solid rgba(122, 15, 62, 0.3);
+  border: 1px solid rgba(var(--color-accent3-rgb), 0.3);
   border-radius: 4px;
   background: transparent;
   color: rgba(255, 255, 255, 0.3);
@@ -221,7 +215,7 @@ onBeforeUnmount(() =>
   }
 
   &.active {
-    color: #ff3fb4;
+    color: var(--color-accent2);
     border-color: rgba(255, 63, 180, 0.6);
     background: rgba(255, 63, 180, 0.08);
   }
@@ -236,12 +230,12 @@ onBeforeUnmount(() =>
   padding: 0 3px;
   border-radius: 7px;
   background: rgba(255, 63, 180, 0.25);
-  color: #ff3fb4;
+  color: var(--color-accent2);
   font-size: 9px;
 }
 
 .automation-toggle-spacer {
-  background: #160b12;
+  background: var(--color-bg-daw-deep);
 }
 
 .add-lane-wrapper {
@@ -255,7 +249,7 @@ onBeforeUnmount(() =>
   font-size: 10px;
   font-weight: 600;
   padding: 3px 7px;
-  border: 1px solid rgba(122, 15, 62, 0.4);
+  border: 1px solid rgba(var(--color-accent3-rgb), 0.4);
   border-radius: 4px;
   background: transparent;
   color: rgba(255, 255, 255, 0.35);
@@ -280,8 +274,8 @@ onBeforeUnmount(() =>
   top: calc(100% + 4px);
   left: 0;
   z-index: 100;
-  background: #2a1020;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-daw-dropdown);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   padding: 4px 0;
   min-width: 140px;

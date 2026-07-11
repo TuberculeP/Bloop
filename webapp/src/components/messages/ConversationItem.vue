@@ -67,7 +67,7 @@ defineEmits<{
   height: 40px;
   border-radius: 50%;
   background: var(--color-primary-hover);
-  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
+  box-shadow: 0 4px 15px rgba(var(--color-accent3-rgb), 0.4);
   color: white;
   display: flex;
   align-items: center;

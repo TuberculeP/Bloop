@@ -11,7 +11,7 @@ withDefaults(defineProps<InputProps>(), {
   type: "text",
 });
 
-const model = defineModel<string>();
+const model = defineModel<string | number>();
 </script>
 
 <template>

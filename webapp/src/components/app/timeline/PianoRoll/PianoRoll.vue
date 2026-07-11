@@ -214,8 +214,8 @@ onBeforeUnmount(() => {
 .piano-roll-wrapper {
   display: flex;
   height: 400px;
-  background: #1a0e15;
-  border-top: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-top: 1px solid var(--color-border-secondary);
 }
 
 .piano-keys-container {
@@ -226,7 +226,7 @@ onBeforeUnmount(() => {
   position: sticky;
   left: 0;
   z-index: 5;
-  background: #2a2a2a;
+  background: var(--color-piano-key-black);
 
   &::-webkit-scrollbar {
     display: none;
@@ -237,6 +237,6 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(122, 15, 62, 0.5) transparent;
+  scrollbar-color: var(--color-border-secondary) transparent;
 }
 </style>

@@ -231,7 +231,7 @@ function formatDate(dateStr: string) {
 .users-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--color-bg-admin-surface);
+  background: var(--color-bg-surface-deep);
   border-radius: var(--radius-lg);
   overflow: hidden;
 
@@ -274,7 +274,7 @@ function formatDate(dateStr: string) {
 
 .pagination-btn {
   padding: 8px 16px;
-  background: var(--color-bg-admin-surface);
+  background: var(--color-bg-surface-deep);
   border: 1px solid rgba(122, 15, 62, 0.5);
   border-radius: var(--radius-md);
   color: var(--color-white);

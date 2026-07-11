@@ -96,11 +96,21 @@
      (admin, DAW, profil) plutôt que réinventées. */
   --color-status-success: #22c55e;
   --color-status-error: #ef4444;
+  --color-status-error-rgb: 239, 68, 68;
 
-  /* Surface de l'admin panel (fond des cards/tables/inputs), utilisée telle
-     quelle dans AdminLayout et toutes les vues admin - distincte de
-     --color-bg-secondary-dark (nuance légèrement différente utilisée côté DAW). */
-  --color-bg-admin-surface: #2a1520;
+  /* Surface sombre partagée (fond des cards/tables/inputs admin, panneau
+     audiothèque du DAW) - distincte de --color-bg-secondary-dark (nuance
+     légèrement différente). */
+  --color-bg-surface-deep: #2a1520;
+
+  /* Surfaces DAW (pistes/dropdowns), reprises telles quelles depuis leur
+     usage répété dans components/app/timeline - distinctes des teintes
+     admin ci-dessus. */
+  --color-bg-daw-active: #3d1528; /* ligne de piste active/expanded */
+  --color-bg-daw-deep: #160b12; /* fond le plus sombre (spacers, lanes) */
+  --color-bg-daw-dropdown: #2a1020; /* menus déroulants (add-lane, etc.) */
+  --color-piano-key-black: #2a2a2a; /* touches noires du piano roll */
+  --color-audio-clip-selected: #fbbf24; /* bordure clip audio sélectionné/survolé */
 
   /* Radius tokens */
   --radius-sm: 4px;

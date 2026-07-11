@@ -220,7 +220,7 @@ Le bucket R2 doit autoriser les origins :
 
 ## Conventions
 
-- Couleurs : tokens CSS de `webapp/src/styles/colors.css` (`--color-accent2` pour le rose admin, `--color-bg-admin-surface` pour le fond des cards/tables/inputs, `--color-status-success`/`--color-status-error` pour les statuts actif/inactif) — pas de hex en dur, cf. `components/ui/`
+- Couleurs : tokens CSS de `webapp/src/styles/colors.css` (`--color-accent2` pour le rose admin, `--color-bg-surface-deep` pour le fond des cards/tables/inputs, `--color-status-success`/`--color-status-error` pour les statuts actif/inactif) — pas de hex en dur, cf. `components/ui/`
 - Composants partagés (`webapp/src/components/ui/`) : `BaseButton`, `BaseModal`, `BaseBadge`, `BaseSpinner`, `EmptyState`, `FormField`/`BaseInput`/`BaseSelect`
 - Confirmation avant suppression/désactivation : `BaseModal`, plus de `confirm()` natif
 - Toast/notifications : `useToast()` + `ToastContainer.vue` (monté dans `App.vue`)

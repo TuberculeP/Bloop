@@ -1,7 +1,7 @@
 <script setup lang="ts">
 export interface SpinnerProps {
   size?: "small" | "normal" | "large";
-  color?: "primary" | "white" | "accent2";
+  color?: "primary" | "white" | "accent2" | "accent3";
 }
 
 withDefaults(defineProps<SpinnerProps>(), {
@@ -52,6 +52,10 @@ withDefaults(defineProps<SpinnerProps>(), {
 
 .base-spinner--accent2 {
   color: var(--color-accent2);
+}
+
+.base-spinner--accent3 {
+  color: var(--color-accent3-hover);
 }
 
 @keyframes base-spinner-spin {

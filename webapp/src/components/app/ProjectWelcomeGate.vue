@@ -62,7 +62,7 @@ defineEmits<{
   text-align: center;
   padding: 48px 40px;
   background: var(--color-bg-secondary-dark);
-  border: 1px solid rgba(122, 15, 62, 0.4);
+  border: 1px solid rgba(var(--color-accent3-rgb), 0.4);
   border-radius: 20px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
@@ -153,7 +153,7 @@ defineEmits<{
   cursor: pointer;
   transition: all 0.25s ease;
   margin-top: 8px;
-  box-shadow: 0 6px 20px rgba(122, 15, 62, 0.45);
+  box-shadow: 0 6px 20px rgba(var(--color-accent3-rgb), 0.45);
 
   &:hover:not(:disabled) {
     background: var(--color-accent3-hover);

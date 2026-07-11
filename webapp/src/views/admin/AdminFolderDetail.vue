@@ -277,7 +277,7 @@ async function executeDeleteSample() {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--color-bg-admin-surface);
+  background: var(--color-bg-surface-deep);
   border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid rgba(122, 15, 62, 0.3);
@@ -307,7 +307,7 @@ async function executeDeleteSample() {
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
-  background: var(--color-bg-admin-surface);
+  background: var(--color-bg-surface-deep);
   border-radius: var(--radius-md);
   border: 1px solid rgba(122, 15, 62, 0.3);
 }

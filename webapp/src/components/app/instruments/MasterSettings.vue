@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useTimelineStore } from "../../../stores/timelineStore";
 import TrackEqualizer from "./TrackEqualizer.vue";
+import RangeSlider from "../../ui/RangeSlider.vue";
 
 defineProps<{
   visible: boolean;
@@ -42,38 +43,24 @@ const handleClose = () => {
           <div class="panel-body">
             <div class="setting-group">
               <label class="setting-label">Volume</label>
-              <div class="slider-control">
-                <input
-                  type="range"
-                  :value="timelineStore.volume"
-                  min="0"
-                  max="100"
-                  @input="
-                    handleVolumeChange(
-                      Number(($event.target as HTMLInputElement).value),
-                    )
-                  "
-                />
-                <span class="slider-value">{{ timelineStore.volume }}%</span>
-              </div>
+              <RangeSlider
+                :model-value="timelineStore.volume"
+                :min="0"
+                :max="100"
+                unit="%"
+                @update:model-value="handleVolumeChange"
+              />
             </div>
 
             <div class="setting-group">
               <label class="setting-label">Reverb</label>
-              <div class="slider-control">
-                <input
-                  type="range"
-                  :value="timelineStore.reverb"
-                  min="0"
-                  max="100"
-                  @input="
-                    handleReverbChange(
-                      Number(($event.target as HTMLInputElement).value),
-                    )
-                  "
-                />
-                <span class="slider-value">{{ timelineStore.reverb }}%</span>
-              </div>
+              <RangeSlider
+                :model-value="timelineStore.reverb"
+                :min="0"
+                :max="100"
+                unit="%"
+                @update:model-value="handleReverbChange"
+              />
             </div>
 
             <div class="setting-group">
@@ -99,110 +86,79 @@ const handleClose = () => {
                   />
                 </div>
               </label>
-              <div
-                class="compressor-controls"
-                :class="{ disabled: !timelineStore.compressor.enabled }"
-              >
+              <div class="compressor-controls">
                 <div class="mini-slider">
                   <span class="mini-label">Threshold</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.compressor.threshold"
-                    min="-100"
-                    max="0"
+                  <RangeSlider
+                    :model-value="timelineStore.compressor.threshold"
+                    :min="-100"
+                    :max="0"
+                    thumb-size="small"
                     :disabled="!timelineStore.compressor.enabled"
-                    @input="
-                      timelineStore.updateCompressor({
-                        threshold: Number(
-                          ($event.target as HTMLInputElement).value,
-                        ),
-                      })
+                    :display-value="`${timelineStore.compressor.threshold}dB`"
+                    @update:model-value="
+                      (v) => timelineStore.updateCompressor({ threshold: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.compressor.threshold }}dB</span
-                  >
                 </div>
                 <div class="mini-slider">
                   <span class="mini-label">Ratio</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.compressor.ratio"
-                    min="1"
-                    max="20"
-                    step="0.5"
+                  <RangeSlider
+                    :model-value="timelineStore.compressor.ratio"
+                    :min="1"
+                    :max="20"
+                    :step="0.5"
+                    thumb-size="small"
                     :disabled="!timelineStore.compressor.enabled"
-                    @input="
-                      timelineStore.updateCompressor({
-                        ratio: Number(
-                          ($event.target as HTMLInputElement).value,
-                        ),
-                      })
+                    :display-value="`${timelineStore.compressor.ratio}:1`"
+                    @update:model-value="
+                      (v) => timelineStore.updateCompressor({ ratio: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.compressor.ratio }}:1</span
-                  >
                 </div>
                 <div class="mini-slider">
                   <span class="mini-label">Attack</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.compressor.attack"
-                    min="0"
-                    max="1"
-                    step="0.001"
+                  <RangeSlider
+                    :model-value="timelineStore.compressor.attack"
+                    :min="0"
+                    :max="1"
+                    :step="0.001"
+                    thumb-size="small"
                     :disabled="!timelineStore.compressor.enabled"
-                    @input="
-                      timelineStore.updateCompressor({
-                        attack: Number(
-                          ($event.target as HTMLInputElement).value,
-                        ),
-                      })
+                    :display-value="`${timelineStore.compressor.attack.toFixed(3)}s`"
+                    @update:model-value="
+                      (v) => timelineStore.updateCompressor({ attack: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.compressor.attack.toFixed(3) }}s</span
-                  >
                 </div>
                 <div class="mini-slider">
                   <span class="mini-label">Release</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.compressor.release"
-                    min="0"
-                    max="1"
-                    step="0.01"
+                  <RangeSlider
+                    :model-value="timelineStore.compressor.release"
+                    :min="0"
+                    :max="1"
+                    :step="0.01"
+                    thumb-size="small"
                     :disabled="!timelineStore.compressor.enabled"
-                    @input="
-                      timelineStore.updateCompressor({
-                        release: Number(
-                          ($event.target as HTMLInputElement).value,
-                        ),
-                      })
+                    :display-value="`${timelineStore.compressor.release.toFixed(2)}s`"
+                    @update:model-value="
+                      (v) => timelineStore.updateCompressor({ release: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.compressor.release.toFixed(2) }}s</span
-                  >
                 </div>
                 <div class="mini-slider">
                   <span class="mini-label">Knee</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.compressor.knee"
-                    min="0"
-                    max="40"
+                  <RangeSlider
+                    :model-value="timelineStore.compressor.knee"
+                    :min="0"
+                    :max="40"
+                    thumb-size="small"
                     :disabled="!timelineStore.compressor.enabled"
-                    @input="
-                      timelineStore.updateCompressor({
-                        knee: Number(($event.target as HTMLInputElement).value),
-                      })
+                    :display-value="`${timelineStore.compressor.knee}dB`"
+                    @update:model-value="
+                      (v) => timelineStore.updateCompressor({ knee: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.compressor.knee }}dB</span
-                  >
                 </div>
               </div>
             </div>
@@ -222,50 +178,35 @@ const handleClose = () => {
                   />
                 </div>
               </label>
-              <div
-                class="compressor-controls"
-                :class="{ disabled: !timelineStore.limiter.enabled }"
-              >
+              <div class="compressor-controls">
                 <div class="mini-slider">
                   <span class="mini-label">Threshold</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.limiter.threshold"
-                    min="-100"
-                    max="0"
+                  <RangeSlider
+                    :model-value="timelineStore.limiter.threshold"
+                    :min="-100"
+                    :max="0"
+                    thumb-size="small"
                     :disabled="!timelineStore.limiter.enabled"
-                    @input="
-                      timelineStore.updateLimiter({
-                        threshold: Number(
-                          ($event.target as HTMLInputElement).value,
-                        ),
-                      })
+                    :display-value="`${timelineStore.limiter.threshold}dB`"
+                    @update:model-value="
+                      (v) => timelineStore.updateLimiter({ threshold: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.limiter.threshold }}dB</span
-                  >
                 </div>
                 <div class="mini-slider">
                   <span class="mini-label">Release</span>
-                  <input
-                    type="range"
-                    :value="timelineStore.limiter.release"
-                    min="0"
-                    max="1"
-                    step="0.01"
+                  <RangeSlider
+                    :model-value="timelineStore.limiter.release"
+                    :min="0"
+                    :max="1"
+                    :step="0.01"
+                    thumb-size="small"
                     :disabled="!timelineStore.limiter.enabled"
-                    @input="
-                      timelineStore.updateLimiter({
-                        release: Number(
-                          ($event.target as HTMLInputElement).value,
-                        ),
-                      })
+                    :display-value="`${timelineStore.limiter.release.toFixed(2)}s`"
+                    @update:model-value="
+                      (v) => timelineStore.updateLimiter({ release: v })
                     "
                   />
-                  <span class="mini-value"
-                    >{{ timelineStore.limiter.release.toFixed(2) }}s</span
-                  >
                 </div>
               </div>
             </div>
@@ -289,7 +230,7 @@ const handleClose = () => {
 .settings-panel {
   width: 320px;
   height: 100%;
-  background: #2d0f20;
+  background: var(--color-bg-secondary-dark);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
@@ -300,13 +241,13 @@ const handleClose = () => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  border-bottom: 1px solid var(--color-border-secondary);
 
   h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -321,8 +262,8 @@ const handleClose = () => {
   cursor: pointer;
 
   &:hover {
-    background: #7a0f3e;
-    color: #f2efe8;
+    background: var(--color-accent3);
+    color: var(--color-white);
   }
 }
 
@@ -353,44 +294,10 @@ const handleClose = () => {
   cursor: pointer;
 }
 
-.slider-control {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  input[type="range"] {
-    flex: 1;
-    height: 6px;
-    -webkit-appearance: none;
-    background: #7a0f3e;
-    border-radius: 3px;
-
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: #ff3fb4;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-  }
-
-  .slider-value {
-    font-size: 13px;
-    color: #f2efe8;
-    min-width: 45px;
-    text-align: right;
-  }
-}
-
 .compressor-controls {
   display: flex;
   flex-direction: column;
   gap: 10px;
-
-  &.disabled {
-    opacity: 0.4;
-  }
 }
 
 .mini-slider {
@@ -402,30 +309,6 @@ const handleClose = () => {
     width: 60px;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.5);
-  }
-
-  input[type="range"] {
-    flex: 1;
-    height: 5px;
-    -webkit-appearance: none;
-    background: #7a0f3e;
-    border-radius: 3px;
-
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 13px;
-      height: 13px;
-      background: #ff3fb4;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-  }
-
-  .mini-value {
-    min-width: 55px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-    text-align: right;
   }
 }
 

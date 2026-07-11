@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from "vue";
+
 export interface ModalProps {
   modelValue: boolean;
   size?: "small" | "normal" | "large";
   closeOnOverlayClick?: boolean;
 }
 
-withDefaults(defineProps<ModalProps>(), {
+const props = withDefaults(defineProps<ModalProps>(), {
   size: "normal",
   closeOnOverlayClick: true,
 });
@@ -15,6 +17,13 @@ const emit = defineEmits<{
 }>();
 
 const close = () => emit("update:modelValue", false);
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape" && props.modelValue) close();
+};
+
+onMounted(() => document.addEventListener("keydown", onKeydown));
+onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
 </script>
 
 <template>
