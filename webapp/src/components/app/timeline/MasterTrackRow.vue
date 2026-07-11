@@ -164,6 +164,7 @@ const closeAddLaneMenu = () => {
 }
 
 .master-track-zone {
+  /* stylelint-disable-next-line color-no-hex -- teinte de fond propre à cette zone, usage unique */
   background: #241019;
 }
 
@@ -296,6 +297,7 @@ const closeAddLaneMenu = () => {
 
   &:hover {
     background: rgba(255, 63, 180, 0.1);
+    /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
     color: #fff;
   }
 }

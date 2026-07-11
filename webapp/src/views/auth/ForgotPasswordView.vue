@@ -6,21 +6,24 @@
         Entrez votre adresse email pour recevoir un lien de réinitialisation.
       </p>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input
+      <FormField label="Email" html-for="email">
+        <BaseInput
           id="email"
           type="email"
           v-model="form.email"
           placeholder="Entrez votre email"
-          class="form-input"
           required
         />
-      </div>
+      </FormField>
 
-      <button type="submit" class="submit-button" :disabled="isLoading">
-        {{ isLoading ? "Envoi en cours..." : "Envoyer le lien" }}
-      </button>
+      <BaseButton
+        type="submit"
+        class="submit-button"
+        :disabled="isLoading"
+        :loading="isLoading"
+      >
+        Envoyer le lien
+      </BaseButton>
 
       <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
@@ -37,6 +40,9 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import apiClient from "../../lib/utils/apiClient";
+import FormField from "../../components/ui/FormField.vue";
+import BaseInput from "../../components/ui/BaseInput.vue";
+import BaseButton from "../../components/ui/BaseButton.vue";
 
 const form = reactive({
   email: "",
@@ -113,14 +119,14 @@ async function submitForm() {
 }
 
 .success-message {
-  color: var(--color-success, #4caf50);
+  color: var(--color-success);
   text-align: center;
   margin-top: 16px;
   font-size: 0.9rem;
 }
 
 .error-message {
-  color: var(--color-error, #f44336);
+  color: var(--color-error);
   text-align: center;
   margin-top: 16px;
   font-size: 0.9rem;

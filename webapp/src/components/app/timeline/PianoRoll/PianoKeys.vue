@@ -148,6 +148,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped lang="scss">
+/* stylelint-disable color-no-hex -- réalisme visuel des touches de piano (dégradés de gris physiques), sans équivalent dans la charte */
 .piano-keys {
   width: 180px;
   min-width: 180px;
@@ -226,6 +227,7 @@ onBeforeUnmount(() => {
     color: white;
   }
 }
+/* stylelint-enable color-no-hex */
 
 .note-name {
   font-size: 10px;

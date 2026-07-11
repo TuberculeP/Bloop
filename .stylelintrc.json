@@ -2,8 +2,8 @@
   "extends": ["stylelint-config-recommended-scss", "stylelint-config-recommended-vue/scss"],
   "customSyntax": "postcss-html",
   "rules": {
-    "color-no-hex": [true, { "severity": "warning" }],
-    "declaration-no-important": [true, { "severity": "warning" }],
+    "color-no-hex": true,
+    "declaration-no-important": true,
     "no-descending-specificity": null,
     "no-empty-source": null
   },

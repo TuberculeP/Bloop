@@ -42,8 +42,8 @@ function handleSuccess() {
 }
 
 .modal-content {
-  background: var(--color-background, #1a1a1a);
-  border: 1px solid var(--color-border-secondary, #333);
+  background: var(--color-bg-primary-dark);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 12px;
   padding: 32px;
   max-width: 400px;
@@ -55,14 +55,14 @@ function handleSuccess() {
   text-align: center;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid var(--color-border-secondary, #333);
-  color: var(--color-text-secondary, #888);
+  border-top: 1px solid var(--color-border-secondary);
+  color: var(--color-text-secondary);
   text-decoration: none;
   font-size: 0.9rem;
 }
 
 .logout-link:hover {
-  color: var(--color-secondary, #aaa);
+  color: var(--color-secondary);
   text-decoration: underline;
 }
 </style>

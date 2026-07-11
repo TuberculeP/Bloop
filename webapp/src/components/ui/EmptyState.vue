@@ -13,6 +13,7 @@ defineProps<EmptyStateProps>();
     <i v-if="icon" :class="icon" class="empty-state__icon" />
     <p v-if="title" class="empty-state__title">{{ title }}</p>
     <p v-if="message" class="empty-state__message">{{ message }}</p>
+    <slot />
     <div v-if="$slots.action" class="empty-state__action">
       <slot name="action" />
     </div>

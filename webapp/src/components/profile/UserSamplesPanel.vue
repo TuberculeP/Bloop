@@ -350,7 +350,7 @@ onMounted(() => {
 .delete-btn {
   background: none;
   border: none;
-  color: #ef4444;
+  color: var(--color-status-error);
   cursor: pointer;
   font-size: 0.8rem;
   text-decoration: underline;

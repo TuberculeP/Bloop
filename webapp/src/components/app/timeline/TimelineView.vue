@@ -910,6 +910,7 @@ defineExpose({
     animation: record-pulse 1.4s ease-in-out infinite;
 
     i {
+      /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
       color: #fff;
     }
   }
@@ -1209,6 +1210,7 @@ defineExpose({
   flex-wrap: wrap;
 }
 
+/* stylelint-disable color-no-hex -- thème bleu "lecture seule", distinct de la charte rose/violette, sans équivalent token */
 .readonly-banner-info {
   display: flex;
   align-items: center;
@@ -1224,6 +1226,7 @@ defineExpose({
     color: #93c5fd;
   }
 }
+/* stylelint-enable color-no-hex */
 
 .readonly-banner-actions {
   display: flex;
@@ -1246,6 +1249,7 @@ defineExpose({
   &:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.4);
+    /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
     color: #fff;
   }
 
@@ -1255,6 +1259,7 @@ defineExpose({
   }
 }
 
+/* stylelint-disable color-no-hex -- thème bleu "lecture seule", distinct de la charte rose/violette, sans équivalent token */
 .banner-btn-primary {
   background: rgba(0, 120, 200, 0.3);
   border-color: rgba(0, 160, 255, 0.5);
@@ -1266,6 +1271,7 @@ defineExpose({
     color: #bfdbfe;
   }
 }
+/* stylelint-enable color-no-hex */
 
 .export-overlay {
   position: fixed;

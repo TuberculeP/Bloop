@@ -515,6 +515,7 @@ onUnmounted(() => {
     rgba(200, 145, 249, 0.2) 0%,
     rgba(200, 145, 249, 0.05) 100%
   );
+  /* stylelint-disable-next-line color-no-hex -- couleur de catégorie illustrative, usage unique */
   color: #c891f9;
   border: 1px solid rgba(200, 145, 249, 0.3);
 }

@@ -270,12 +270,14 @@ function handleAction(action: () => void) {
   }
 
   &.danger {
-    color: #ff6b6b;
+    color: var(--color-error-light);
 
+    /* stylelint-disable color-no-hex -- rouge de hover danger + blanc de contraste, usage unique */
     &:hover {
       background: #c0392b;
       color: #fff;
     }
+    /* stylelint-enable color-no-hex */
   }
 }
 </style>

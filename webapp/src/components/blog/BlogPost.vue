@@ -4,6 +4,8 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/authStore";
 import { formatFullDate } from "../../lib/utils/dateFormatter";
 import BaseButton from "../ui/BaseButton.vue";
+import BaseModal from "../ui/BaseModal.vue";
+import { useToast } from "../../composables/useToast";
 import {
   createPost,
   deletePost,
@@ -20,6 +22,7 @@ const props = defineProps<{
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 // État pour gérer l'affichage des commentaires
 const showComments = ref(false);
@@ -185,18 +188,26 @@ const toggleLike = async () => {
   }
 };
 
-const handleDelete = async () => {
-  if (
-    props.post.id &&
-    confirm("Êtes-vous sûr de vouloir supprimer ce post ?")
-  ) {
-    try {
-      await deletePost(props.post.id);
-      toggleCommentForm();
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      alert("Erreur lors de la suppression du post");
-    }
+const showDeleteConfirm = ref(false);
+
+const handleDelete = () => {
+  if (props.post.id) showDeleteConfirm.value = true;
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+};
+
+const confirmDelete = async () => {
+  if (!props.post.id) return;
+
+  try {
+    await deletePost(props.post.id);
+    showDeleteConfirm.value = false;
+    toggleCommentForm();
+  } catch (error) {
+    console.error("Erreur lors de la suppression:", error);
+    toast.error("Erreur lors de la suppression du post.");
   }
 };
 
@@ -209,7 +220,7 @@ const toggleHighlight = async () => {
       toggleCommentForm();
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
-      alert("Erreur lors de la mise à jour du post");
+      toast.error("Erreur lors de la mise à jour du post.");
     }
   }
 };
@@ -472,5 +483,23 @@ fetchComments();
         </div>
       </div>
     </div>
+
+    <BaseModal
+      :model-value="showDeleteConfirm"
+      @update:model-value="cancelDelete"
+    >
+      <template #header>
+        <h3>Supprimer le post ?</h3>
+      </template>
+      <p>Cette action est irréversible.</p>
+      <template #footer>
+        <BaseButton variant="secondary" @click.stop="cancelDelete">
+          Annuler
+        </BaseButton>
+        <BaseButton variant="danger" @click.stop="confirmDelete">
+          Supprimer
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>

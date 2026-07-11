@@ -1358,6 +1358,7 @@ onUnmounted(() => {
   border-radius: 50%;
 }
 
+/* stylelint-disable color-no-hex -- pastilles macOS (rouge/jaune/vert) du mockup illustratif, couleurs figées non liées à la charte */
 .mockup-dots span:nth-child(1) {
   background: #ff5f57;
 }
@@ -1367,6 +1368,7 @@ onUnmounted(() => {
 .mockup-dots span:nth-child(3) {
   background: #28c840;
 }
+/* stylelint-enable color-no-hex */
 
 .mockup-title {
   font-size: 0.85rem;
@@ -2088,6 +2090,7 @@ onUnmounted(() => {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* stylelint-disable color-no-hex -- verts/bleus de statut copié + coloration syntaxique JSON illustrative, non liés à la charte */
 .config-copy-btn.copied {
   background: rgba(40, 201, 64, 0.12);
   border-color: rgba(40, 201, 64, 0.3);
@@ -2115,6 +2118,7 @@ onUnmounted(() => {
 .json-string {
   color: #86efac;
 }
+/* stylelint-enable color-no-hex */
 .json-origin {
   color: var(--color-accent);
 }

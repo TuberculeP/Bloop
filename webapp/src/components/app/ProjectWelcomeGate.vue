@@ -45,6 +45,7 @@ defineEmits<{
 .welcome-gate {
   position: fixed;
   inset: 0;
+  /* stylelint-disable-next-line color-no-hex -- fond décoratif propre à cet écran d'accueil de projet */
   background: #0f0810;
   display: flex;
   align-items: center;

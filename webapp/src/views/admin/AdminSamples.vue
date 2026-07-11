@@ -290,7 +290,7 @@ async function executeDeletePack() {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -315,7 +315,7 @@ async function executeDeletePack() {
 }
 
 .pack-card {
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -330,7 +330,11 @@ async function executeDeletePack() {
 
 .pack-cover {
   height: 120px;
-  background: linear-gradient(135deg, #ff3fb4 0%, #7a0f3e 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent2) 0%,
+    var(--color-accent3) 100%
+  );
 
   img {
     width: 100%;
@@ -357,7 +361,7 @@ async function executeDeletePack() {
     margin: 0 0 4px;
     font-size: 16px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -389,17 +393,17 @@ async function executeDeletePack() {
 
 .pagination-btn {
   padding: 8px 16px;
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border: 1px solid rgba(122, 15, 62, 0.5);
   border-radius: 6px;
-  color: #f2efe8;
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
     background: rgba(122, 15, 62, 0.4);
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 
   &:disabled {

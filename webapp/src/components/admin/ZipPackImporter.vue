@@ -812,7 +812,7 @@ function reset() {
     margin-bottom: 16px;
 
     small {
-      color: #eab308;
+      color: var(--color-warning);
     }
   }
 }

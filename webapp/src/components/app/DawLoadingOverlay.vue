@@ -122,6 +122,7 @@ function statusIcon(status: string): string {
 .logo-text {
   font-size: 32px;
   font-weight: 700;
+  /* stylelint-disable-next-line color-no-hex -- teinte de dégradé décorative, propre à ce logo */
   background: linear-gradient(135deg, var(--color-accent2) 0%, #ff6f91 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -155,6 +156,7 @@ function statusIcon(status: string): string {
 
 .progress-fill {
   height: 100%;
+  /* stylelint-disable-next-line color-no-hex -- teinte de dégradé décorative, propre à cette barre de progression */
   background: linear-gradient(90deg, var(--color-accent2), #ff6f91);
   border-radius: 4px;
   transition: width 0.3s ease;

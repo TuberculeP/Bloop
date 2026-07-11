@@ -4,6 +4,10 @@ import { createPost } from "../../services/posts";
 import { getAllTags, defaultTags, type Tag } from "../../services/tags";
 import type { CreatePostData } from "../../lib/utils/types";
 import BaseButton from "../ui/BaseButton.vue";
+import FormField from "../ui/FormField.vue";
+import { useToast } from "../../composables/useToast";
+
+const toast = useToast();
 
 const emit = defineEmits<{
   postCreated: [];
@@ -104,17 +108,17 @@ const handleTagKeydown = (event: KeyboardEvent) => {
 };
 
 const loading = ref(false);
-const error = ref<string | null>(null);
+const bodyError = ref<string | null>(null);
 
 const handleSubmit = async () => {
   if (!form.value.body.trim()) {
-    error.value = "Le contenu sont requis";
+    bodyError.value = "Le contenu est requis";
     return;
   }
 
   try {
     loading.value = true;
-    error.value = null;
+    bodyError.value = null;
 
     const postData: CreatePostData = {
       body: form.value.body.trim(),
@@ -136,7 +140,7 @@ const handleSubmit = async () => {
 
     emit("postCreated");
   } catch (err) {
-    error.value = "Erreur lors de la création du post";
+    toast.error("Erreur lors de la création du post.");
     console.error("Erreur:", err);
   } finally {
     loading.value = false;
@@ -147,22 +151,12 @@ const handleSubmit = async () => {
   <div class="post-create">
     <h2>Ajouter un nouveau post</h2>
 
-    <div v-if="error" class="error">{{ error }}</div>
-
     <form @submit.prevent="handleSubmit" class="create-form">
-      <!-- <div class="form-group">
-        <label for="author">Auteur*</label>
-        <input
-          id="author"
-          v-model="form.author"
-          type="text"
-          placeholder="Votre nom"
-          required
-        />
-      </div>
- -->
-      <div class="form-group">
-        <label for="body">Contenu*</label>
+      <FormField
+        label="Contenu*"
+        html-for="body"
+        :error="bodyError ?? undefined"
+      >
         <textarea
           id="body"
           v-model="form.body"
@@ -170,10 +164,9 @@ const handleSubmit = async () => {
           rows="4"
           required
         ></textarea>
-      </div>
+      </FormField>
 
-      <div class="form-group">
-        <label for="tags">Ajouter des Tags</label>
+      <FormField label="Ajouter des Tags" html-for="tags">
         <div class="tags-input-container">
           <!-- Tags sélectionnés -->
           <div class="selected-tags">
@@ -227,7 +220,7 @@ const handleSubmit = async () => {
             </ul>
           </div>
         </div>
-      </div>
+      </FormField>
       <div>
         <BaseButton
           type="submit"

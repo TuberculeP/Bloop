@@ -4,6 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import { getPostById } from "../../services/posts";
 import BlogPost from "../../components/blog/BlogPost.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseSpinner from "../../components/ui/BaseSpinner.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
 import type { Post } from "../../lib/utils/types";
 import AppLayout from "../../layouts/AppLayout.vue";
 const route = useRoute();
@@ -77,24 +79,23 @@ onMounted(() => {
 
       <!-- État de chargement -->
       <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
+        <BaseSpinner size="large" />
         <p>Chargement du post...</p>
       </div>
 
       <!-- État d'erreur -->
-      <div v-else-if="error" class="error-state">
-        <div class="error-icon">⚠️</div>
-        <h3>Erreur</h3>
-        <p>{{ error }}</p>
-        <div class="error-actions">
-          <BaseButton variant="primary" @click="loadPost">
-            Réessayer
-          </BaseButton>
-          <BaseButton variant="ghost" @click="goToBlog">
-            Retour au blog
-          </BaseButton>
-        </div>
-      </div>
+      <EmptyState v-else-if="error" title="Erreur" :message="error">
+        <template #action>
+          <div class="error-actions">
+            <BaseButton variant="primary" @click="loadPost">
+              Réessayer
+            </BaseButton>
+            <BaseButton variant="ghost" @click="goToBlog">
+              Retour au blog
+            </BaseButton>
+          </div>
+        </template>
+      </EmptyState>
 
       <!-- Contenu du post -->
       <div v-else-if="post" class="post-content">
@@ -118,47 +119,13 @@ onMounted(() => {
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
-/* États de chargement et d'erreur */
-.loading-state,
-.error-state {
-  text-align: center;
+/* États de chargement */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   padding: 3rem 1rem;
-}
-
-.loading-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--color-border-secondary);
-  border-top: 3px solid var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.error-state h3 {
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
-  color: var(--color-text-primary);
-  margin: 0 0 1rem 0;
-}
-
-.error-state p {
-  color: var(--color-text-secondary);
-  margin: 0 0 2rem 0;
 }
 
 .error-actions {

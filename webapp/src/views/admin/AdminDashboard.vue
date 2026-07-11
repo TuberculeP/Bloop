@@ -54,14 +54,14 @@ onMounted(() => {
     margin: 0 0 24px;
     font-size: 24px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 
   h2 {
     margin: 0 0 16px;
     font-size: 18px;
     font-weight: 500;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -73,7 +73,7 @@ onMounted(() => {
 }
 
 .stat-card {
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border-radius: 12px;
   padding: 24px;
   display: flex;
@@ -85,7 +85,7 @@ onMounted(() => {
 .stat-value {
   font-size: 36px;
   font-weight: 700;
-  color: #ff3fb4;
+  color: var(--color-accent2);
 }
 
 .stat-label {
@@ -94,7 +94,7 @@ onMounted(() => {
 }
 
 .quick-actions {
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border-radius: 12px;
   padding: 24px;
   border: 1px solid rgba(122, 15, 62, 0.3);
@@ -111,9 +111,9 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   border-radius: 8px;
-  color: #f2efe8;
+  color: var(--color-white);
   text-decoration: none;
   transition: all 0.15s;
 

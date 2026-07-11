@@ -65,6 +65,7 @@ const getNotePreviewHeight = (): number => {
   cursor: pointer;
 
   &:hover {
+    /* stylelint-disable-next-line color-no-hex -- même teinte que le hover du rendu canvas équivalent (TrackTimelinePreviewCanvas) */
     background: #1f1119;
   }
 }

@@ -3,52 +3,47 @@
     <form class="form-container" @submit.prevent="submitForm">
       <h2>Inscription</h2>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input
+      <FormField label="Email" html-for="email">
+        <BaseInput
           id="email"
           type="email"
           v-model="form.email"
           placeholder="Entrez votre email"
           required
         />
-      </div>
+      </FormField>
 
-      <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input
+      <FormField label="Mot de passe" html-for="password">
+        <BaseInput
           id="password"
           type="password"
           v-model="form.password"
           placeholder="Entrez votre mot de passe"
           required
         />
-      </div>
+      </FormField>
 
-      <div class="form-group">
-        <label for="firstName">Prénom</label>
-        <input
+      <FormField label="Prénom" html-for="firstName">
+        <BaseInput
           id="firstName"
           type="text"
           v-model="form.firstName"
           placeholder="Entrez votre prénom"
           required
         />
-      </div>
+      </FormField>
 
-      <div class="form-group">
-        <label for="lastName">Nom</label>
-        <input
+      <FormField label="Nom" html-for="lastName">
+        <BaseInput
           id="lastName"
           type="text"
           v-model="form.lastName"
           placeholder="Entrez votre nom"
           required
         />
-      </div>
+      </FormField>
 
-      <div class="form-group">
-        <label for="profilePicture">Photo de profil</label>
+      <FormField label="Photo de profil" html-for="profilePicture">
         <input
           id="profilePicture"
           type="file"
@@ -58,9 +53,9 @@
         <div v-if="previewUrl" class="image-preview">
           <img :src="previewUrl" alt="Aperçu de votre photo de profil" />
         </div>
-      </div>
+      </FormField>
 
-      <button type="submit">Créer mon compte</button>
+      <BaseButton type="submit">Créer mon compte</BaseButton>
 
       <div class="form-footer">
         <router-link :to="{ name: 'app-login' }" class="login-link">
@@ -78,9 +73,14 @@ import { resizeImageFile } from "../../lib/utils/imageResize";
 import { useAuthStore } from "../../stores/authStore";
 import { useRouter } from "vue-router";
 import type { User } from "../../lib/utils/types";
+import FormField from "../../components/ui/FormField.vue";
+import BaseInput from "../../components/ui/BaseInput.vue";
+import BaseButton from "../../components/ui/BaseButton.vue";
+import { useToast } from "../../composables/useToast";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 const profilePictureFile = ref<File | null>(null);
 const previewUrl = ref<string>("");
 
@@ -118,6 +118,7 @@ async function submitForm() {
 
     if (result.error || !result.data?.user) {
       console.error("Erreur lors de l'inscription:", result.error);
+      toast.error("Erreur lors de l'inscription. Veuillez réessayer.");
       return;
     }
 
@@ -129,12 +130,14 @@ async function submitForm() {
       );
       if (avatarError) {
         console.error("Erreur lors de l'upload de l'avatar:", avatarError);
+        toast.error("Erreur lors de l'upload de la photo de profil.");
       }
     }
 
     router.push({ name: "landing-main" });
   } catch (error) {
     console.error("Erreur lors de l'envoi du formulaire:", error);
+    toast.error("Erreur lors de l'envoi du formulaire.");
   }
 }
 </script>

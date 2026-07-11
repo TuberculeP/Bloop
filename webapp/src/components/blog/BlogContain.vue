@@ -7,7 +7,6 @@ import { useAuthStore } from "../../stores/authStore";
 import BlogSearch from "./BlogSearch.vue";
 import apiClient from "../../lib/utils/apiClient";
 import type { User } from "../../lib/utils/types";
-// import BlogUsers from "./BlogUsers.vue";
 import BlogTopLikedUsers from "./BlogTopLikedUsers.vue";
 import BlogBackground from "./BlogBackground.vue";
 

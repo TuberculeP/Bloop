@@ -501,7 +501,7 @@ onUnmounted(() => {
   color: var(--color-white);
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 0 !important;
+  margin: 0;
 }
 
 .profile-btn:hover {

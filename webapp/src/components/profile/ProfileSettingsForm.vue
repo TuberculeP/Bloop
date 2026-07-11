@@ -6,10 +6,14 @@ import { useOnboardingStore } from "../../stores/onboardingStore";
 import { updateUserProfile } from "../../services/users";
 import { resizeImageFile } from "../../lib/utils/imageResize";
 import BaseButton from "../ui/BaseButton.vue";
+import FormField from "../ui/FormField.vue";
+import BaseInput from "../ui/BaseInput.vue";
+import { useToast } from "../../composables/useToast";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const onboardingStore = useOnboardingStore();
+const toast = useToast();
 const user = computed(() => authStore.user);
 
 const replayOnboarding = async () => {
@@ -24,11 +28,10 @@ const settingsForm = ref({
   phone: "",
 });
 
+const photoInputRef = ref<HTMLInputElement | null>(null);
 const photoFile = ref<File | null>(null);
 const photoPreview = ref<string | null>(null);
 const isSaving = ref(false);
-const error = ref<string | null>(null);
-const success = ref(false);
 
 const avatarSrc = computed(
   () => photoPreview.value || user.value?.profilePicture || null,
@@ -56,8 +59,6 @@ const handlePhotoChange = async (event: Event) => {
 
 const save = async () => {
   isSaving.value = true;
-  error.value = null;
-  success.value = false;
 
   try {
     if (photoFile.value) {
@@ -74,12 +75,12 @@ const save = async () => {
     });
     authStore.user = updatedUser;
 
-    success.value = true;
+    toast.success("Profil mis à jour avec succès.");
     photoFile.value = null;
     photoPreview.value = null;
   } catch (err) {
     console.error("Erreur lors de la mise à jour du profil:", err);
-    error.value = "Erreur lors de la mise à jour du profil";
+    toast.error("Erreur lors de la mise à jour du profil.");
   } finally {
     isSaving.value = false;
   }
@@ -97,63 +98,35 @@ onMounted(resetForm);
           {{ user?.firstName?.charAt(0) }}{{ user?.lastName?.charAt(0) }}
         </span>
       </div>
-      <label class="btn-outline photo-upload-btn">
+      <BaseButton type="button" variant="ghost" @click="photoInputRef?.click()">
         Changer la photo
-        <input
-          type="file"
-          accept="image/*"
-          class="photo-input"
-          @change="handlePhotoChange"
-        />
-      </label>
+      </BaseButton>
+      <input
+        ref="photoInputRef"
+        type="file"
+        accept="image/*"
+        class="photo-input"
+        @change="handlePhotoChange"
+      />
     </div>
 
     <form class="settings-form" @submit.prevent="save">
       <div class="form-row">
-        <div class="form-group">
-          <label for="firstName">Prénom</label>
-          <input
-            id="firstName"
-            v-model="settingsForm.firstName"
-            type="text"
-            class="form-input"
-          />
-        </div>
-        <div class="form-group">
-          <label for="lastName">Nom</label>
-          <input
-            id="lastName"
-            v-model="settingsForm.lastName"
-            type="text"
-            class="form-input"
-          />
-        </div>
+        <FormField label="Prénom" html-for="firstName">
+          <BaseInput id="firstName" v-model="settingsForm.firstName" />
+        </FormField>
+        <FormField label="Nom" html-for="lastName">
+          <BaseInput id="lastName" v-model="settingsForm.lastName" />
+        </FormField>
       </div>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input
-          id="email"
-          v-model="settingsForm.email"
-          type="email"
-          class="form-input"
-        />
-      </div>
+      <FormField label="Email" html-for="email">
+        <BaseInput id="email" v-model="settingsForm.email" type="email" />
+      </FormField>
 
-      <div class="form-group">
-        <label for="phone">Téléphone</label>
-        <input
-          id="phone"
-          v-model="settingsForm.phone"
-          type="tel"
-          class="form-input"
-        />
-      </div>
-
-      <p v-if="error" class="settings-message error-text">{{ error }}</p>
-      <p v-if="success" class="settings-message success-text">
-        Profil mis à jour avec succès.
-      </p>
+      <FormField label="Téléphone" html-for="phone">
+        <BaseInput id="phone" v-model="settingsForm.phone" type="tel" />
+      </FormField>
 
       <div class="edit-actions">
         <BaseButton
@@ -217,19 +190,8 @@ onMounted(resetForm);
   object-fit: cover;
 }
 
-.photo-upload-btn {
-  position: relative;
-  padding: 10px 24px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-}
-
 .photo-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+  display: none;
 }
 
 .settings-form {
@@ -242,46 +204,6 @@ onMounted(resetForm);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  color: var(--color-white-light);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.form-input {
-  padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
-  color: var(--color-white);
-  font-size: 0.95rem;
-  box-sizing: border-box;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-accent3-hover);
-}
-
-.settings-message {
-  margin: 0;
-  font-size: 0.85rem;
-}
-
-.error-text {
-  color: #f88;
-}
-
-.success-text {
-  color: var(--color-success);
 }
 
 .edit-actions {
@@ -310,22 +232,6 @@ onMounted(resetForm);
   color: var(--color-white-light);
   opacity: 0.7;
   font-size: 0.85rem;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 2px solid var(--color-accent3);
-  color: var(--color-accent3-hover);
-  padding: 12px 32px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background: var(--color-accent3);
-  color: var(--color-white);
 }
 
 @media (max-width: 768px) {

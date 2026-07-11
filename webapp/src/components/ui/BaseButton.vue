@@ -240,8 +240,10 @@ const handleClick = (event: MouseEvent) => {
 .base-button--disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  /* stylelint-disable declaration-no-important -- nécessaire : même spécificité que les règles :hover par variante (.base-button--primary:hover etc.), qui gagneraient sinon par ordre de déclaration */
   transform: none !important;
   box-shadow: none !important;
+  /* stylelint-enable declaration-no-important */
 }
 
 .base-button--loading {

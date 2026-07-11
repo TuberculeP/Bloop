@@ -236,8 +236,10 @@ onMounted(() => {
 
 .floating-shape.triangle {
   border: none;
+  /* stylelint-disable declaration-no-important -- nécessaire : chaque forme reçoit une largeur/hauteur inline (:style) aléatoire, le triangle doit forcer 0 pour se dessiner via les bordures */
   width: 0 !important;
   height: 0 !important;
+  /* stylelint-enable declaration-no-important */
   border-left: 15px solid transparent;
   border-right: 15px solid transparent;
   border-bottom: 26px solid rgba(255, 210, 105, 0.3);

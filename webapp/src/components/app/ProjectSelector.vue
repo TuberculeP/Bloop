@@ -821,14 +821,14 @@ onMounted(() => loadProjects());
 }
 
 .favorite-btn.active {
-  border-color: #e25555;
-  color: #e25555;
-  background: rgba(226, 85, 85, 0.15);
+  border-color: var(--color-danger-hover);
+  color: var(--color-danger-hover);
+  background: rgba(var(--color-danger-hover-rgb), 0.15);
 }
 
 .favorite-btn:hover {
-  border-color: #e25555 !important;
-  color: #e25555 !important;
+  border-color: var(--color-danger-hover);
+  color: var(--color-danger-hover);
 }
 
 .state-container {
@@ -895,8 +895,8 @@ onMounted(() => loadProjects());
 }
 
 .delete-btn:hover {
-  border-color: #e25555 !important;
-  color: #e25555 !important;
+  border-color: var(--color-danger-hover);
+  color: var(--color-danger-hover);
 }
 
 .trash-card {
@@ -918,7 +918,7 @@ onMounted(() => loadProjects());
 }
 
 .days-badge {
-  background: rgba(226, 85, 85, 0.2);
+  background: rgba(var(--color-danger-hover-rgb), 0.2);
 }
 
 .delete-confirm-title {
