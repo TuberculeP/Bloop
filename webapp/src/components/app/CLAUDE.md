@@ -217,10 +217,19 @@ Engine → GainNode (volume) → EQ Filters (5 bandes) → DryGain → inputBus
 
 | Composant            | Rôle                                               |
 | -------------------- | -------------------------------------------------- |
-| `TimelineView.vue`   | Container principal, playback, orchestration       |
+| `TimelineView.vue`   | Orchestrateur : câble les composables ci-dessous, CRUD pistes, raccourcis clavier, template/style |
 | `TrackRow.vue`       | Header + preview notes + piano roll inline         |
 | `TimelineRuler.vue`  | Marqueurs de mesures cliquables                    |
 | `AddTrackButton.vue` | Menu de sélection d'instrument                     |
+
+**Composables** (`composables/timelineView/`) — même principe que `composables/pianoGrid/*` :
+- `useTimelinePlaybackEngine` - boucle rAF, déclenchement notes/clips, métronome, automation
+- `useTimelineExport` - export WAV/MP3 (modal, capture PCM, progress)
+- `useTimelineVoiceRecording` - enregistrement voix (device picker, décodage, upload sample, création clip)
+- `useTimelineFileDrop` - drag & drop de fichiers audio sur la timeline
+- `useTimelineProjectMeta` - nom de projet, sauvegarde, clonage, rechargement (route + lecture seule)
+
+Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre (l'export doit interrompre la boucle, arrêter la lecture doit finaliser un enregistrement en cours) : `TimelineView.vue` casse ce cycle avec deux callbacks (`onLoopEnd`, `onStop`) câblés une fois les 3 composables construits.
 
 #### Piano Roll (`components/app/timeline/PianoRoll/`)
 
@@ -268,7 +277,8 @@ Engine → GainNode (volume) → EQ Filters (5 bandes) → DryGain → inputBus
 
 ## Constantes partagées
 
-### Timeline/UI (`composants`)
+### Timeline/UI
+Définies dans `TimelineView.vue` et passées en props aux enfants (`TrackRow`, `TimelineRuler`, `MasterTrackRow`) — pas de fichier de constantes partagé pour la timeline (contrairement au piano roll, voir plus bas).
 ```typescript
 const COL_WIDTH = 20;            // Largeur d'une colonne (1 step)
 const TRACK_HEADER_WIDTH = 180;  // Header sticky
