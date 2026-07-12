@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import { vOnClickOutside } from "@vueuse/components";
 import type { AutomatableParam } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import MasterTrackHeader from "./MasterTrackHeader.vue";
 import AutomationLaneComponent from "./AutomationLane.vue";
+import { useDropdown } from "../../../composables/useDropdown";
 
 const MASTER_COLOR = "#ff3fb4";
 
@@ -21,7 +22,11 @@ const emit = defineEmits<{
 
 const timelineStore = useTimelineStore();
 
-const showAddLaneMenu = ref(false);
+const {
+  isOpen: showAddLaneMenu,
+  toggle: toggleAddLaneMenu,
+  close: closeAddLaneMenu,
+} = useDropdown();
 
 const isAutomationExpanded = computed(
   () => timelineStore.automationExpandedMaster,
@@ -39,7 +44,7 @@ const availableParams = computed(() =>
 
 const handleAddLane = (param: AutomatableParam) => {
   timelineStore.addMasterAutomationLane(param);
-  showAddLaneMenu.value = false;
+  closeAddLaneMenu();
 };
 
 const handleRemoveLane = (laneId: string) => {
@@ -48,11 +53,7 @@ const handleRemoveLane = (laneId: string) => {
 
 const handleToggleAutomation = () => {
   timelineStore.toggleMasterAutomationExpanded();
-  showAddLaneMenu.value = false;
-};
-
-const closeAddLaneMenu = () => {
-  showAddLaneMenu.value = false;
+  closeAddLaneMenu();
 };
 </script>
 
@@ -84,7 +85,7 @@ const closeAddLaneMenu = () => {
             class="add-lane-btn"
             :disabled="availableParams.length === 0"
             title="Ajouter un paramètre"
-            @click.stop="showAddLaneMenu = !showAddLaneMenu"
+            @click.stop="toggleAddLaneMenu"
           >
             +
             <svg

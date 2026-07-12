@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { vOnClickOutside } from "@vueuse/components";
 import type { InstrumentType } from "../../../lib/utils/types";
 import BaseButton from "../../ui/BaseButton.vue";
+import { useDropdown } from "../../../composables/useDropdown";
 
 const emit = defineEmits<{
   (e: "add-track", type: InstrumentType): void;
 }>();
 
-const showMenu = ref(false);
+const {
+  isOpen: showMenu,
+  toggle: toggleMenu,
+  close: closeMenu,
+} = useDropdown();
 
 const instruments = [
   {
@@ -45,20 +49,16 @@ const instruments = [
 
 const handleSelect = (type: InstrumentType) => {
   emit("add-track", type);
-  showMenu.value = false;
-};
-
-const handleClickOutside = () => {
-  showMenu.value = false;
+  closeMenu();
 };
 </script>
 
 <template>
-  <div class="add-track-wrapper" v-on-click-outside="handleClickOutside">
+  <div class="add-track-wrapper" v-on-click-outside="closeMenu">
     <BaseButton
       class="add-track-btn"
       variant="error"
-      @click="showMenu = !showMenu"
+      @click="toggleMenu"
       title="Ajouter une piste"
     >
       <span class="label">Nouvelle piste</span>

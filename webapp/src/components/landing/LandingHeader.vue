@@ -157,6 +157,7 @@ import { useAuthStore } from "../../stores/authStore";
 import apiClient from "../../lib/utils/apiClient";
 import gsap from "gsap";
 import LandingCtaButton from "./LandingCtaButton.vue";
+import { useDropdown } from "../../composables/useDropdown";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -172,7 +173,11 @@ const navLinks = [
 // State
 const isScrolled = ref(false);
 const scrollProgress = ref(0);
-const showProfileMenu = ref(false);
+const {
+  isOpen: showProfileMenu,
+  toggle: toggleProfileMenu,
+  close: closeProfileMenu,
+} = useDropdown();
 const isMobileMenuOpen = ref(false);
 
 // Auth state
@@ -188,14 +193,6 @@ const userInitials = computed(() => {
 });
 
 // Menu handlers
-const toggleProfileMenu = () => {
-  showProfileMenu.value = !showProfileMenu.value;
-};
-
-const closeProfileMenu = () => {
-  showProfileMenu.value = false;
-};
-
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
   document.body.style.overflow = isMobileMenuOpen.value ? "hidden" : "";

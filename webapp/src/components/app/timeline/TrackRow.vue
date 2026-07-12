@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { vOnClickOutside } from "@vueuse/components";
 import type { Track, AutomatableParam } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
+import { useDropdown } from "../../../composables/useDropdown";
 import TrackHeader from "./TrackHeader.vue";
 import TrackTimelinePreview from "./TrackTimelinePreview.vue";
 import TrackTimelinePreviewCanvas from "./TrackTimelinePreviewCanvas.vue";
@@ -41,7 +42,11 @@ const isAudioTrack = computed(
   () => props.track.instrument.type === "audioTrack",
 );
 
-const showAddLaneMenu = ref(false);
+const {
+  isOpen: showAddLaneMenu,
+  toggle: toggleAddLaneMenu,
+  close: closeAddLaneMenu,
+} = useDropdown();
 
 const isAutomationExpanded = computed(
   () => timelineStore.automationExpandedTrackId === props.track.id,
@@ -59,7 +64,7 @@ const availableParams = computed(() =>
 
 const handleAddLane = (param: AutomatableParam) => {
   timelineStore.addAutomationLane(props.track.id, param);
-  showAddLaneMenu.value = false;
+  closeAddLaneMenu();
 };
 
 const handleRemoveLane = (laneId: string) => {
@@ -68,11 +73,7 @@ const handleRemoveLane = (laneId: string) => {
 
 const handleToggleAutomation = () => {
   timelineStore.toggleAutomationExpanded(props.track.id);
-  showAddLaneMenu.value = false;
-};
-
-const closeAddLaneMenu = () => {
-  showAddLaneMenu.value = false;
+  closeAddLaneMenu();
 };
 </script>
 
@@ -149,7 +150,7 @@ const closeAddLaneMenu = () => {
             class="add-lane-btn"
             :disabled="availableParams.length === 0"
             title="Ajouter un paramètre"
-            @click.stop="showAddLaneMenu = !showAddLaneMenu"
+            @click.stop="toggleAddLaneMenu"
           >
             +
             <svg
