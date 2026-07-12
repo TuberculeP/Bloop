@@ -271,12 +271,9 @@ onMounted(() => loadProjects());
           <div class="music-note">♪</div>
           <h3>Bibliothèque vide</h3>
           <p>Commencez votre première composition musicale dès maintenant.</p>
-          <button
-            @click="emit('new-project')"
-            class="btn-outline new-project-btn"
-          >
+          <BaseButton variant="ghost" @click="emit('new-project')">
             Créer mon premier projet
-          </button>
+          </BaseButton>
         </div>
 
         <div v-else class="projects-grid">
@@ -370,9 +367,9 @@ onMounted(() => loadProjects());
           </div>
           <h3>Aucun favori</h3>
           <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
-          <button @click="activeTab = 'discover'" class="btn-outline">
+          <BaseButton variant="ghost" @click="activeTab = 'discover'">
             Explorer les projets
-          </button>
+          </BaseButton>
         </div>
 
         <div v-else class="projects-grid">
@@ -855,22 +852,6 @@ onMounted(() => loadProjects());
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 2px solid var(--color-accent3);
-  color: var(--color-accent3-hover);
-  padding: 12px 32px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background: var(--color-accent3);
-  color: var(--color-white);
 }
 
 .btn-text-accent {

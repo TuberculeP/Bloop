@@ -288,10 +288,5 @@ onMounted(() => {
     gap: 16px;
     align-items: stretch;
   }
-
-  .empty-query,
-  .no-results {
-    padding: 40px 16px;
-  }
 }
 </style>

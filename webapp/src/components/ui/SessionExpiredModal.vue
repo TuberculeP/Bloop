@@ -1,24 +1,23 @@
 <template>
-  <Teleport to="body">
-    <div v-if="authStore.sessionExpired" class="modal-overlay">
-      <div class="modal-content">
-        <LoginForm
-          title="Session expirée"
-          description="Votre session a expiré. Vos modifications locales sont conservées."
-          :show-footer="false"
-          @success="handleSuccess"
-        />
-        <a href="/login" class="logout-link"
-          >Retourner à la page de connexion</a
-        >
-      </div>
-    </div>
-  </Teleport>
+  <BaseModal
+    :model-value="authStore.sessionExpired"
+    :close-on-overlay-click="false"
+    @update:model-value="() => {}"
+  >
+    <LoginForm
+      title="Session expirée"
+      description="Votre session a expiré. Vos modifications locales sont conservées."
+      :show-footer="false"
+      @success="handleSuccess"
+    />
+    <a href="/login" class="logout-link">Retourner à la page de connexion</a>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
 import { useAuthStore } from "../../stores/authStore";
 import LoginForm from "../auth/LoginForm.vue";
+import BaseModal from "./BaseModal.vue";
 
 const authStore = useAuthStore();
 
@@ -28,28 +27,6 @@ function handleSuccess() {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modal-content {
-  background: var(--color-bg-primary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 12px;
-  padding: 32px;
-  max-width: 400px;
-  width: 90%;
-}
-
 .logout-link {
   display: block;
   text-align: center;

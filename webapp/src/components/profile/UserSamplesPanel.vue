@@ -75,45 +75,51 @@
         </tbody>
       </table>
     </div>
-    <p v-else class="empty-state">Aucun sample uploadé pour le moment.</p>
+    <EmptyState
+      v-else
+      icon="fas fa-compact-disc"
+      title="Aucun sample uploadé"
+      message="Vos samples importés apparaîtront ici."
+    />
 
-    <Teleport to="body">
-      <div v-if="pendingDelete" class="modal-overlay" @click="cancelDelete">
-        <div class="modal" @click.stop>
-          <h3>Supprimer « {{ pendingDelete.name }} » ?</h3>
-          <p>
-            Ce sample est utilisé dans {{ pendingUsage.length }} projet{{
-              pendingUsage.length > 1 ? "s" : ""
-            }}
-            :
-          </p>
-          <ul class="usage-list">
-            <li v-for="project in pendingUsage" :key="project.id">
-              {{ project.name }}
-            </li>
-          </ul>
-          <p class="warning-text">
-            La suppression retirera les clips correspondants dans ces projets.
-          </p>
-          <div class="modal-actions">
-            <BaseButton
-              variant="secondary"
-              :disabled="isDeleting"
-              @click="cancelDelete"
-            >
-              Annuler
-            </BaseButton>
-            <BaseButton
-              variant="error"
-              :loading="isDeleting"
-              @click="confirmDelete"
-            >
-              Supprimer
-            </BaseButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <BaseModal
+      :model-value="pendingDelete !== null"
+      @update:model-value="cancelDelete"
+    >
+      <template #header>
+        <h3>Supprimer « {{ pendingDelete?.name }} » ?</h3>
+      </template>
+      <p>
+        Ce sample est utilisé dans {{ pendingUsage.length }} projet{{
+          pendingUsage.length > 1 ? "s" : ""
+        }}
+        :
+      </p>
+      <ul class="usage-list">
+        <li v-for="project in pendingUsage" :key="project.id">
+          {{ project.name }}
+        </li>
+      </ul>
+      <p class="warning-text">
+        La suppression retirera les clips correspondants dans ces projets.
+      </p>
+      <template #footer>
+        <BaseButton
+          variant="secondary"
+          :disabled="isDeleting"
+          @click="cancelDelete"
+        >
+          Annuler
+        </BaseButton>
+        <BaseButton
+          variant="error"
+          :loading="isDeleting"
+          @click="confirmDelete"
+        >
+          Supprimer
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -125,6 +131,8 @@ import {
   type SampleUsageProject,
 } from "../../stores/userSamplesStore";
 import BaseButton from "../ui/BaseButton.vue";
+import BaseModal from "../ui/BaseModal.vue";
+import EmptyState from "../ui/EmptyState.vue";
 import SamplePreviewButton from "../shared/SamplePreviewButton.vue";
 import { formatShortDate } from "../../lib/utils/dateFormatter";
 
@@ -356,47 +364,12 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-.empty-state {
+.warning-text {
   color: var(--color-white-light);
-  opacity: 0.6;
-  font-size: 0.9rem;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal {
-  background: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 420px;
-  width: 90%;
-
-  h3 {
-    color: var(--color-white);
-    font-size: 1.25rem;
-    margin: 0 0 12px;
-  }
-
-  p {
-    color: var(--color-white-light);
-    opacity: 0.75;
-    margin: 0 0 12px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .warning-text {
-    margin: 0 0 24px;
-  }
+  opacity: 0.75;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 24px;
 }
 
 .usage-list {
@@ -410,11 +383,5 @@ onMounted(() => {
     font-size: 0.9rem;
     margin-bottom: 4px;
   }
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
 }
 </style>
