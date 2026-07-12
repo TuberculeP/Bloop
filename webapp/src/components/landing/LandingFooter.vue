@@ -723,7 +723,7 @@ onUnmounted(() => {
   justify-content: center;
   background: var(--color-accent);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-black);
   cursor: pointer;
   transform: translateY(20px);

@@ -249,21 +249,21 @@ onMounted(() => {
 .quota-bar {
   width: 100%;
   height: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
 .quota-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--color-accent3-hover);
   transition: width 0.3s ease;
 }
 
 .drop-zone {
   border: 2px dashed var(--color-border-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 32px;
   text-align: center;
   transition: all 0.15s;
@@ -304,7 +304,7 @@ onMounted(() => {
 .samples-table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .samples-table {

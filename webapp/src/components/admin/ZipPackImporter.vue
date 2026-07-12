@@ -504,7 +504,7 @@ function reset() {
 
 .drop-zone {
   border: 2px dashed rgba(122, 15, 62, 0.5);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 48px 32px;
   text-align: center;
   transition: all 0.15s;
@@ -686,7 +686,7 @@ function reset() {
 .warnings {
   background: rgba(234, 179, 8, 0.1);
   border: 1px solid rgba(234, 179, 8, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
 
   h4 {

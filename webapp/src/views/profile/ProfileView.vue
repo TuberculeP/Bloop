@@ -192,7 +192,7 @@ onMounted(() => {
 .stat-card {
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 8px 12px;
   text-align: center;
 }

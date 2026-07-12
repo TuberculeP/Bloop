@@ -1276,7 +1276,7 @@ onUnmounted(() => {
   padding: 1rem 2rem;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   transition: all 0.3s ease;
   overflow: hidden;
@@ -1329,7 +1329,7 @@ onUnmounted(() => {
     rgba(var(--color-landing-bg-rgb), 0.95) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.5),
@@ -1389,7 +1389,7 @@ onUnmounted(() => {
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .wave-bar {
@@ -1445,7 +1445,7 @@ onUnmounted(() => {
   position: relative;
   height: 24px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .track-block {
@@ -1475,7 +1475,7 @@ onUnmounted(() => {
   gap: 1rem;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .control-btn {
@@ -1582,7 +1582,7 @@ onUnmounted(() => {
   padding: 2rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   transform-style: preserve-3d;
   will-change: transform;
@@ -1623,7 +1623,7 @@ onUnmounted(() => {
     rgba(255, 255, 255, 0.02) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1.5rem;
   color: var(--color);
   transition: all 0.3s ease;
@@ -1723,7 +1723,7 @@ onUnmounted(() => {
   width: 60px;
   height: 60px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-accent);
 }
 
@@ -1891,7 +1891,7 @@ onUnmounted(() => {
 /* ==================== CTA SECTION ==================== */
 .cta-content {
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(
     45deg,
     rgba(145, 165, 249, 0.05) 0,
@@ -1996,7 +1996,7 @@ onUnmounted(() => {
 .mcp-step-number {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: rgba(255, 247, 171, 0.08);
   border: 1px solid rgba(255, 247, 171, 0.15);
   display: flex;
@@ -2026,7 +2026,7 @@ onUnmounted(() => {
 .mcp-config-card {
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   backdrop-filter: blur(8px);
 }

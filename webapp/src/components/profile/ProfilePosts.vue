@@ -232,14 +232,14 @@ onMounted(loadUserPosts);
 .project-card {
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .project-card:hover {
   border-color: var(--color-accent3-hover);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
   background: linear-gradient(
     180deg,
     var(--color-bg-accent3-dark) 0%,
@@ -269,7 +269,7 @@ onMounted(loadUserPosts);
   padding: 12px 16px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-white);
   font-size: 1rem;
   line-height: 1.5;
@@ -303,7 +303,7 @@ onMounted(loadUserPosts);
 .skeleton-card {
   height: 140px;
   background: var(--color-bg-secondary-dark);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   animation: pulse 1.5s infinite;
 }
 

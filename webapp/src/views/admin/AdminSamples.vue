@@ -316,7 +316,7 @@ async function executeDeletePack() {
 
 .pack-card {
   background: var(--color-bg-surface-deep);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.15s;

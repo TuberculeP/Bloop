@@ -231,7 +231,7 @@ onMounted(() => {
 }
 
 .floating-shape.square {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .floating-shape.triangle {

@@ -202,7 +202,7 @@ const handleToggleAutomation = () => {
   margin: 3px 8px;
   padding: 2px 7px;
   border: 1px solid rgba(var(--color-accent3-rgb), 0.3);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.3);
   font-size: 10px;
@@ -252,7 +252,7 @@ const handleToggleAutomation = () => {
   font-weight: 600;
   padding: 3px 7px;
   border: 1px solid rgba(var(--color-accent3-rgb), 0.4);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.35);
   cursor: pointer;

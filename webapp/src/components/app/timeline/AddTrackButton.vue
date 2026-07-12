@@ -98,7 +98,7 @@ const handleSelect = (type: InstrumentType) => {
   min-width: 280px;
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   z-index: 100;
@@ -144,7 +144,7 @@ const handleSelect = (type: InstrumentType) => {
   align-items: center;
   justify-content: center;
   background: var(--color-bg-primary-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .inst-info {

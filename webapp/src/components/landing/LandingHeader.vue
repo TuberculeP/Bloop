@@ -455,7 +455,7 @@ onUnmounted(() => {
   font-weight: 500;
   font-size: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
   overflow: hidden;
 }
@@ -578,7 +578,7 @@ onUnmounted(() => {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -598,7 +598,7 @@ onUnmounted(() => {
   color: var(--color-white);
   text-decoration: none;
   font-size: 0.9rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }

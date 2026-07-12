@@ -51,7 +51,7 @@ defineEmits<{
   padding: 1rem;
   cursor: pointer;
   transition: background 0.2s;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .conversation-item:hover {

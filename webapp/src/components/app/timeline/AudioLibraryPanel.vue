@@ -523,7 +523,7 @@ const getSampleCount = (pack: SamplePack): number => {
   gap: 12px;
   padding: 12px;
   background: var(--color-bg-primary-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.15s;

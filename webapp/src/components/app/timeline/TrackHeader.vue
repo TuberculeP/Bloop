@@ -247,7 +247,7 @@ function handleAction(action: () => void) {
   position: fixed;
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-accent2);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   min-width: 150px;
   z-index: 1000;
   overflow: hidden;

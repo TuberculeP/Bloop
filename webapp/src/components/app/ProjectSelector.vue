@@ -684,7 +684,7 @@ onMounted(() => loadProjects());
   display: block;
   width: 6px;
   background: var(--color-accent3);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   animation: wave 1.5s ease-in-out infinite;
   opacity: 0.6;
 }
@@ -728,7 +728,7 @@ onMounted(() => loadProjects());
   background: rgba(var(--color-accent3-rgb), 0.3);
   color: var(--color-secondary);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
 }
 

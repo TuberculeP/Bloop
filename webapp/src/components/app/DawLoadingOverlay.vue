@@ -105,7 +105,7 @@ function statusIcon(status: string): string {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 40px;
   min-width: 360px;
   max-width: 90vw;
@@ -150,7 +150,7 @@ function statusIcon(status: string): string {
   flex: 1;
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -158,7 +158,7 @@ function statusIcon(status: string): string {
   height: 100%;
   /* stylelint-disable-next-line color-no-hex -- teinte de dégradé décorative, propre à cette barre de progression */
   background: linear-gradient(90deg, var(--color-accent2), #ff6f91);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: width 0.3s ease;
 }
 
@@ -263,7 +263,7 @@ function statusIcon(status: string): string {
   padding: 12px;
   background: rgba(var(--color-status-error-rgb), 0.1);
   border: 1px solid rgba(var(--color-status-error-rgb), 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .error-text {

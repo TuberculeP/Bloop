@@ -250,7 +250,7 @@ onMounted(() => {
   text-align: center;
   padding: 16px;
   background-color: var(--color-bg-secondary-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border-secondary);
 }
 

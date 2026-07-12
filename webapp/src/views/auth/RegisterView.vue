@@ -191,7 +191,7 @@ async function submitForm() {
 .image-preview img {
   max-width: 150px;
   max-height: 150px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   border: 2px solid var(--color-border-secondary);
 }

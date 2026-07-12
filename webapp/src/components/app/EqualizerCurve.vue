@@ -245,7 +245,7 @@ onMounted(draw);
 
   .eq-canvas {
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: crosshair;
     /* stylelint-disable-next-line color-no-hex -- fond du canvas EQ, teinte propre à ce composant */
     background-color: #0a1f33;

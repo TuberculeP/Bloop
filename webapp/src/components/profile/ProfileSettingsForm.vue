@@ -157,7 +157,7 @@ onMounted(resetForm);
 
 <style scoped>
 .settings-card {
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
   gap: 32px;

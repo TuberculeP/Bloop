@@ -229,7 +229,7 @@ async function submitForm() {
   background-color: #1f1f1f;
   color: #fff;
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 500;
   text-decoration: none;

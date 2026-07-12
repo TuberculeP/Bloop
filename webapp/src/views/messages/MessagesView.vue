@@ -87,7 +87,7 @@ onUnmounted(cleanup);
 .messages-container {
   display: flex;
   height: calc(100vh - 89px);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 

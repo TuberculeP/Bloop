@@ -56,7 +56,7 @@ const handleClick = (event: MouseEvent) => {
 <style scoped>
 .base-button {
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-family: inherit;
   font-weight: 500;
   cursor: pointer;

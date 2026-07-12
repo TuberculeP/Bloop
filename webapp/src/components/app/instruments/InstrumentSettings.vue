@@ -383,7 +383,7 @@ const handleClose = () => {
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.6);
   font-size: 20px;

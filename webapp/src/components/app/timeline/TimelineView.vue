@@ -798,7 +798,7 @@ defineExpose({
 .save-message {
   font-size: 12px;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 
   &.success {
     color: var(--color-status-success);
@@ -820,7 +820,7 @@ defineExpose({
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -833,7 +833,7 @@ defineExpose({
   color: var(--color-white);
   background: var(--color-bg-primary-dark);
   border: 1px solid var(--color-accent2);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 4px 8px;
   outline: none;
   max-width: 200px;
@@ -952,7 +952,7 @@ defineExpose({
   min-width: 220px;
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   z-index: 100;
@@ -1043,7 +1043,7 @@ defineExpose({
     width: 60px;
     padding: 6px 8px;
     border: 1px solid var(--color-border-secondary);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background-color: var(--color-bg-secondary-dark);
     color: var(--color-white);
     font-size: 14px;
@@ -1102,7 +1102,7 @@ defineExpose({
   gap: 8px;
   padding: 12px;
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-white);
   font-size: 14px;
   cursor: pointer;
@@ -1125,7 +1125,7 @@ defineExpose({
   padding: 6px 12px;
   background-color: var(--color-bg-secondary-dark);
   color: var(--color-white);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .timeline-content {
@@ -1286,7 +1286,7 @@ defineExpose({
 .export-card {
   background: var(--color-bg-primary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 32px 40px;
   display: flex;
   flex-direction: column;

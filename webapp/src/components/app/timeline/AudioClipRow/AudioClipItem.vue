@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .audio-clip-item {
   position: absolute;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: grab;
   overflow: hidden;
   border: 2px solid transparent;

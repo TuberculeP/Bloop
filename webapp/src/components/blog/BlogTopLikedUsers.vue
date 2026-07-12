@@ -109,7 +109,7 @@ onMounted(() => {
   background: hsla(325, 30%, 8%, 0.55);
   backdrop-filter: blur(1px);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 20px;
   color: var(--color-white);
   display: flex;
@@ -148,7 +148,7 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--color-bg-secondary-dark);
   border: 1px solid color-mix(in srgb, var(--color-white) 8%, transparent);
 }
@@ -261,7 +261,7 @@ onMounted(() => {
   .user-card {
     padding: 8px;
     gap: 8px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   }
 
   .avatar {

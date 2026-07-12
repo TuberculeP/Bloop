@@ -74,7 +74,7 @@ onMounted(() => {
 
 .stat-card {
   background: var(--color-bg-surface-deep);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -95,7 +95,7 @@ onMounted(() => {
 
 .quick-actions {
   background: var(--color-bg-surface-deep);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   border: 1px solid rgba(122, 15, 62, 0.3);
 }
@@ -112,7 +112,7 @@ onMounted(() => {
   gap: 12px;
   padding: 16px 20px;
   background: var(--color-bg-primary-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-white);
   text-decoration: none;
   transition: all 0.15s;

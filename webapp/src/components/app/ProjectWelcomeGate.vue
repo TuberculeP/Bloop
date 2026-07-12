@@ -79,7 +79,7 @@ defineEmits<{
     display: block;
     width: 5px;
     background: var(--color-accent3);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     animation: wave 1.4s ease-in-out infinite;
     opacity: 0.7;
 
