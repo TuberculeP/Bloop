@@ -774,4 +774,10 @@ const getSampleCount = (pack: SamplePack): number => {
     opacity: 0.6;
   }
 }
+
+@media (max-width: 768px) {
+  .audio-library-panel {
+    max-width: 70vw;
+  }
+}
 </style>

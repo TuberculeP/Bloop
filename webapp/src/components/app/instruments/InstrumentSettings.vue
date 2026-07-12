@@ -522,4 +522,10 @@ const handleClose = () => {
     transform: translateX(100%);
   }
 }
+
+@media (max-width: 480px) {
+  .settings-panel {
+    width: 100%;
+  }
+}
 </style>

@@ -298,6 +298,8 @@ async function executeDeletePack() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -432,6 +434,12 @@ async function executeDeletePack() {
   input[type="checkbox"] {
     width: 16px;
     height: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .packs-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

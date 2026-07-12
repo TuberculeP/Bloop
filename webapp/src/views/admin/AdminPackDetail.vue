@@ -260,6 +260,8 @@ async function executeDeleteFolder() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -395,5 +397,16 @@ async function executeDeleteFolder() {
 .folder-actions {
   display: flex;
   gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .pack-info-card {
+    flex-direction: column;
+  }
+
+  .pack-cover {
+    width: 100%;
+    height: 140px;
+  }
 }
 </style>

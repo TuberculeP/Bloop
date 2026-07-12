@@ -1322,4 +1322,17 @@ defineExpose({
   font-size: 0.85rem;
   margin: 0;
 }
+
+@media (max-width: 1024px) {
+  .timeline-header {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .header-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>

@@ -230,6 +230,7 @@ function formatDate(dateStr: string) {
 
 .users-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   background: var(--color-bg-surface-deep);
   border-radius: var(--radius-lg);
@@ -296,5 +297,11 @@ function formatDate(dateStr: string) {
 .pagination-info {
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .page-header .search-input {
+    width: 100%;
+  }
 }
 </style>

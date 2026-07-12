@@ -111,4 +111,34 @@
   overflow-y: auto;
   max-height: 100vh;
 }
+
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 8px;
+  }
+
+  .nav-spacer {
+    display: none;
+  }
+
+  .nav-back {
+    border-top: none;
+    margin-top: 0;
+  }
+
+  .admin-main {
+    max-height: none;
+  }
+}
 </style>

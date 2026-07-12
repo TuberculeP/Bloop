@@ -318,6 +318,7 @@ async function executeDeleteSample() {
 
 .sample-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -327,15 +328,32 @@ async function executeDeleteSample() {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sample-meta {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sample-actions {
   display: flex;
   gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .sample-item {
+    flex-wrap: wrap;
+  }
+
+  .sample-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 </style>

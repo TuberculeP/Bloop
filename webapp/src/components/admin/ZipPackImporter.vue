@@ -571,9 +571,14 @@ function reset() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 
   h3 {
     margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 16px;
     color: var(--color-white);
     font-weight: 500;
@@ -814,6 +819,17 @@ function reset() {
     small {
       color: var(--color-warning);
     }
+  }
+}
+
+@media (max-width: 480px) {
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions :deep(.base-button) {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
