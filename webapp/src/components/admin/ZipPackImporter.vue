@@ -37,35 +37,36 @@
     <div v-else-if="!isUploading" class="step-preview">
       <div class="preview-header">
         <h3>{{ zipFile.name }}</h3>
-        <button type="button" @click="reset" class="btn-reset">
+        <BaseButton variant="link" size="small" @click="reset">
           Change file
-        </button>
+        </BaseButton>
       </div>
 
       <div v-if="isParsing" class="parsing-state">
-        <span class="spinner"></span>
+        <BaseSpinner />
         Analyzing ZIP content...
       </div>
 
       <template v-else-if="parsedStructure">
         <form @submit.prevent="startImport" class="pack-form">
-          <div class="form-group">
-            <label>Pack Name</label>
-            <input v-model="packName" required placeholder="My Sample Pack" />
-          </div>
-          <div class="form-group">
-            <label>Slug (URL-friendly)</label>
-            <input
+          <FormField label="Pack Name">
+            <BaseInput
+              v-model="packName"
+              required
+              placeholder="My Sample Pack"
+            />
+          </FormField>
+          <FormField label="Slug (URL-friendly)">
+            <BaseInput
               v-model="packSlug"
               required
               pattern="[a-z0-9-]+"
               placeholder="my-sample-pack"
             />
-          </div>
-          <div class="form-group">
-            <label>Author (optional)</label>
-            <input v-model="packAuthor" placeholder="Author name" />
-          </div>
+          </FormField>
+          <FormField label="Author (optional)">
+            <BaseInput v-model="packAuthor" placeholder="Author name" />
+          </FormField>
 
           <div class="structure-preview">
             <h4>Content Preview</h4>
@@ -111,25 +112,19 @@
           </div>
 
           <div class="form-actions">
-            <button
-              type="button"
-              @click="$emit('cancel')"
-              class="btn-secondary"
-            >
+            <BaseButton variant="outline" @click="$emit('cancel')">
               Cancel
-            </button>
-            <button type="submit" class="btn-primary" :disabled="!canImport">
+            </BaseButton>
+            <BaseButton variant="accent2" type="submit" :disabled="!canImport">
               Import Pack
-            </button>
+            </BaseButton>
           </div>
         </form>
       </template>
 
       <div v-else-if="parseError" class="error-state">
         <p>{{ parseError }}</p>
-        <button type="button" @click="reset" class="btn-secondary">
-          Try again
-        </button>
+        <BaseButton variant="outline" @click="reset">Try again</BaseButton>
       </div>
     </div>
 
@@ -172,13 +167,9 @@
         <p class="result-title">Import failed</p>
         <p>{{ importResult.error }}</p>
       </template>
-      <button
-        type="button"
-        @click="$emit('done', importResult)"
-        class="btn-primary"
-      >
+      <BaseButton variant="accent2" @click="$emit('done', importResult)">
         {{ importResult.success ? "Done" : "Close" }}
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>
@@ -187,6 +178,10 @@
 import { ref, computed, watch } from "vue";
 import JSZip from "jszip";
 import { useAdminStore } from "../../stores/adminStore";
+import BaseButton from "../ui/BaseButton.vue";
+import BaseSpinner from "../ui/BaseSpinner.vue";
+import FormField from "../ui/FormField.vue";
+import BaseInput from "../ui/BaseInput.vue";
 
 interface ParsedSample {
   name: string;
@@ -509,7 +504,7 @@ function reset() {
 
 .drop-zone {
   border: 2px dashed rgba(122, 15, 62, 0.5);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 48px 32px;
   text-align: center;
   transition: all 0.15s;
@@ -517,7 +512,7 @@ function reset() {
 
   &:hover,
   &.drag-over {
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
     background: rgba(255, 63, 180, 0.05);
   }
 }
@@ -536,10 +531,10 @@ function reset() {
 .drop-icon {
   font-size: 14px;
   font-weight: 700;
-  color: #ff3fb4;
+  color: var(--color-accent2);
   padding: 16px 24px;
   border: 2px solid rgba(255, 63, 180, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .drop-content p {
@@ -551,13 +546,13 @@ function reset() {
 .browse-btn {
   background: none;
   border: none;
-  color: #ff3fb4;
+  color: var(--color-accent2);
   font-size: 14px;
   cursor: pointer;
   text-decoration: underline;
 
   &:hover {
-    color: #e0359e;
+    color: var(--color-accent2-hover);
   }
 }
 
@@ -576,22 +571,18 @@ function reset() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 
   h3 {
     margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 16px;
-    color: #f2efe8;
+    color: var(--color-white);
     font-weight: 500;
   }
-}
-
-.btn-reset {
-  background: none;
-  border: none;
-  color: #ff3fb4;
-  font-size: 13px;
-  cursor: pointer;
-  text-decoration: underline;
 }
 
 .parsing-state,
@@ -606,23 +597,7 @@ function reset() {
 }
 
 .error-state p {
-  color: #ef4444;
-}
-
-.spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 63, 180, 0.3);
-  border-top-color: #ff3fb4;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  color: var(--color-status-error);
 }
 
 .pack-form {
@@ -631,38 +606,9 @@ function reset() {
   gap: 16px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  label {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  input {
-    padding: 10px 12px;
-    background: #1a0e15;
-    border: 1px solid rgba(122, 15, 62, 0.5);
-    border-radius: 6px;
-    color: #f2efe8;
-    font-size: 14px;
-
-    &:focus {
-      outline: none;
-      border-color: #ff3fb4;
-    }
-
-    &::placeholder {
-      color: rgba(255, 255, 255, 0.3);
-    }
-  }
-}
-
 .structure-preview {
-  background: #1a0e15;
-  border-radius: 8px;
+  background: var(--color-bg-primary-dark);
+  border-radius: var(--radius-md);
   padding: 16px;
 
   h4 {
@@ -697,14 +643,14 @@ function reset() {
 .cover-icon {
   font-size: 10px;
   font-weight: 600;
-  color: #ff3fb4;
+  color: var(--color-accent2);
   padding: 4px 6px;
   background: rgba(255, 63, 180, 0.15);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .cover-icon {
-  color: #22c55e;
+  color: var(--color-status-success);
   background: rgba(34, 197, 94, 0.15);
 }
 
@@ -712,7 +658,7 @@ function reset() {
 .cover-name {
   flex: 1;
   font-size: 13px;
-  color: #f2efe8;
+  color: var(--color-white);
 }
 
 .folder-count {
@@ -723,10 +669,10 @@ function reset() {
 .cover-badge {
   font-size: 10px;
   font-weight: 500;
-  color: #22c55e;
+  color: var(--color-status-success);
   padding: 2px 6px;
   background: rgba(34, 197, 94, 0.15);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .stats {
@@ -745,14 +691,14 @@ function reset() {
 .warnings {
   background: rgba(234, 179, 8, 0.1);
   border: 1px solid rgba(234, 179, 8, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
 
   h4 {
     margin: 0 0 8px;
     font-size: 13px;
     font-weight: 500;
-    color: #eab308;
+    color: var(--color-warning);
   }
 
   ul {
@@ -772,42 +718,6 @@ function reset() {
   gap: 12px;
   justify-content: flex-end;
   margin-top: 8px;
-}
-
-.btn-primary {
-  padding: 10px 20px;
-  background: #ff3fb4;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover:not(:disabled) {
-    background: #e0359e;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: #f2efe8;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .step-uploading {
@@ -839,34 +749,38 @@ function reset() {
 .progress-stage {
   font-size: 14px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
 }
 
 .progress-percent {
   font-size: 14px;
   font-weight: 600;
-  color: #ff3fb4;
+  color: var(--color-accent2);
 }
 
 .progress-bar-container {
   width: 100%;
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff3fb4 0%, #e0359e 100%);
-  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent2) 0%,
+    var(--color-accent2-hover) 100%
+  );
+  border-radius: var(--radius-sm);
   transition: width 0.3s ease;
 }
 
 .import-result {
   text-align: center;
   padding: 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-top: 16px;
 
   &.success {
@@ -874,7 +788,7 @@ function reset() {
     border: 1px solid rgba(34, 197, 94, 0.3);
 
     .result-title {
-      color: #22c55e;
+      color: var(--color-status-success);
     }
   }
 
@@ -883,7 +797,7 @@ function reset() {
     border: 1px solid rgba(239, 68, 68, 0.3);
 
     .result-title {
-      color: #ef4444;
+      color: var(--color-status-error);
     }
   }
 
@@ -903,8 +817,19 @@ function reset() {
     margin-bottom: 16px;
 
     small {
-      color: #eab308;
+      color: var(--color-warning);
     }
+  }
+}
+
+@media (max-width: 480px) {
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions :deep(.base-button) {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

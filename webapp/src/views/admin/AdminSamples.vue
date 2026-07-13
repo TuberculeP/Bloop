@@ -3,19 +3,22 @@
     <div class="admin-samples">
       <div class="page-header">
         <h1>Sample Library</h1>
-        <button @click="showImportModal = true" class="btn-primary">
+        <BaseButton variant="accent2" @click="showImportModal = true">
           + Import Pack (ZIP)
-        </button>
+        </BaseButton>
       </div>
 
-      <div v-if="packsLoading" class="loading">Loading...</div>
-
-      <div v-else-if="packs.length === 0" class="empty-state">
-        <p>No sample packs yet</p>
-        <button @click="showImportModal = true" class="btn-primary">
-          Import your first pack
-        </button>
+      <div v-if="packsLoading" class="loading">
+        <BaseSpinner />
       </div>
+
+      <EmptyState v-else-if="packs.length === 0" title="No sample packs yet">
+        <template #action>
+          <BaseButton variant="accent2" @click="showImportModal = true">
+            Import your first pack
+          </BaseButton>
+        </template>
+      </EmptyState>
 
       <div v-else class="packs-grid">
         <div
@@ -40,15 +43,25 @@
               pack.author
             }}</span>
             <div class="pack-badges">
-              <span v-if="pack.featured" class="badge featured">Featured</span>
-              <span v-if="!pack.isActive" class="badge inactive">Inactive</span>
+              <BaseBadge v-if="pack.featured" variant="featured"
+                >Featured</BaseBadge
+              >
+              <BaseBadge v-if="!pack.isActive" variant="inactive"
+                >Inactive</BaseBadge
+              >
             </div>
           </div>
           <div class="pack-actions" @click.stop>
-            <button @click="editPack(pack)" class="action-btn">Edit</button>
-            <button @click="confirmDeletePack(pack)" class="action-btn danger">
+            <BaseButton variant="outline" size="small" @click="editPack(pack)"
+              >Edit</BaseButton
+            >
+            <BaseButton
+              variant="error"
+              size="small"
+              @click="confirmDeletePack(pack)"
+            >
               Delete
-            </button>
+            </BaseButton>
           </div>
         </div>
       </div>
@@ -75,67 +88,84 @@
     </div>
 
     <!-- Import ZIP Modal -->
-    <div
-      v-if="showImportModal"
-      class="modal-overlay"
-      @click="showImportModal = false"
-    >
-      <div class="modal modal-large" @click.stop>
+    <BaseModal v-model="showImportModal" size="large">
+      <template #header>
         <h2>Import Sample Pack</h2>
-        <ZipPackImporter
-          @cancel="showImportModal = false"
-          @done="handleImportDone"
-        />
-      </div>
-    </div>
+      </template>
+      <ZipPackImporter
+        @cancel="showImportModal = false"
+        @done="handleImportDone"
+      />
+    </BaseModal>
 
     <!-- Edit Pack Modal -->
-    <div v-if="editingPack" class="modal-overlay" @click="closeModal">
-      <div class="modal" @click.stop>
+    <BaseModal
+      :model-value="editingPack !== null"
+      @update:model-value="closeModal"
+    >
+      <template #header>
         <h2>Edit Pack</h2>
-        <form @submit.prevent="submitPack">
-          <div class="form-group">
-            <label>Name</label>
-            <input v-model="packForm.name" required />
-          </div>
-          <div class="form-group">
-            <label>Slug (URL-friendly)</label>
-            <input
-              v-model="packForm.slug"
-              required
-              pattern="[a-z0-9-]+"
-              disabled
-            />
-          </div>
-          <div class="form-group">
-            <label>Author</label>
-            <input v-model="packForm.author" />
-          </div>
-          <div class="form-group">
-            <label>Cover filename</label>
-            <input v-model="packForm.cover" placeholder="cover.jpg" />
-          </div>
-          <div class="form-group checkbox">
-            <label>
-              <input type="checkbox" v-model="packForm.featured" />
-              Featured
-            </label>
-          </div>
-          <div class="form-group checkbox">
-            <label>
-              <input type="checkbox" v-model="packForm.isActive" />
-              Active
-            </label>
-          </div>
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </template>
+      <form id="edit-pack-form" @submit.prevent="submitPack">
+        <FormField label="Name">
+          <BaseInput v-model="packForm.name" required />
+        </FormField>
+        <FormField label="Slug (URL-friendly)">
+          <BaseInput
+            v-model="packForm.slug"
+            required
+            pattern="[a-z0-9-]+"
+            disabled
+          />
+        </FormField>
+        <FormField label="Author">
+          <BaseInput v-model="packForm.author" />
+        </FormField>
+        <FormField label="Cover filename">
+          <BaseInput v-model="packForm.cover" placeholder="cover.jpg" />
+        </FormField>
+        <div class="form-group checkbox">
+          <label>
+            <input type="checkbox" v-model="packForm.featured" />
+            Featured
+          </label>
+        </div>
+        <div class="form-group checkbox">
+          <label>
+            <input type="checkbox" v-model="packForm.isActive" />
+            Active
+          </label>
+        </div>
+      </form>
+      <template #footer>
+        <BaseButton variant="outline" @click="closeModal">Cancel</BaseButton>
+        <BaseButton variant="accent2" type="submit" form="edit-pack-form"
+          >Save</BaseButton
+        >
+      </template>
+    </BaseModal>
+
+    <!-- Delete confirmation -->
+    <BaseModal
+      :model-value="pendingDeletePack !== null"
+      @update:model-value="cancelDeletePack"
+    >
+      <template #header>
+        <h2>Delete pack?</h2>
+      </template>
+      <p>
+        Delete pack "{{ pendingDeletePack?.name }}"? This will also delete all
+        folders and samples.
+      </p>
+      <template #footer>
+        <BaseButton variant="outline" @click="cancelDeletePack"
+          >Cancel</BaseButton
+        >
+        <BaseButton variant="error" @click="executeDeletePack">
+          Delete
+        </BaseButton>
+      </template>
+    </BaseModal>
   </AdminLayout>
 </template>
 
@@ -145,9 +175,18 @@ import { useRouter } from "vue-router";
 import AdminLayout from "../../layouts/AdminLayout.vue";
 import ZipPackImporter from "../../components/admin/ZipPackImporter.vue";
 import { useAdminStore } from "../../stores/adminStore";
+import { useToast } from "../../composables/useToast";
+import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseModal from "../../components/ui/BaseModal.vue";
+import BaseBadge from "../../components/ui/BaseBadge.vue";
+import BaseSpinner from "../../components/ui/BaseSpinner.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
+import FormField from "../../components/ui/FormField.vue";
+import BaseInput from "../../components/ui/BaseInput.vue";
 
 const router = useRouter();
 const adminStore = useAdminStore();
+const toast = useToast();
 
 const packs = computed(() => adminStore.packs);
 const packsPagination = computed(() => adminStore.packsPagination);
@@ -206,25 +245,42 @@ function handleImportDone(result: any) {
 
 async function submitPack() {
   if (editingPack.value) {
-    await adminStore.updatePack(editingPack.value.id, {
+    const result = await adminStore.updatePack(editingPack.value.id, {
       name: packForm.name,
       author: packForm.author || null,
       cover: packForm.cover || null,
       featured: packForm.featured,
       isActive: packForm.isActive,
     });
+    if (result.error) {
+      toast.error(`Erreur lors de la mise à jour de "${packForm.name}".`);
+    } else {
+      toast.success(`Pack "${packForm.name}" mis à jour.`);
+    }
   }
   closeModal();
 }
 
-async function confirmDeletePack(pack: any) {
-  if (
-    confirm(
-      `Delete pack "${pack.name}"? This will also delete all folders and samples.`,
-    )
-  ) {
-    await adminStore.deletePack(pack.id);
+const pendingDeletePack = ref<any>(null);
+
+function confirmDeletePack(pack: any) {
+  pendingDeletePack.value = pack;
+}
+
+function cancelDeletePack() {
+  pendingDeletePack.value = null;
+}
+
+async function executeDeletePack() {
+  if (!pendingDeletePack.value) return;
+  const pack = pendingDeletePack.value;
+  const result = await adminStore.deletePack(pack.id);
+  if (result.error) {
+    toast.error(`Erreur lors de la suppression de "${pack.name}".`);
+  } else {
+    toast.success(`Pack "${pack.name}" supprimé.`);
   }
+  pendingDeletePack.value = null;
 }
 </script>
 
@@ -234,7 +290,7 @@ async function confirmDeletePack(pack: any) {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -242,34 +298,16 @@ async function confirmDeletePack(pack: any) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.btn-primary {
-  padding: 10px 20px;
-  background: #ff3fb4;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: #e0359e;
-  }
-}
-
-.loading,
-.empty-state {
-  text-align: center;
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 48px;
-  color: rgba(255, 255, 255, 0.6);
-
-  p {
-    margin: 0 0 16px;
-  }
 }
 
 .packs-grid {
@@ -279,8 +317,8 @@ async function confirmDeletePack(pack: any) {
 }
 
 .pack-card {
-  background: #2a1520;
-  border-radius: 12px;
+  background: var(--color-bg-surface-deep);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.15s;
@@ -294,7 +332,11 @@ async function confirmDeletePack(pack: any) {
 
 .pack-cover {
   height: 120px;
-  background: linear-gradient(135deg, #ff3fb4 0%, #7a0f3e 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent2) 0%,
+    var(--color-accent3) 100%
+  );
 
   img {
     width: 100%;
@@ -321,7 +363,7 @@ async function confirmDeletePack(pack: any) {
     margin: 0 0 4px;
     font-size: 16px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -336,51 +378,11 @@ async function confirmDeletePack(pack: any) {
   margin-top: 8px;
 }
 
-.badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-
-  &.featured {
-    background: rgba(255, 63, 180, 0.2);
-    color: #ff3fb4;
-  }
-
-  &.inactive {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-}
-
 .pack-actions {
   padding: 12px 16px;
   display: flex;
   gap: 8px;
   border-top: 1px solid rgba(122, 15, 62, 0.2);
-}
-
-.action-btn {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 6px;
-  color: #f2efe8;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  &.danger {
-    color: #ef4444;
-
-    &:hover {
-      background: rgba(239, 68, 68, 0.2);
-    }
-  }
 }
 
 .pagination {
@@ -393,17 +395,17 @@ async function confirmDeletePack(pack: any) {
 
 .pagination-btn {
   padding: 8px 16px;
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border: 1px solid rgba(122, 15, 62, 0.5);
   border-radius: 6px;
-  color: #f2efe8;
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
     background: rgba(122, 15, 62, 0.4);
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 
   &:disabled {
@@ -417,100 +419,27 @@ async function confirmDeletePack(pack: any) {
   font-size: 14px;
 }
 
-// Modal styles
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #2a1520;
-  border-radius: 12px;
-  padding: 24px;
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-
-  &.modal-large {
-    max-width: 540px;
-  }
-
-  h2 {
-    margin: 0 0 20px;
-    font-size: 18px;
-    color: #f2efe8;
-  }
-}
-
-.form-group {
+.form-group.checkbox {
   margin-bottom: 16px;
 
   label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
     color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
   }
 
-  input[type="text"],
-  input:not([type]) {
-    width: 100%;
-    padding: 10px 12px;
-    background: #1a0e15;
-    border: 1px solid rgba(122, 15, 62, 0.5);
-    border-radius: 6px;
-    color: #f2efe8;
-    font-size: 14px;
-
-    &:focus {
-      outline: none;
-      border-color: #ff3fb4;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-    }
-  }
-
-  &.checkbox {
-    label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-    }
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
   }
 }
 
-.modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: #f2efe8;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
+@media (max-width: 480px) {
+  .packs-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

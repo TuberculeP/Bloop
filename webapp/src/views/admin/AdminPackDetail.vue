@@ -7,12 +7,14 @@
           <span>/</span>
           <span>{{ currentPack?.name || "Loading..." }}</span>
         </div>
-        <button @click="showCreateFolder = true" class="btn-primary">
+        <BaseButton variant="accent2" @click="showCreateFolder = true">
           + New Folder
-        </button>
+        </BaseButton>
       </div>
 
-      <div v-if="!currentPack" class="loading">Loading...</div>
+      <div v-if="!currentPack" class="loading">
+        <BaseSpinner />
+      </div>
 
       <template v-else>
         <div class="pack-info-card">
@@ -33,11 +35,11 @@
             </p>
             <div class="pack-meta">
               <span>Slug: {{ currentPack.slug }}</span>
-              <span v-if="currentPack.featured" class="badge featured"
-                >Featured</span
+              <BaseBadge v-if="currentPack.featured" variant="featured"
+                >Featured</BaseBadge
               >
-              <span v-if="!currentPack.isActive" class="badge inactive"
-                >Inactive</span
+              <BaseBadge v-if="!currentPack.isActive" variant="inactive"
+                >Inactive</BaseBadge
               >
             </div>
           </div>
@@ -45,12 +47,13 @@
 
         <h2>Folders ({{ currentFolders.length }})</h2>
 
-        <div v-if="currentFolders.length === 0" class="empty-state">
-          <p>No folders yet</p>
-          <button @click="showCreateFolder = true" class="btn-primary">
-            Create first folder
-          </button>
-        </div>
+        <EmptyState v-if="currentFolders.length === 0" title="No folders yet">
+          <template #action>
+            <BaseButton variant="accent2" @click="showCreateFolder = true">
+              Create first folder
+            </BaseButton>
+          </template>
+        </EmptyState>
 
         <div v-else class="folders-list">
           <div
@@ -65,15 +68,20 @@
               <span class="folder-order">Order: {{ folder.order }}</span>
             </div>
             <div class="folder-actions" @click.stop>
-              <button @click="editFolder(folder)" class="action-btn">
+              <BaseButton
+                variant="outline"
+                size="small"
+                @click="editFolder(folder)"
+              >
                 Edit
-              </button>
-              <button
+              </BaseButton>
+              <BaseButton
+                variant="danger"
+                size="small"
                 @click="confirmDeleteFolder(folder)"
-                class="action-btn danger"
               >
                 Delete
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -81,33 +89,50 @@
     </div>
 
     <!-- Create/Edit Folder Modal -->
-    <div
-      v-if="showCreateFolder || editingFolder"
-      class="modal-overlay"
-      @click="closeModal"
+    <BaseModal
+      :model-value="showCreateFolder || editingFolder !== null"
+      @update:model-value="closeModal"
     >
-      <div class="modal" @click.stop>
+      <template #header>
         <h2>{{ editingFolder ? "Edit Folder" : "Create Folder" }}</h2>
-        <form @submit.prevent="submitFolder">
-          <div class="form-group">
-            <label>Name</label>
-            <input v-model="folderForm.name" required />
-          </div>
-          <div class="form-group">
-            <label>Order</label>
-            <input v-model.number="folderForm.order" type="number" min="0" />
-          </div>
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              {{ editingFolder ? "Save" : "Create" }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </template>
+      <form id="folder-form" @submit.prevent="submitFolder">
+        <FormField label="Name">
+          <BaseInput v-model="folderForm.name" required />
+        </FormField>
+        <FormField label="Order">
+          <BaseInput v-model.number="folderForm.order" type="number" min="0" />
+        </FormField>
+      </form>
+      <template #footer>
+        <BaseButton variant="outline" @click="closeModal">Cancel</BaseButton>
+        <BaseButton variant="accent2" type="submit" form="folder-form">
+          {{ editingFolder ? "Save" : "Create" }}
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <!-- Delete confirmation -->
+    <BaseModal
+      :model-value="pendingDeleteFolder !== null"
+      @update:model-value="cancelDeleteFolder"
+    >
+      <template #header>
+        <h2>Delete folder?</h2>
+      </template>
+      <p>
+        Delete folder "{{ pendingDeleteFolder?.name }}"? This will also delete
+        all samples in it.
+      </p>
+      <template #footer>
+        <BaseButton variant="outline" @click="cancelDeleteFolder"
+          >Cancel</BaseButton
+        >
+        <BaseButton variant="danger" @click="executeDeleteFolder">
+          Delete
+        </BaseButton>
+      </template>
+    </BaseModal>
   </AdminLayout>
 </template>
 
@@ -116,10 +141,19 @@ import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AdminLayout from "../../layouts/AdminLayout.vue";
 import { useAdminStore } from "../../stores/adminStore";
+import { useToast } from "../../composables/useToast";
+import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseModal from "../../components/ui/BaseModal.vue";
+import BaseBadge from "../../components/ui/BaseBadge.vue";
+import BaseSpinner from "../../components/ui/BaseSpinner.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
+import FormField from "../../components/ui/FormField.vue";
+import BaseInput from "../../components/ui/BaseInput.vue";
 
 const route = useRoute();
 const router = useRouter();
 const adminStore = useAdminStore();
+const toast = useToast();
 
 const currentPack = computed(() => adminStore.currentPack);
 const currentFolders = computed(() => adminStore.currentFolders);
@@ -164,28 +198,44 @@ function closeModal() {
 async function submitFolder() {
   const packId = route.params.packId as string;
 
-  if (editingFolder.value) {
-    await adminStore.updateFolder(editingFolder.value.id, {
-      name: folderForm.name,
-      order: folderForm.order,
-    });
+  const result = editingFolder.value
+    ? await adminStore.updateFolder(editingFolder.value.id, {
+        name: folderForm.name,
+        order: folderForm.order,
+      })
+    : await adminStore.createFolder(packId, {
+        name: folderForm.name,
+        order: folderForm.order,
+      });
+
+  if (result.error) {
+    toast.error(`Erreur lors de l'enregistrement du dossier.`);
   } else {
-    await adminStore.createFolder(packId, {
-      name: folderForm.name,
-      order: folderForm.order,
-    });
+    toast.success(`Dossier "${folderForm.name}" enregistré.`);
   }
   closeModal();
 }
 
-async function confirmDeleteFolder(folder: any) {
-  if (
-    confirm(
-      `Delete folder "${folder.name}"? This will also delete all samples in it.`,
-    )
-  ) {
-    await adminStore.deleteFolder(folder.id);
+const pendingDeleteFolder = ref<any>(null);
+
+function confirmDeleteFolder(folder: any) {
+  pendingDeleteFolder.value = folder;
+}
+
+function cancelDeleteFolder() {
+  pendingDeleteFolder.value = null;
+}
+
+async function executeDeleteFolder() {
+  if (!pendingDeleteFolder.value) return;
+  const folder = pendingDeleteFolder.value;
+  const result = await adminStore.deleteFolder(folder.id);
+  if (result.error) {
+    toast.error(`Erreur lors de la suppression de "${folder.name}".`);
+  } else {
+    toast.success(`Dossier "${folder.name}" supprimé.`);
   }
+  pendingDeleteFolder.value = null;
 }
 </script>
 
@@ -195,14 +245,14 @@ async function confirmDeleteFolder(folder: any) {
     margin: 0 0 4px;
     font-size: 24px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 
   h2 {
     margin: 24px 0 16px;
     font-size: 18px;
     font-weight: 500;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -210,6 +260,8 @@ async function confirmDeleteFolder(folder: any) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -220,7 +272,7 @@ async function confirmDeleteFolder(folder: any) {
   font-size: 14px;
 
   a {
-    color: #ff3fb4;
+    color: var(--color-accent2);
     text-decoration: none;
 
     &:hover {
@@ -233,38 +285,18 @@ async function confirmDeleteFolder(folder: any) {
   }
 }
 
-.btn-primary {
-  padding: 10px 20px;
-  background: #ff3fb4;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: #e0359e;
-  }
-}
-
-.loading,
-.empty-state {
-  text-align: center;
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 48px;
-  color: rgba(255, 255, 255, 0.6);
-
-  p {
-    margin: 0 0 16px;
-  }
 }
 
 .pack-info-card {
   display: flex;
   gap: 20px;
-  background: #2a1520;
-  border-radius: 12px;
+  background: var(--color-bg-surface-deep);
+  border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid rgba(122, 15, 62, 0.3);
 }
@@ -272,9 +304,13 @@ async function confirmDeleteFolder(folder: any) {
 .pack-cover {
   width: 100px;
   height: 100px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: linear-gradient(135deg, #ff3fb4 0%, #7a0f3e 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent2) 0%,
+    var(--color-accent3) 100%
+  );
   flex-shrink: 0;
 
   img {
@@ -292,7 +328,7 @@ async function confirmDeleteFolder(folder: any) {
   justify-content: center;
   font-size: 36px;
   font-weight: 700;
-  color: white;
+  color: var(--color-white);
 }
 
 .pack-details {
@@ -313,23 +349,6 @@ async function confirmDeleteFolder(folder: any) {
   color: rgba(255, 255, 255, 0.5);
 }
 
-.badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-
-  &.featured {
-    background: rgba(255, 63, 180, 0.2);
-    color: #ff3fb4;
-  }
-
-  &.inactive {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-}
-
 .folders-list {
   display: flex;
   flex-direction: column;
@@ -341,8 +360,8 @@ async function confirmDeleteFolder(folder: any) {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #2a1520;
-  border-radius: 8px;
+  background: var(--color-bg-surface-deep);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s;
   border: 1px solid rgba(122, 15, 62, 0.3);
@@ -367,7 +386,7 @@ async function confirmDeleteFolder(folder: any) {
 .folder-name {
   font-size: 15px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
 }
 
 .folder-order {
@@ -380,100 +399,14 @@ async function confirmDeleteFolder(folder: any) {
   gap: 8px;
 }
 
-.action-btn {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 6px;
-  color: #f2efe8;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+@media (max-width: 480px) {
+  .pack-info-card {
+    flex-direction: column;
   }
 
-  &.danger {
-    color: #ef4444;
-
-    &:hover {
-      background: rgba(239, 68, 68, 0.2);
-    }
-  }
-}
-
-// Modal styles
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #2a1520;
-  border-radius: 12px;
-  padding: 24px;
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-
-  h2 {
-    margin: 0 0 20px;
-    font-size: 18px;
-    color: #f2efe8;
-  }
-}
-
-.form-group {
-  margin-bottom: 16px;
-
-  label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  input {
+  .pack-cover {
     width: 100%;
-    padding: 10px 12px;
-    background: #1a0e15;
-    border: 1px solid rgba(122, 15, 62, 0.5);
-    border-radius: 6px;
-    color: #f2efe8;
-    font-size: 14px;
-
-    &:focus {
-      outline: none;
-      border-color: #ff3fb4;
-    }
-  }
-}
-
-.modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: #f2efe8;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    height: 140px;
   }
 }
 </style>

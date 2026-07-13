@@ -146,7 +146,7 @@ const handleDelete = () => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   transition: all 0.2s ease;
   font-size: 0.85rem;
   opacity: 0.7;

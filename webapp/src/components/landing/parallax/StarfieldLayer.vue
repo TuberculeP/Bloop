@@ -110,6 +110,7 @@ onMounted(() => {
 
 .star {
   position: absolute;
+  /* stylelint-disable-next-line color-no-hex -- blanc pur pour les particules d'étoiles */
   background: #fff;
   border-radius: 50%;
   animation: twinkle 3s ease-in-out infinite;
@@ -132,6 +133,7 @@ onMounted(() => {
   position: absolute;
   width: 4px;
   height: 4px;
+  /* stylelint-disable-next-line color-no-hex -- blanc pur pour la traînée d'étoile filante */
   background: linear-gradient(90deg, #fff, transparent);
   border-radius: 50%;
   animation: shoot 3s ease-out infinite;

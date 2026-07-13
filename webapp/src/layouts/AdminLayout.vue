@@ -36,12 +36,12 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
 }
 
 .admin-sidebar {
   width: 250px;
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border-right: 1px solid rgba(122, 15, 62, 0.5);
   display: flex;
   flex-direction: column;
@@ -56,7 +56,7 @@
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -79,13 +79,13 @@
 
   &:hover {
     background: rgba(122, 15, 62, 0.3);
-    color: #ff3fb4;
+    color: var(--color-accent2);
   }
 
   &.router-link-exact-active {
     background: rgba(122, 15, 62, 0.5);
-    color: #f2efe8;
-    border-left: 3px solid #ff3fb4;
+    color: var(--color-white);
+    border-left: 3px solid var(--color-accent2);
     padding-left: 17px;
   }
 }
@@ -110,5 +110,35 @@
   padding: 24px;
   overflow-y: auto;
   max-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 8px;
+  }
+
+  .nav-spacer {
+    display: none;
+  }
+
+  .nav-back {
+    border-top: none;
+    margin-top: 0;
+  }
+
+  .admin-main {
+    max-height: none;
+  }
 }
 </style>

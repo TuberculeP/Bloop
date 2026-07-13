@@ -5,6 +5,7 @@ import {
   onMounted,
   onBeforeUnmount,
   inject,
+  watch,
   type Ref,
 } from "vue";
 import { storeToRefs } from "pinia";
@@ -30,6 +31,12 @@ import AddTrackButton from "./AddTrackButton.vue";
 import InstrumentSettings from "../instruments/InstrumentSettings.vue";
 import MasterSettings from "../instruments/MasterSettings.vue";
 import BaseButton from "../../ui/BaseButton.vue";
+import BaseModal from "../../ui/BaseModal.vue";
+import BaseSpinner from "../../ui/BaseSpinner.vue";
+import EmptyState from "../../ui/EmptyState.vue";
+import FormField from "../../ui/FormField.vue";
+import BaseInput from "../../ui/BaseInput.vue";
+import { useToast } from "../../../composables/useToast";
 
 const emit = defineEmits<{
   (
@@ -54,6 +61,7 @@ const props = defineProps<{
 
 const timelineStore = useTimelineStore();
 const projectStore = useProjectStore();
+const toast = useToast();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
@@ -195,10 +203,20 @@ const handleSelectTrack = (track: Track) => {
   timelineStore.setActiveTrack(track.id);
 };
 
+const pendingDeleteTrack = ref<Track | null>(null);
+
 const handleDeleteTrack = (track: Track) => {
-  if (confirm(`Supprimer la piste "${track.name}" ?`)) {
-    timelineStore.deleteTrack(track.id);
-  }
+  pendingDeleteTrack.value = track;
+};
+
+const cancelDeleteTrack = () => {
+  pendingDeleteTrack.value = null;
+};
+
+const confirmDeleteTrack = () => {
+  if (!pendingDeleteTrack.value) return;
+  timelineStore.deleteTrack(pendingDeleteTrack.value.id);
+  pendingDeleteTrack.value = null;
 };
 
 const handleOpenSettings = (track: Track) => {
@@ -215,17 +233,35 @@ const handleToggleExpand = (track: Track) => {
   timelineStore.toggleTrackExpanded(track.id);
 };
 
+const renamingTrack = ref<Track | null>(null);
+const renameValue = ref("");
+
 const handleRenameTrack = (track: Track) => {
-  const newName = prompt("Nouveau nom de la piste :", track.name);
-  if (newName && newName.trim() && newName.trim() !== track.name) {
-    timelineStore.renameTrack(track.id, newName.trim());
+  renamingTrack.value = track;
+  renameValue.value = track.name;
+};
+
+const cancelRenameTrack = () => {
+  renamingTrack.value = null;
+};
+
+const confirmRenameTrack = () => {
+  if (!renamingTrack.value) return;
+  const newName = renameValue.value.trim();
+  if (newName && newName !== renamingTrack.value.name) {
+    timelineStore.renameTrack(renamingTrack.value.id, newName);
   }
+  renamingTrack.value = null;
 };
 
 const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement;
   scrollLeft.value = target.scrollLeft;
 };
+
+watch(voiceRecorderError, (message) => {
+  if (message) toast.error(message);
+});
 
 const isTypingTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
@@ -271,7 +307,7 @@ defineExpose({
     <!-- Export overlay -->
     <div v-if="isExporting" class="export-overlay">
       <div class="export-card">
-        <div class="export-spinner"></div>
+        <BaseSpinner size="large" color="primary" />
         <p class="export-title">Export audio en cours…</p>
         <div class="export-progress-bar">
           <div
@@ -283,50 +319,41 @@ defineExpose({
       </div>
     </div>
 
-    <Teleport to="body">
-      <div
-        v-if="showExportModal"
-        class="modal-overlay"
-        @click="cancelExportModal"
-      >
-        <div class="modal export-format-modal" @click.stop>
-          <h3>Exporter le projet</h3>
-          <p>Choisissez le format du fichier audio à générer.</p>
-          <div class="export-format-options">
-            <label
-              class="export-format-option"
-              :class="{ active: exportFormat === 'mp3' }"
-            >
-              <input v-model="exportFormat" type="radio" value="mp3" />
-              MP3
-            </label>
-            <label
-              class="export-format-option"
-              :class="{ active: exportFormat === 'wav' }"
-            >
-              <input v-model="exportFormat" type="radio" value="wav" />
-              WAV
-            </label>
-          </div>
-          <div class="modal-actions">
-            <BaseButton
-              class="export-cancel-btn"
-              variant="secondary"
-              @click="cancelExportModal"
-            >
-              Annuler
-            </BaseButton>
-            <BaseButton
-              class="export-confirm-btn"
-              variant="accent"
-              @click="confirmExport"
-            >
-              Exporter
-            </BaseButton>
-          </div>
-        </div>
+    <BaseModal
+      :model-value="showExportModal"
+      @update:model-value="cancelExportModal"
+    >
+      <template #header>
+        <h3>Exporter le projet</h3>
+      </template>
+      <p class="export-modal-description">
+        Choisissez le format du fichier audio à générer.
+      </p>
+      <div class="export-format-options">
+        <label
+          class="export-format-option"
+          :class="{ active: exportFormat === 'mp3' }"
+        >
+          <input v-model="exportFormat" type="radio" value="mp3" />
+          MP3
+        </label>
+        <label
+          class="export-format-option"
+          :class="{ active: exportFormat === 'wav' }"
+        >
+          <input v-model="exportFormat" type="radio" value="wav" />
+          WAV
+        </label>
       </div>
-    </Teleport>
+      <template #footer>
+        <BaseButton variant="secondary" @click="cancelExportModal">
+          Annuler
+        </BaseButton>
+        <BaseButton variant="accent" @click="confirmExport">
+          Exporter
+        </BaseButton>
+      </template>
+    </BaseModal>
 
     <div class="timeline-header">
       <div class="header-left">
@@ -579,12 +606,11 @@ defineExpose({
             @toggle-expand="handleToggleExpand"
           />
 
-          <div v-if="sortedTracks.length === 0" class="empty-state">
-            <p>Aucune piste</p>
-            <p class="hint">
-              Cliquez sur "Ajouter" pour créer votre première piste
-            </p>
-          </div>
+          <EmptyState
+            v-if="sortedTracks.length === 0"
+            title="Aucune piste"
+            message='Cliquez sur "Ajouter" pour créer votre première piste'
+          />
         </div>
 
         <div class="checkpoint-marker" :style="checkpointStyle" />
@@ -604,12 +630,49 @@ defineExpose({
       @close="showMasterSettings = false"
     />
 
-    <Teleport to="body">
-      <div v-if="voiceRecorderError" class="voice-warning-toast">
-        <i class="fas fa-exclamation-triangle"></i>
-        {{ voiceRecorderError }}
-      </div>
-    </Teleport>
+    <BaseModal
+      :model-value="pendingDeleteTrack !== null"
+      @update:model-value="cancelDeleteTrack"
+    >
+      <template #header>
+        <h3>Supprimer la piste ?</h3>
+      </template>
+      <p class="export-modal-description">
+        Supprimer la piste "{{ pendingDeleteTrack?.name }}" ?
+      </p>
+      <template #footer>
+        <BaseButton variant="secondary" @click="cancelDeleteTrack">
+          Annuler
+        </BaseButton>
+        <BaseButton variant="danger" @click="confirmDeleteTrack">
+          Supprimer
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <BaseModal
+      :model-value="renamingTrack !== null"
+      @update:model-value="cancelRenameTrack"
+    >
+      <template #header>
+        <h3>Renommer la piste</h3>
+      </template>
+      <FormField label="Nom">
+        <BaseInput
+          v-model="renameValue"
+          required
+          @keydown.enter="confirmRenameTrack"
+        />
+      </FormField>
+      <template #footer>
+        <BaseButton variant="secondary" @click="cancelRenameTrack">
+          Annuler
+        </BaseButton>
+        <BaseButton variant="accent2" @click="confirmRenameTrack">
+          Renommer
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -618,8 +681,8 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #1a0e15;
-  color: #f2efe8;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
 }
 
 .timeline-header {
@@ -628,7 +691,7 @@ defineExpose({
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--color-bg-secondary-dark);
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .header-left,
@@ -645,7 +708,7 @@ defineExpose({
 
 .header-btn {
   padding: 8px 16px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   background: var(--color-bg-secondary-dark);
   color: var(--color-white);
@@ -674,7 +737,7 @@ defineExpose({
 
   &.active {
     background: var(--color-accent3);
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 }
 
@@ -685,7 +748,7 @@ defineExpose({
 }
 
 .unsaved-indicator {
-  color: #fbbf24;
+  color: var(--color-audio-clip-selected);
   font-size: 12px;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -705,7 +768,7 @@ defineExpose({
   border-color: var(--color-accent3);
 
   &:hover {
-    background: #9b2458;
+    background: var(--color-accent3-hover);
   }
 
   &.saving {
@@ -713,7 +776,7 @@ defineExpose({
   }
 
   &.has-changes {
-    border-color: #fbbf24;
+    border-color: var(--color-audio-clip-selected);
   }
 }
 
@@ -735,14 +798,14 @@ defineExpose({
 .save-message {
   font-size: 12px;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 
   &.success {
-    color: #22c55e;
+    color: var(--color-status-success);
   }
 
   &.error {
-    color: #ef4444;
+    color: var(--color-status-error);
   }
 }
 
@@ -757,20 +820,20 @@ defineExpose({
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
 .project-name-input {
   font-size: 14px;
-  color: #f2efe8;
-  background: #1a0e15;
-  border: 1px solid #ff3fb4;
-  border-radius: 4px;
+  color: var(--color-white);
+  background: var(--color-bg-primary-dark);
+  border: 1px solid var(--color-accent2);
+  border-radius: var(--radius-sm);
   padding: 4px 8px;
   outline: none;
   max-width: 200px;
@@ -787,24 +850,24 @@ defineExpose({
   border: none;
   border-radius: 50%;
   background: var(--color-accent3);
-  color: #f2efe8;
+  color: var(--color-white);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background: #9b2458;
+    background: var(--color-accent3-hover);
   }
 
   &.play-btn {
-    background: #ff3fb4;
+    background: var(--color-accent2);
 
     &:hover {
-      background: #ff62c2;
+      background: var(--color-accent2-hover);
     }
 
     &.playing {
-      background: #ed2aa1;
+      background: var(--color-accent2-active);
     }
   }
 }
@@ -829,12 +892,12 @@ defineExpose({
   justify-content: center;
 
   i {
-    color: #ef4444;
+    color: var(--color-status-error);
     font-size: 14px;
   }
 
   &:hover:not(:disabled) {
-    background: #9b2458;
+    background: var(--color-accent3-hover);
   }
 
   &:disabled {
@@ -843,10 +906,11 @@ defineExpose({
   }
 
   &.recording {
-    background: #ef4444;
+    background: var(--color-status-error);
     animation: record-pulse 1.4s ease-in-out infinite;
 
     i {
+      /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
       color: #fff;
     }
   }
@@ -855,10 +919,10 @@ defineExpose({
 @keyframes record-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 0 0 rgba(var(--color-status-error-rgb), 0.5);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 8px rgba(var(--color-status-error-rgb), 0);
   }
 }
 
@@ -872,7 +936,7 @@ defineExpose({
   font-size: 10px;
 
   &:hover:not(:disabled) {
-    color: #f2efe8;
+    color: var(--color-white);
   }
 
   &:disabled {
@@ -886,9 +950,9 @@ defineExpose({
   top: calc(100% + 8px);
   left: 0;
   min-width: 220px;
-  background: #2d0f20;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 8px;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   z-index: 100;
@@ -901,8 +965,8 @@ defineExpose({
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
-  background: #1a0e15;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .mic-picker-option {
@@ -912,17 +976,17 @@ defineExpose({
   padding: 10px 14px;
   background: transparent;
   border: none;
-  color: #f2efe8;
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.15s ease;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
   }
 
   &.active {
-    color: #ff3fb4;
+    color: var(--color-accent2);
     font-weight: 600;
   }
 }
@@ -939,8 +1003,8 @@ defineExpose({
   gap: 6px;
   padding: 6px 10px;
   border-radius: 14px;
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: rgba(var(--color-status-error-rgb), 0.15);
+  color: var(--color-status-error);
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -950,7 +1014,7 @@ defineExpose({
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ef4444;
+  background: var(--color-status-error);
   transition: transform 0.05s linear;
 }
 
@@ -978,17 +1042,17 @@ defineExpose({
   input {
     width: 60px;
     padding: 6px 8px;
-    border: 1px solid rgba(122, 15, 62, 0.5);
-    border-radius: 4px;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--radius-sm);
     background-color: var(--color-bg-secondary-dark);
-    color: #f2efe8;
+    color: var(--color-white);
     font-size: 14px;
     text-align: center;
     color-scheme: dark;
 
     &:focus {
       outline: none;
-      border-color: #ff3fb4;
+      border-color: var(--color-accent2);
     }
   }
 }
@@ -996,7 +1060,7 @@ defineExpose({
 .metronome-toggle {
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   background: transparent;
   color: rgba(255, 255, 255, 0.5);
@@ -1005,54 +1069,23 @@ defineExpose({
   transition: all 0.15s ease;
 
   &:hover {
-    border-color: #ff3fb4;
-    color: #f2efe8;
+    border-color: var(--color-accent2);
+    color: var(--color-white);
   }
 
   &.active {
-    background: #ff3fb4;
-    border-color: #ff3fb4;
-    color: #f2efe8;
-  }
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal {
-  background: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 420px;
-  width: 90%;
-
-  h3 {
+    background: var(--color-accent2);
+    border-color: var(--color-accent2);
     color: var(--color-white);
-    font-size: 1.25rem;
-    margin: 0 0 12px;
-  }
-
-  p {
-    color: var(--color-white-light);
-    opacity: 0.75;
-    margin: 0 0 24px;
-    font-size: 0.95rem;
-    line-height: 1.5;
   }
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+.export-modal-description {
+  color: var(--color-white-light);
+  opacity: 0.75;
+  margin: 0 0 24px;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .export-format-options {
@@ -1068,19 +1101,19 @@ defineExpose({
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 8px;
-  color: #f2efe8;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  color: var(--color-white);
   font-size: 14px;
   cursor: pointer;
 
   &.active {
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
     background-color: rgba(255, 63, 180, 0.1);
   }
 
   input {
-    accent-color: #ff3fb4;
+    accent-color: var(--color-accent2);
   }
 }
 
@@ -1091,8 +1124,8 @@ defineExpose({
   text-align: center;
   padding: 6px 12px;
   background-color: var(--color-bg-secondary-dark);
-  color: #f2efe8;
-  border-radius: 4px;
+  color: var(--color-white);
+  border-radius: var(--radius-sm);
 }
 
 .timeline-content {
@@ -1106,18 +1139,13 @@ defineExpose({
   overflow-x: auto;
   overflow-y: auto;
   position: relative;
-  background: #1a0e15;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  scrollbar-width: none; // Firefox
+  background: var(--color-bg-primary-dark);
 }
 
 .tracks-container {
   position: relative;
   min-height: calc(100% - 30px);
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   transition: background 0.15s;
 
   &.drag-over {
@@ -1127,30 +1155,12 @@ defineExpose({
   }
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  color: rgba(255, 255, 255, 0.6);
-
-  p {
-    margin: 0;
-  }
-
-  .hint {
-    font-size: 12px;
-    margin-top: 8px;
-  }
-}
-
 .checkpoint-marker {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #22c55e;
+  background: var(--color-status-success);
   pointer-events: none;
   z-index: 49;
 
@@ -1161,7 +1171,7 @@ defineExpose({
     left: -5px;
     width: 12px;
     height: 12px;
-    background: #22c55e;
+    background: var(--color-status-success);
     clip-path: polygon(50% 100%, 0 0, 100% 0);
   }
 }
@@ -1172,7 +1182,7 @@ defineExpose({
   bottom: 0;
   left: 0;
   width: 2px;
-  background: #ef4444;
+  background: var(--color-status-error);
   pointer-events: none;
   z-index: 50;
   will-change: transform;
@@ -1184,7 +1194,7 @@ defineExpose({
     left: -5px;
     width: 12px;
     height: 12px;
-    background: #ef4444;
+    background: var(--color-status-error);
     clip-path: polygon(50% 100%, 0 0, 100% 0);
   }
 }
@@ -1200,6 +1210,7 @@ defineExpose({
   flex-wrap: wrap;
 }
 
+/* stylelint-disable color-no-hex -- thème bleu "lecture seule", distinct de la charte rose/violette, sans équivalent token */
 .readonly-banner-info {
   display: flex;
   align-items: center;
@@ -1215,6 +1226,7 @@ defineExpose({
     color: #93c5fd;
   }
 }
+/* stylelint-enable color-no-hex */
 
 .readonly-banner-actions {
   display: flex;
@@ -1237,6 +1249,7 @@ defineExpose({
   &:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.4);
+    /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
     color: #fff;
   }
 
@@ -1246,6 +1259,7 @@ defineExpose({
   }
 }
 
+/* stylelint-disable color-no-hex -- thème bleu "lecture seule", distinct de la charte rose/violette, sans équivalent token */
 .banner-btn-primary {
   background: rgba(0, 120, 200, 0.3);
   border-color: rgba(0, 160, 255, 0.5);
@@ -1257,6 +1271,7 @@ defineExpose({
     color: #bfdbfe;
   }
 }
+/* stylelint-enable color-no-hex */
 
 .export-overlay {
   position: fixed;
@@ -1271,28 +1286,13 @@ defineExpose({
 .export-card {
   background: var(--color-bg-primary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 32px 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   min-width: 280px;
-}
-
-.export-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--color-border-secondary);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .export-title {
@@ -1323,26 +1323,16 @@ defineExpose({
   margin: 0;
 }
 
-.voice-warning-toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #2d0f20;
-  border: 1px solid var(--color-error);
-  color: var(--color-white);
-  padding: 12px 18px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 420px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 10000;
+@media (max-width: 1024px) {
+  .timeline-header {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
 
-  i {
-    color: var(--color-error);
+  .header-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

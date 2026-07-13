@@ -3,7 +3,7 @@
     <div class="admin-users">
       <div class="page-header">
         <h1>Users Management</h1>
-        <input
+        <BaseInput
           v-model="searchQuery"
           @input="debouncedSearch"
           placeholder="Search by email or name..."
@@ -11,7 +11,9 @@
         />
       </div>
 
-      <div v-if="usersLoading" class="loading">Loading...</div>
+      <div v-if="usersLoading" class="loading">
+        <BaseSpinner />
+      </div>
 
       <div v-else class="users-table-container">
         <table class="users-table">
@@ -30,46 +32,36 @@
               <td>{{ user.email }}</td>
               <td>{{ user.firstName }} {{ user.lastName }}</td>
               <td>
-                <select
-                  :value="user.role"
-                  @change="
-                    updateRole(
-                      user.id,
-                      ($event.target as HTMLSelectElement).value,
-                    )
-                  "
+                <BaseSelect
+                  :model-value="user.role"
+                  :options="roleOptions"
                   class="role-select"
-                >
-                  <option value="ROLE_USER">User</option>
-                  <option value="ROLE_ADMIN">Admin</option>
-                </select>
+                  @update:model-value="(role) => updateRole(user.id, role)"
+                />
               </td>
               <td>
-                <span
-                  :class="[
-                    'status-badge',
-                    user.isActive ? 'active' : 'inactive',
-                  ]"
-                >
+                <BaseBadge :variant="user.isActive ? 'active' : 'inactive'">
                   {{ user.isActive ? "Active" : "Inactive" }}
-                </span>
+                </BaseBadge>
               </td>
               <td>{{ formatDate(user.createdAt) }}</td>
               <td>
-                <button
+                <BaseButton
                   v-if="user.isActive"
+                  variant="danger"
+                  size="small"
                   @click="deactivateUser(user.id)"
-                  class="btn-danger"
                 >
                   Deactivate
-                </button>
-                <button
+                </BaseButton>
+                <BaseButton
                   v-else
+                  variant="success"
+                  size="small"
                   @click="activateUser(user.id)"
-                  class="btn-success"
                 >
                   Activate
-                </button>
+                </BaseButton>
               </td>
             </tr>
           </tbody>
@@ -96,6 +88,24 @@
         </button>
       </div>
     </div>
+
+    <BaseModal
+      :model-value="pendingDeactivateId !== null"
+      @update:model-value="cancelDeactivate"
+    >
+      <template #header>
+        <h2>Deactivate user?</h2>
+      </template>
+      <p>This user will no longer be able to log in.</p>
+      <template #footer>
+        <BaseButton variant="outline" @click="cancelDeactivate"
+          >Cancel</BaseButton
+        >
+        <BaseButton variant="danger" @click="confirmDeactivate">
+          Deactivate
+        </BaseButton>
+      </template>
+    </BaseModal>
   </AdminLayout>
 </template>
 
@@ -103,9 +113,22 @@
 import { ref, computed, onMounted } from "vue";
 import AdminLayout from "../../layouts/AdminLayout.vue";
 import { useAdminStore } from "../../stores/adminStore";
+import { useToast } from "../../composables/useToast";
+import BaseInput from "../../components/ui/BaseInput.vue";
+import BaseSelect from "../../components/ui/BaseSelect.vue";
+import BaseBadge from "../../components/ui/BaseBadge.vue";
+import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseSpinner from "../../components/ui/BaseSpinner.vue";
+import BaseModal from "../../components/ui/BaseModal.vue";
 
 const adminStore = useAdminStore();
+const toast = useToast();
 const searchQuery = ref("");
+
+const roleOptions = [
+  { value: "ROLE_USER", label: "User" },
+  { value: "ROLE_ADMIN", label: "Admin" },
+];
 
 const users = computed(() => adminStore.users);
 const usersPagination = computed(() => adminStore.usersPagination);
@@ -127,18 +150,43 @@ function goToPage(page: number) {
   adminStore.fetchUsers(page, searchQuery.value || undefined);
 }
 
-function updateRole(userId: string, role: string) {
-  adminStore.updateUser(userId, { role });
-}
-
-function deactivateUser(userId: string) {
-  if (confirm("Deactivate this user?")) {
-    adminStore.updateUser(userId, { isActive: false });
+async function updateRole(userId: string, role: string) {
+  const result = await adminStore.updateUser(userId, { role });
+  if (result.error) {
+    toast.error("Erreur lors du changement de rôle.");
   }
 }
 
-function activateUser(userId: string) {
-  adminStore.updateUser(userId, { isActive: true });
+const pendingDeactivateId = ref<string | null>(null);
+
+function deactivateUser(userId: string) {
+  pendingDeactivateId.value = userId;
+}
+
+function cancelDeactivate() {
+  pendingDeactivateId.value = null;
+}
+
+async function confirmDeactivate() {
+  if (!pendingDeactivateId.value) return;
+  const result = await adminStore.updateUser(pendingDeactivateId.value, {
+    isActive: false,
+  });
+  if (result.error) {
+    toast.error("Erreur lors de la désactivation de l'utilisateur.");
+  } else {
+    toast.success("Utilisateur désactivé.");
+  }
+  pendingDeactivateId.value = null;
+}
+
+async function activateUser(userId: string) {
+  const result = await adminStore.updateUser(userId, { isActive: true });
+  if (result.error) {
+    toast.error("Erreur lors de l'activation de l'utilisateur.");
+  } else {
+    toast.success("Utilisateur activé.");
+  }
 }
 
 function formatDate(dateStr: string) {
@@ -152,7 +200,7 @@ function formatDate(dateStr: string) {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -165,29 +213,15 @@ function formatDate(dateStr: string) {
   flex-wrap: wrap;
 }
 
-.search-input {
-  padding: 10px 16px;
-  background: #2a1520;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 8px;
-  color: #f2efe8;
-  font-size: 14px;
+.page-header .search-input {
   width: 300px;
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #ff3fb4;
-  }
 }
 
 .loading {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 48px;
-  color: rgba(255, 255, 255, 0.6);
 }
 
 .users-table-container {
@@ -196,9 +230,10 @@ function formatDate(dateStr: string) {
 
 .users-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
-  background: #2a1520;
-  border-radius: 12px;
+  background: var(--color-bg-surface-deep);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 
   th,
@@ -217,7 +252,7 @@ function formatDate(dateStr: string) {
   }
 
   td {
-    color: #f2efe8;
+    color: var(--color-white);
     border-top: 1px solid rgba(122, 15, 62, 0.2);
   }
 
@@ -227,65 +262,7 @@ function formatDate(dateStr: string) {
 }
 
 .role-select {
-  padding: 6px 10px;
-  background: #1a0e15;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 6px;
-  color: #f2efe8;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: #ff3fb4;
-  }
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-
-  &.active {
-    background: rgba(34, 197, 94, 0.2);
-    color: #22c55e;
-  }
-
-  &.inactive {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-}
-
-.btn-danger,
-.btn-success {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-danger {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-
-  &:hover {
-    background: rgba(239, 68, 68, 0.3);
-  }
-}
-
-.btn-success {
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
-
-  &:hover {
-    background: rgba(34, 197, 94, 0.3);
-  }
+  width: auto;
 }
 
 .pagination {
@@ -298,17 +275,17 @@ function formatDate(dateStr: string) {
 
 .pagination-btn {
   padding: 8px 16px;
-  background: #2a1520;
+  background: var(--color-bg-surface-deep);
   border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 6px;
-  color: #f2efe8;
+  border-radius: var(--radius-md);
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
     background: rgba(122, 15, 62, 0.4);
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 
   &:disabled {
@@ -320,5 +297,11 @@ function formatDate(dateStr: string) {
 .pagination-info {
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .page-header .search-input {
+    width: 100%;
+  }
 }
 </style>

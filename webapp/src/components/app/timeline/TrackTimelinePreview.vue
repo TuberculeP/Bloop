@@ -60,11 +60,12 @@ const getNotePreviewHeight = (): number => {
 <style scoped lang="scss">
 .track-timeline {
   position: relative;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   overflow: hidden;
   cursor: pointer;
 
   &:hover {
+    /* stylelint-disable-next-line color-no-hex -- même teinte que le hover du rendu canvas équivalent (TrackTimelinePreviewCanvas) */
     background: #1f1119;
   }
 }
@@ -80,7 +81,7 @@ const getNotePreviewHeight = (): number => {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(122, 15, 62, 0.5);
+  background: var(--color-border-secondary);
 }
 
 .notes-preview {

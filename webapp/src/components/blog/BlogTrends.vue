@@ -104,7 +104,7 @@ defineExpose({ clearFilters, selectedTags });
   background: hsla(325, 30%, 8%, 0.55);
   backdrop-filter: blur(1px);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 20px;
   margin-bottom: 20px;
   color: var(--color-white);

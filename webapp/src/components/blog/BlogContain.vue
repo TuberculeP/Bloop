@@ -7,7 +7,6 @@ import { useAuthStore } from "../../stores/authStore";
 import BlogSearch from "./BlogSearch.vue";
 import apiClient from "../../lib/utils/apiClient";
 import type { User } from "../../lib/utils/types";
-// import BlogUsers from "./BlogUsers.vue";
 import BlogTopLikedUsers from "./BlogTopLikedUsers.vue";
 import BlogBackground from "./BlogBackground.vue";
 
@@ -228,7 +227,7 @@ onMounted(() => {
 .admin-test-controls {
   background: var(--color-bg-primary);
   border: 2px dashed var(--color-accent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   margin-bottom: 20px;
   text-align: center;
@@ -268,7 +267,7 @@ onMounted(() => {
 .login-prompt {
   background: var(--color-bg-primary-dark);
   border: 1px solid var(--color-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 20px;
   margin-bottom: 20px;
   text-align: center;

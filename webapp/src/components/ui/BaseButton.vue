@@ -23,11 +23,15 @@ export interface ButtonProps {
     | "primary"
     | "secondary"
     | "accent"
+    | "accent2"
     | "error"
     | "link"
     | "ghost"
     | "lightghost"
-    | "lightlink";
+    | "lightlink"
+    | "outline"
+    | "danger"
+    | "success";
   size?: "small" | "normal" | "large";
   disabled?: boolean;
   loading?: boolean;
@@ -52,7 +56,7 @@ const handleClick = (event: MouseEvent) => {
 <style scoped>
 .base-button {
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-family: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -97,7 +101,7 @@ const handleClick = (event: MouseEvent) => {
   background: var(--color-primary);
   border-color: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-hover), 0.3);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-hover-rgb), 0.3);
 }
 
 .base-button--secondary {
@@ -138,6 +142,50 @@ const handleClick = (event: MouseEvent) => {
   border-color: var(--color-error-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(var(--color-error-rgb), 0.3);
+}
+
+.base-button--accent2 {
+  background: var(--color-accent2);
+  color: var(--color-white);
+  border: 1px solid var(--color-accent2);
+}
+
+.base-button--accent2:hover:not(:disabled) {
+  background: var(--color-accent2-hover);
+  border-color: var(--color-accent2-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--color-accent2-rgb), 0.3);
+}
+
+.base-button--outline {
+  background: transparent;
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.base-button--outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.base-button--danger {
+  background: color-mix(in srgb, var(--color-status-error) 20%, transparent);
+  color: var(--color-status-error);
+  border: 1px solid transparent;
+}
+
+.base-button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-status-error) 30%, transparent);
+}
+
+.base-button--success {
+  background: color-mix(in srgb, var(--color-status-success) 20%, transparent);
+  color: var(--color-status-success);
+  border: 1px solid transparent;
+}
+
+.base-button--success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-status-success) 30%, transparent);
 }
 
 .base-button--link {
@@ -192,8 +240,10 @@ const handleClick = (event: MouseEvent) => {
 .base-button--disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  /* stylelint-disable declaration-no-important -- nécessaire : même spécificité que les règles :hover par variante (.base-button--primary:hover etc.), qui gagneraient sinon par ordre de déclaration */
   transform: none !important;
   box-shadow: none !important;
+  /* stylelint-enable declaration-no-important */
 }
 
 .base-button--loading {

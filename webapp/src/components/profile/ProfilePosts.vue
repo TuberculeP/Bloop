@@ -5,7 +5,12 @@ import { useAuthStore } from "../../stores/authStore";
 import { getAllPosts, updatePost, deletePost } from "../../services/posts";
 import BlogPost from "../../components/blog/BlogPost.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseModal from "../../components/ui/BaseModal.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
+import { useToast } from "../../composables/useToast";
 import type { Post } from "../../lib/utils/types";
+
+const toast = useToast();
 
 const emit = defineEmits<{
   (e: "posts-changed", posts: Post[]): void;
@@ -86,12 +91,23 @@ const saveEdit = async () => {
     cancelEdit();
   } catch (err) {
     console.error("Erreur lors de la modification:", err);
-    error.value = "Erreur lors de la modification du post";
+    toast.error("Erreur lors de la modification du post.");
   }
 };
 
-const handleDeletePost = async (postId: number) => {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer ce post ?")) return;
+const pendingDeletePostId = ref<number | null>(null);
+
+const handleDeletePost = (postId: number) => {
+  pendingDeletePostId.value = postId;
+};
+
+const cancelDeletePost = () => {
+  pendingDeletePostId.value = null;
+};
+
+const confirmDeletePost = async () => {
+  if (pendingDeletePostId.value === null) return;
+  const postId = pendingDeletePostId.value;
 
   try {
     await deletePost(postId);
@@ -99,7 +115,9 @@ const handleDeletePost = async (postId: number) => {
     emit("posts-changed", userPosts.value);
   } catch (err) {
     console.error("Erreur lors de la suppression:", err);
-    error.value = "Erreur lors de la suppression du post";
+    toast.error("Erreur lors de la suppression du post.");
+  } finally {
+    pendingDeletePostId.value = null;
   }
 };
 
@@ -123,16 +141,18 @@ onMounted(loadUserPosts);
   </div>
 
   <div v-else class="profile-posts">
-    <div v-if="userPosts.length === 0" class="state-container empty">
-      <div class="empty-illustration">
-        <div class="music-note"><i class="fas fa-newspaper" /></div>
-      </div>
-      <h3>Aucun post pour le moment</h3>
-      <p>Commencez à partager vos idées !</p>
-      <button @click="router.push('/blog')" class="btn-outline">
-        Créer mon premier post
-      </button>
-    </div>
+    <EmptyState
+      v-if="userPosts.length === 0"
+      icon="fas fa-newspaper"
+      title="Aucun post pour le moment"
+      message="Commencez à partager vos idées !"
+    >
+      <template #action>
+        <BaseButton variant="ghost" @click="router.push('/blog')">
+          Créer mon premier post
+        </BaseButton>
+      </template>
+    </EmptyState>
 
     <div v-else class="posts-list">
       <div
@@ -165,21 +185,40 @@ onMounted(loadUserPosts);
         <div v-else class="post-display">
           <BlogPost :post="post" />
           <div class="post-actions">
-            <button class="btn-action" @click="startEdit(post)">
+            <BaseButton variant="outline" size="small" @click="startEdit(post)">
               <i class="fas fa-pencil-alt"></i>
               <span>Modifier</span>
-            </button>
-            <button
-              class="btn-action btn-danger"
+            </BaseButton>
+            <BaseButton
+              variant="danger"
+              size="small"
               @click="post.id !== undefined && handleDeletePost(post.id)"
             >
               <i class="fas fa-trash-alt"></i>
               <span>Supprimer</span>
-            </button>
+            </BaseButton>
           </div>
         </div>
       </div>
     </div>
+
+    <BaseModal
+      :model-value="pendingDeletePostId !== null"
+      @update:model-value="cancelDeletePost"
+    >
+      <template #header>
+        <h3>Supprimer le post ?</h3>
+      </template>
+      <p>Cette action est irréversible.</p>
+      <template #footer>
+        <BaseButton variant="secondary" @click="cancelDeletePost">
+          Annuler
+        </BaseButton>
+        <BaseButton variant="danger" @click="confirmDeletePost">
+          Supprimer
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -193,14 +232,14 @@ onMounted(loadUserPosts);
 .project-card {
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .project-card:hover {
   border-color: var(--color-accent3-hover);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
   background: linear-gradient(
     180deg,
     var(--color-bg-accent3-dark) 0%,
@@ -221,33 +260,6 @@ onMounted(loadUserPosts);
   border-top: 1px solid var(--color-border-secondary);
 }
 
-.btn-action {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: transparent;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
-  color: var(--color-white-light);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-action:hover {
-  border-color: var(--color-accent3-hover);
-  color: var(--color-white);
-  background: rgba(122, 15, 62, 0.15);
-}
-
-.btn-action.btn-danger:hover {
-  border-color: #e55;
-  color: #f88;
-  background: rgba(200, 50, 50, 0.15);
-}
-
 .edit-mode {
   padding: 20px;
 }
@@ -257,7 +269,7 @@ onMounted(loadUserPosts);
   padding: 12px 16px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-white);
   font-size: 1rem;
   line-height: 1.5;
@@ -291,7 +303,7 @@ onMounted(loadUserPosts);
 .skeleton-card {
   height: 140px;
   background: var(--color-bg-secondary-dark);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   animation: pulse 1.5s infinite;
 }
 
@@ -307,12 +319,6 @@ onMounted(loadUserPosts);
   }
 }
 
-.empty-illustration {
-  font-size: 4rem;
-  margin-bottom: 20px;
-  opacity: 0.5;
-}
-
 .state-container h3 {
   color: var(--color-white);
   font-size: 1.5rem;
@@ -325,22 +331,6 @@ onMounted(loadUserPosts);
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 2px solid var(--color-accent3);
-  color: var(--color-accent3-hover);
-  padding: 12px 32px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background: var(--color-accent3);
-  color: var(--color-white);
 }
 
 .btn-text-accent {
@@ -362,7 +352,7 @@ onMounted(loadUserPosts);
     flex-direction: column;
   }
 
-  .btn-action {
+  .post-actions :deep(.base-button) {
     width: 100%;
     justify-content: center;
   }

@@ -4,37 +4,36 @@
       <h2>Nouveau mot de passe</h2>
       <p class="form-description">Entrez votre nouveau mot de passe.</p>
 
-      <div class="form-group">
-        <label for="password">Nouveau mot de passe</label>
-        <input
+      <FormField label="Nouveau mot de passe" html-for="password">
+        <BaseInput
           id="password"
           type="password"
           v-model="form.password"
           placeholder="Entrez votre nouveau mot de passe"
-          class="form-input"
           required
           minlength="8"
         />
-      </div>
+      </FormField>
 
-      <div class="form-group">
-        <label for="confirmPassword">Confirmer le mot de passe</label>
-        <input
+      <FormField label="Confirmer le mot de passe" html-for="confirmPassword">
+        <BaseInput
           id="confirmPassword"
           type="password"
           v-model="form.confirmPassword"
           placeholder="Confirmez votre mot de passe"
-          class="form-input"
           required
           minlength="8"
         />
-      </div>
+      </FormField>
 
-      <button type="submit" class="submit-button" :disabled="isLoading">
-        {{
-          isLoading ? "Modification en cours..." : "Modifier le mot de passe"
-        }}
-      </button>
+      <BaseButton
+        type="submit"
+        class="submit-button"
+        :disabled="isLoading"
+        :loading="isLoading"
+      >
+        Modifier le mot de passe
+      </BaseButton>
 
       <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
@@ -52,6 +51,9 @@
 import { reactive, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import apiClient from "../../lib/utils/apiClient";
+import FormField from "../../components/ui/FormField.vue";
+import BaseInput from "../../components/ui/BaseInput.vue";
+import BaseButton from "../../components/ui/BaseButton.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -155,14 +157,14 @@ async function submitForm() {
 }
 
 .success-message {
-  color: var(--color-success, #4caf50);
+  color: var(--color-success);
   text-align: center;
   margin-top: 16px;
   font-size: 0.9rem;
 }
 
 .error-message {
-  color: var(--color-error, #f44336);
+  color: var(--color-error);
   text-align: center;
   margin-top: 16px;
   font-size: 0.9rem;

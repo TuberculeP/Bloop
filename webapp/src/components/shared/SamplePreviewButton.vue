@@ -88,7 +88,7 @@ function toggle(event: MouseEvent) {
   padding: 0 10px;
   background: rgba(122, 15, 62, 0.3);
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   color: var(--color-white-light);
   cursor: pointer;

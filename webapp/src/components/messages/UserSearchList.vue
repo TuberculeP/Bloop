@@ -58,7 +58,7 @@ defineEmits<{
   width: 100%;
   padding: 0.75rem;
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--bg-primary);
   margin-bottom: 0.5rem;
 }
@@ -73,7 +73,7 @@ defineEmits<{
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.2s;
 }

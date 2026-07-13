@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { computed } from "vue";
+import { vOnClickOutside } from "@vueuse/components";
 import type { AutomatableParam } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import MasterTrackHeader from "./MasterTrackHeader.vue";
 import AutomationLaneComponent from "./AutomationLane.vue";
+import { useDropdown } from "../../../composables/useDropdown";
 
 const MASTER_COLOR = "#ff3fb4";
 
@@ -20,7 +22,11 @@ const emit = defineEmits<{
 
 const timelineStore = useTimelineStore();
 
-const showAddLaneMenu = ref(false);
+const {
+  isOpen: showAddLaneMenu,
+  toggle: toggleAddLaneMenu,
+  close: closeAddLaneMenu,
+} = useDropdown();
 
 const isAutomationExpanded = computed(
   () => timelineStore.automationExpandedMaster,
@@ -38,7 +44,7 @@ const availableParams = computed(() =>
 
 const handleAddLane = (param: AutomatableParam) => {
   timelineStore.addMasterAutomationLane(param);
-  showAddLaneMenu.value = false;
+  closeAddLaneMenu();
 };
 
 const handleRemoveLane = (laneId: string) => {
@@ -47,19 +53,8 @@ const handleRemoveLane = (laneId: string) => {
 
 const handleToggleAutomation = () => {
   timelineStore.toggleMasterAutomationExpanded();
-  showAddLaneMenu.value = false;
+  closeAddLaneMenu();
 };
-
-const closeMenuOnOutsideClick = (e: MouseEvent) => {
-  if (!(e.target as Element).closest(".add-lane-wrapper")) {
-    showAddLaneMenu.value = false;
-  }
-};
-
-onMounted(() => document.addEventListener("click", closeMenuOnOutsideClick));
-onBeforeUnmount(() =>
-  document.removeEventListener("click", closeMenuOnOutsideClick),
-);
 </script>
 
 <template>
@@ -85,12 +80,12 @@ onBeforeUnmount(() =>
         @remove="handleRemoveLane(lane.id)"
       />
       <div class="drawer-add-bar">
-        <div class="add-lane-wrapper">
+        <div class="add-lane-wrapper" v-on-click-outside="closeAddLaneMenu">
           <button
             class="add-lane-btn"
             :disabled="availableParams.length === 0"
             title="Ajouter un paramètre"
-            @click.stop="showAddLaneMenu = !showAddLaneMenu"
+            @click.stop="toggleAddLaneMenu"
           >
             +
             <svg
@@ -166,21 +161,22 @@ onBeforeUnmount(() =>
   position: sticky;
   top: 0;
   z-index: 60;
-  border-bottom: 2px solid #ff3fb4;
+  border-bottom: 2px solid var(--color-accent2);
 }
 
 .master-track-zone {
+  /* stylelint-disable-next-line color-no-hex -- teinte de fond propre à cette zone, usage unique */
   background: #241019;
 }
 
 .automation-drawer {
-  border-top: 1px solid rgba(122, 15, 62, 0.3);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
 }
 
 .drawer-add-bar {
   display: grid;
   grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.15);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.15);
 }
 
 .drawer-add-bar > :first-child {
@@ -190,13 +186,13 @@ onBeforeUnmount(() =>
 }
 
 .drawer-add-spacer {
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
 }
 
 .automation-toggle-row {
   display: grid;
   grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.15);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.15);
 }
 
 .automation-toggle-btn {
@@ -205,8 +201,8 @@ onBeforeUnmount(() =>
   gap: 5px;
   margin: 3px 8px;
   padding: 2px 7px;
-  border: 1px solid rgba(122, 15, 62, 0.3);
-  border-radius: 4px;
+  border: 1px solid rgba(var(--color-accent3-rgb), 0.3);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.3);
   font-size: 10px;
@@ -221,7 +217,7 @@ onBeforeUnmount(() =>
   }
 
   &.active {
-    color: #ff3fb4;
+    color: var(--color-accent2);
     border-color: rgba(255, 63, 180, 0.6);
     background: rgba(255, 63, 180, 0.08);
   }
@@ -236,12 +232,12 @@ onBeforeUnmount(() =>
   padding: 0 3px;
   border-radius: 7px;
   background: rgba(255, 63, 180, 0.25);
-  color: #ff3fb4;
+  color: var(--color-accent2);
   font-size: 9px;
 }
 
 .automation-toggle-spacer {
-  background: #160b12;
+  background: var(--color-bg-daw-deep);
 }
 
 .add-lane-wrapper {
@@ -255,8 +251,8 @@ onBeforeUnmount(() =>
   font-size: 10px;
   font-weight: 600;
   padding: 3px 7px;
-  border: 1px solid rgba(122, 15, 62, 0.4);
-  border-radius: 4px;
+  border: 1px solid rgba(var(--color-accent3-rgb), 0.4);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
@@ -280,8 +276,8 @@ onBeforeUnmount(() =>
   top: calc(100% + 4px);
   left: 0;
   z-index: 100;
-  background: #2a1020;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-daw-dropdown);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   padding: 4px 0;
   min-width: 140px;
@@ -302,6 +298,7 @@ onBeforeUnmount(() =>
 
   &:hover {
     background: rgba(255, 63, 180, 0.1);
+    /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
     color: #fff;
   }
 }

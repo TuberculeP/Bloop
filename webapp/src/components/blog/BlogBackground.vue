@@ -169,8 +169,7 @@ svg {
 }
 
 .wave {
-  stroke: #ffb2ae4a;
-  /* fill: var(--color-accent3); */
+  stroke: color-mix(in srgb, var(--color-secondary) 29%, transparent);
   fill: transparent;
 
   stroke-width: 0.5px;

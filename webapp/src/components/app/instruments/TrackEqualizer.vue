@@ -234,7 +234,7 @@ onMounted(draw);
   align-items: center;
 
   .eq-canvas {
-    border: 1px solid rgba(122, 15, 62, 0.4);
+    border: 1px solid rgba(var(--color-accent3-rgb), 0.4);
     border-radius: 6px;
     cursor: crosshair;
   }

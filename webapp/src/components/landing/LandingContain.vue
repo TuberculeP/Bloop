@@ -36,21 +36,19 @@
           </div>
 
           <div class="hero-actions" ref="heroActionsRef">
-            <router-link to="/app" class="btn-cta primary">
-              <span class="btn-content">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                <span>Commencer gratuitement</span>
-              </span>
-            </router-link>
+            <LandingCtaButton to="/app">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Commencer gratuitement</span>
+            </LandingCtaButton>
             <button class="btn-cta secondary" @click="scrollToFeatures">
               <span class="btn-content">
                 <span>Découvrir</span>
@@ -425,23 +423,20 @@
             >
           </div>
           <div class="cta-actions">
-            <router-link to="/app" class="btn-cta primary medium">
-              <span class="btn-shine"></span>
-              <span class="btn-content">
-                <span>Lancer le studio</span>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </span>
-            </router-link>
+            <LandingCtaButton to="/app">
+              <span>Lancer le studio</span>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </LandingCtaButton>
           </div>
         </div>
       </div>
@@ -462,6 +457,7 @@ import {
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LandingIncluded from "./LandingIncluded.vue";
+import LandingCtaButton from "./LandingCtaButton.vue";
 import SplitText from "./effects/SplitText.vue";
 import CountUp from "./effects/CountUp.vue";
 import MorphShape from "./effects/MorphShape.vue";
@@ -1280,26 +1276,12 @@ onUnmounted(() => {
   padding: 1rem 2rem;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   transition: all 0.3s ease;
   overflow: hidden;
   border: none;
   cursor: pointer;
-}
-
-.btn-cta.primary {
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent2) 100%
-  );
-  color: var(--color-black);
-}
-
-.btn-cta.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(255, 210, 105, 0.4);
 }
 
 .btn-cta.secondary {
@@ -1344,10 +1326,10 @@ onUnmounted(() => {
   background: linear-gradient(
     145deg,
     rgba(15, 23, 42, 0.9) 0%,
-    rgba(6, 11, 23, 0.95) 100%
+    rgba(var(--color-landing-bg-rgb), 0.95) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.5),
@@ -1376,6 +1358,7 @@ onUnmounted(() => {
   border-radius: 50%;
 }
 
+/* stylelint-disable color-no-hex -- pastilles macOS (rouge/jaune/vert) du mockup illustratif, couleurs figées non liées à la charte */
 .mockup-dots span:nth-child(1) {
   background: #ff5f57;
 }
@@ -1385,6 +1368,7 @@ onUnmounted(() => {
 .mockup-dots span:nth-child(3) {
   background: #28c840;
 }
+/* stylelint-enable color-no-hex */
 
 .mockup-title {
   font-size: 0.85rem;
@@ -1405,7 +1389,7 @@ onUnmounted(() => {
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .wave-bar {
@@ -1461,7 +1445,7 @@ onUnmounted(() => {
   position: relative;
   height: 24px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .track-block {
@@ -1491,7 +1475,7 @@ onUnmounted(() => {
   gap: 1rem;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .control-btn {
@@ -1598,7 +1582,7 @@ onUnmounted(() => {
   padding: 2rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   transform-style: preserve-3d;
   will-change: transform;
@@ -1639,7 +1623,7 @@ onUnmounted(() => {
     rgba(255, 255, 255, 0.02) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1.5rem;
   color: var(--color);
   transition: all 0.3s ease;
@@ -1739,7 +1723,7 @@ onUnmounted(() => {
   width: 60px;
   height: 60px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-accent);
 }
 
@@ -1907,7 +1891,7 @@ onUnmounted(() => {
 /* ==================== CTA SECTION ==================== */
 .cta-content {
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(
     45deg,
     rgba(145, 165, 249, 0.05) 0,
@@ -2012,7 +1996,7 @@ onUnmounted(() => {
 .mcp-step-number {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: rgba(255, 247, 171, 0.08);
   border: 1px solid rgba(255, 247, 171, 0.15);
   display: flex;
@@ -2042,7 +2026,7 @@ onUnmounted(() => {
 .mcp-config-card {
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   backdrop-filter: blur(8px);
 }
@@ -2106,6 +2090,7 @@ onUnmounted(() => {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* stylelint-disable color-no-hex -- verts/bleus de statut copié + coloration syntaxique JSON illustrative, non liés à la charte */
 .config-copy-btn.copied {
   background: rgba(40, 201, 64, 0.12);
   border-color: rgba(40, 201, 64, 0.3);
@@ -2133,6 +2118,7 @@ onUnmounted(() => {
 .json-string {
   color: #86efac;
 }
+/* stylelint-enable color-no-hex */
 .json-origin {
   color: var(--color-accent);
 }
@@ -2225,7 +2211,8 @@ onUnmounted(() => {
     align-items: center;
   }
 
-  .btn-cta {
+  .btn-cta,
+  :deep(.landing-cta-button) {
     width: 100%;
     max-width: 300px;
     justify-content: center;

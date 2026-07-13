@@ -32,7 +32,11 @@
         <!-- Auth section -->
         <div class="auth-section">
           <!-- Si connecté -->
-          <div v-if="isAuthenticated" class="profile-wrapper">
+          <div
+            v-if="isAuthenticated"
+            v-on-click-outside="closeProfileMenu"
+            class="profile-wrapper"
+          >
             <button @click.stop="toggleProfileMenu" class="profile-btn">
               <span class="avatar-ring">
                 <span class="avatar">{{ userInitials }}</span>
@@ -124,10 +128,9 @@
             <router-link to="/login" class="btn-login">
               <span>Connexion</span>
             </router-link>
-            <router-link to="/register" class="btn-register">
-              <span class="btn-text">Inscription</span>
-              <span class="btn-shine"></span>
-            </router-link>
+            <LandingCtaButton to="/register" size="compact">
+              Inscription
+            </LandingCtaButton>
           </div>
         </div>
       </nav>
@@ -148,10 +151,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { vOnClickOutside } from "@vueuse/components";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/authStore";
 import apiClient from "../../lib/utils/apiClient";
 import gsap from "gsap";
+import LandingCtaButton from "./LandingCtaButton.vue";
+import { useDropdown } from "../../composables/useDropdown";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -167,7 +173,11 @@ const navLinks = [
 // State
 const isScrolled = ref(false);
 const scrollProgress = ref(0);
-const showProfileMenu = ref(false);
+const {
+  isOpen: showProfileMenu,
+  toggle: toggleProfileMenu,
+  close: closeProfileMenu,
+} = useDropdown();
 const isMobileMenuOpen = ref(false);
 
 // Auth state
@@ -183,14 +193,6 @@ const userInitials = computed(() => {
 });
 
 // Menu handlers
-const toggleProfileMenu = () => {
-  showProfileMenu.value = !showProfileMenu.value;
-};
-
-const closeProfileMenu = () => {
-  showProfileMenu.value = false;
-};
-
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
   document.body.style.overflow = isMobileMenuOpen.value ? "hidden" : "";
@@ -199,14 +201,6 @@ const toggleMobileMenu = () => {
 const closeMobileMenu = () => {
   isMobileMenuOpen.value = false;
   document.body.style.overflow = "";
-};
-
-// Click outside handler
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest(".profile-wrapper")) {
-    showProfileMenu.value = false;
-  }
 };
 
 // Logout handler
@@ -245,7 +239,6 @@ const handleScroll = () => {
 onMounted(() => {
   checkAuth();
   window.addEventListener("scroll", handleScroll, { passive: true });
-  document.addEventListener("click", handleClickOutside);
   handleScroll();
 
   // GSAP entrance animations
@@ -266,7 +259,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
-  document.removeEventListener("click", handleClickOutside);
   document.body.style.overflow = "";
 });
 </script>
@@ -289,8 +281,8 @@ onUnmounted(() => {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgb(6, 11, 23, 0.2) 0%,
-    rgba(6, 11, 23, 0) 100%
+    rgba(var(--color-landing-bg-rgb), 0.2) 0%,
+    rgba(var(--color-landing-bg-rgb), 0) 100%
   );
   opacity: 1;
   transition: opacity 0.4s ease;
@@ -304,7 +296,7 @@ onUnmounted(() => {
 }
 
 .main-header.scrolled::before {
-  background: rgba(6, 11, 23, 0.85);
+  background: rgba(var(--color-landing-bg-rgb), 0.85);
   opacity: 1;
 }
 
@@ -463,7 +455,7 @@ onUnmounted(() => {
   font-weight: 500;
   font-size: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
   overflow: hidden;
 }
@@ -490,53 +482,6 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-.btn-register {
-  position: relative;
-  padding: 0.6rem 1.5rem;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent2) 100%
-  );
-  color: var(--color-black);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 210, 105, 0.3);
-}
-
-.btn-text {
-  position: relative;
-  z-index: 1;
-}
-
-.btn-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  transition: left 0.5s ease;
-}
-
-.btn-register:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(255, 210, 105, 0.4);
-}
-
-.btn-register:hover .btn-shine {
-  left: 100%;
-}
-
 /* Profile menu */
 .profile-wrapper {
   position: relative;
@@ -553,7 +498,7 @@ onUnmounted(() => {
   color: var(--color-white);
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 0 !important;
+  margin: 0;
 }
 
 .profile-btn:hover {
@@ -629,11 +574,11 @@ onUnmounted(() => {
 .dropdown-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(6, 11, 23, 0.95);
+  background: rgba(var(--color-landing-bg-rgb), 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -653,7 +598,7 @@ onUnmounted(() => {
   color: var(--color-white);
   text-decoration: none;
   font-size: 0.9rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -669,7 +614,7 @@ onUnmounted(() => {
 }
 
 .dropdown-item.admin {
-  color: #ff3fb4;
+  color: var(--color-accent2);
 }
 
 .dropdown-item.admin:hover {
@@ -752,7 +697,7 @@ onUnmounted(() => {
     height: 100vh;
     background: linear-gradient(
       180deg,
-      rgba(6, 11, 23, 0.98) 0%,
+      rgba(var(--color-landing-bg-rgb), 0.98) 0%,
       rgba(4, 13, 26, 0.98) 100%
     );
     backdrop-filter: blur(20px);
@@ -788,7 +733,7 @@ onUnmounted(() => {
   }
 
   .btn-login,
-  .btn-register {
+  :deep(.landing-cta-button) {
     padding: 1rem 2rem;
     font-size: 1rem;
   }

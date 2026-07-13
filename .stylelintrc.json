@@ -1,0 +1,14 @@
+{
+  "extends": ["stylelint-config-recommended-scss", "stylelint-config-recommended-vue/scss"],
+  "customSyntax": "postcss-html",
+  "rules": {
+    "color-no-hex": true,
+    "declaration-no-important": true,
+    "declaration-property-value-disallowed-list": {
+      "border-radius": ["/^(4px|8px|12px|16px)$/"]
+    },
+    "no-descending-specificity": null,
+    "no-empty-source": null
+  },
+  "ignoreFiles": ["**/dist/**", "webapp/src/styles/colors.css"]
+}

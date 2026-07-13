@@ -432,7 +432,7 @@ onUnmounted(() => {
   position: relative;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
   opacity: 0;
   transform: translateY(30px);
@@ -515,6 +515,7 @@ onUnmounted(() => {
     rgba(200, 145, 249, 0.2) 0%,
     rgba(200, 145, 249, 0.05) 100%
   );
+  /* stylelint-disable-next-line color-no-hex -- couleur de catégorie illustrative, usage unique */
   color: #c891f9;
   border: 1px solid rgba(200, 145, 249, 0.3);
 }
@@ -590,7 +591,7 @@ onUnmounted(() => {
   padding: 0.875rem 1rem;
   margin-bottom: 0.5rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   opacity: 0;
   transform: translateY(-10px);
   transition: all 0.3s ease;

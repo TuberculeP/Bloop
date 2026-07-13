@@ -18,7 +18,9 @@
         </div>
       </div>
 
-      <div v-if="!currentFolder" class="loading">Loading...</div>
+      <div v-if="!currentFolder" class="loading">
+        <BaseSpinner />
+      </div>
 
       <template v-else>
         <div class="folder-info-card">
@@ -31,9 +33,10 @@
 
         <h2>Samples ({{ currentSamples.length }})</h2>
 
-        <div v-if="currentSamples.length === 0" class="empty-state">
-          <p>No samples in this folder.</p>
-        </div>
+        <EmptyState
+          v-if="currentSamples.length === 0"
+          title="No samples in this folder."
+        />
 
         <div v-else class="samples-list">
           <div
@@ -52,15 +55,20 @@
               </span>
             </div>
             <div class="sample-actions">
-              <button @click="editSample(sample)" class="action-btn">
+              <BaseButton
+                variant="outline"
+                size="small"
+                @click="editSample(sample)"
+              >
                 Edit
-              </button>
-              <button
+              </BaseButton>
+              <BaseButton
+                variant="danger"
+                size="small"
                 @click="confirmDeleteSample(sample)"
-                class="action-btn danger"
               >
                 Delete
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -68,32 +76,52 @@
     </div>
 
     <!-- Edit Sample Modal -->
-    <div v-if="editingSample" class="modal-overlay" @click="closeModal">
-      <div class="modal" @click.stop>
+    <BaseModal
+      :model-value="editingSample !== null"
+      @update:model-value="closeModal"
+    >
+      <template #header>
         <h2>Edit Sample</h2>
-        <form @submit.prevent="submitSample">
-          <div class="form-group">
-            <label>Name</label>
-            <input v-model="sampleForm.name" required />
-          </div>
-          <div class="form-group">
-            <label>Duration (seconds)</label>
-            <input
-              v-model.number="sampleForm.duration"
-              type="number"
-              min="0"
-              step="0.01"
-            />
-          </div>
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </template>
+      <form id="sample-form" @submit.prevent="submitSample">
+        <FormField label="Name">
+          <BaseInput v-model="sampleForm.name" required />
+        </FormField>
+        <FormField label="Duration (seconds)">
+          <BaseInput
+            v-model.number="sampleForm.duration"
+            type="number"
+            min="0"
+            step="0.01"
+          />
+        </FormField>
+      </form>
+      <template #footer>
+        <BaseButton variant="outline" @click="closeModal">Cancel</BaseButton>
+        <BaseButton variant="accent2" type="submit" form="sample-form"
+          >Save</BaseButton
+        >
+      </template>
+    </BaseModal>
+
+    <!-- Delete confirmation -->
+    <BaseModal
+      :model-value="pendingDeleteSample !== null"
+      @update:model-value="cancelDeleteSample"
+    >
+      <template #header>
+        <h2>Delete sample?</h2>
+      </template>
+      <p>Delete sample "{{ pendingDeleteSample?.name }}"?</p>
+      <template #footer>
+        <BaseButton variant="outline" @click="cancelDeleteSample"
+          >Cancel</BaseButton
+        >
+        <BaseButton variant="danger" @click="executeDeleteSample">
+          Delete
+        </BaseButton>
+      </template>
+    </BaseModal>
   </AdminLayout>
 </template>
 
@@ -103,9 +131,17 @@ import { useRoute } from "vue-router";
 import AdminLayout from "../../layouts/AdminLayout.vue";
 import { useAdminStore } from "../../stores/adminStore";
 import { formatDuration } from "../../lib/utils/audioFormatter";
+import { useToast } from "../../composables/useToast";
+import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseModal from "../../components/ui/BaseModal.vue";
+import BaseSpinner from "../../components/ui/BaseSpinner.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
+import FormField from "../../components/ui/FormField.vue";
+import BaseInput from "../../components/ui/BaseInput.vue";
 
 const route = useRoute();
 const adminStore = useAdminStore();
+const toast = useToast();
 
 const currentPack = computed(() => adminStore.currentPack);
 const currentFolder = ref<any>(null);
@@ -153,18 +189,39 @@ function closeModal() {
 
 async function submitSample() {
   if (editingSample.value) {
-    await adminStore.updateSample(editingSample.value.id, {
+    const result = await adminStore.updateSample(editingSample.value.id, {
       name: sampleForm.name,
       duration: sampleForm.duration,
     });
+    if (result.error) {
+      toast.error(`Erreur lors de la mise à jour de "${sampleForm.name}".`);
+    } else {
+      toast.success(`Sample "${sampleForm.name}" mis à jour.`);
+    }
   }
   closeModal();
 }
 
-async function confirmDeleteSample(sample: any) {
-  if (confirm(`Delete sample "${sample.name}"?`)) {
-    await adminStore.deleteSample(sample.id);
+const pendingDeleteSample = ref<any>(null);
+
+function confirmDeleteSample(sample: any) {
+  pendingDeleteSample.value = sample;
+}
+
+function cancelDeleteSample() {
+  pendingDeleteSample.value = null;
+}
+
+async function executeDeleteSample() {
+  if (!pendingDeleteSample.value) return;
+  const sample = pendingDeleteSample.value;
+  const result = await adminStore.deleteSample(sample.id);
+  if (result.error) {
+    toast.error(`Erreur lors de la suppression de "${sample.name}".`);
+  } else {
+    toast.success(`Sample "${sample.name}" supprimé.`);
   }
+  pendingDeleteSample.value = null;
 }
 </script>
 
@@ -174,14 +231,14 @@ async function confirmDeleteSample(sample: any) {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 
   h2 {
     margin: 24px 0 16px;
     font-size: 18px;
     font-weight: 500;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -196,7 +253,7 @@ async function confirmDeleteSample(sample: any) {
   font-size: 14px;
 
   a {
-    color: #ff3fb4;
+    color: var(--color-accent2);
     text-decoration: none;
 
     &:hover {
@@ -209,23 +266,19 @@ async function confirmDeleteSample(sample: any) {
   }
 }
 
-.loading,
-.empty-state {
-  text-align: center;
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 48px;
-  color: rgba(255, 255, 255, 0.6);
-
-  p {
-    margin: 0;
-  }
 }
 
 .folder-info-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #2a1520;
-  border-radius: 12px;
+  background: var(--color-bg-surface-deep);
+  border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid rgba(122, 15, 62, 0.3);
 }
@@ -254,8 +307,8 @@ async function confirmDeleteSample(sample: any) {
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
-  background: #2a1520;
-  border-radius: 8px;
+  background: var(--color-bg-surface-deep);
+  border-radius: var(--radius-md);
   border: 1px solid rgba(122, 15, 62, 0.3);
 }
 
@@ -265,6 +318,7 @@ async function confirmDeleteSample(sample: any) {
 
 .sample-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -273,12 +327,18 @@ async function confirmDeleteSample(sample: any) {
 .sample-name {
   font-size: 14px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sample-meta {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sample-actions {
@@ -286,116 +346,14 @@ async function confirmDeleteSample(sample: any) {
   gap: 8px;
 }
 
-.action-btn {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 6px;
-  color: #f2efe8;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+@media (max-width: 480px) {
+  .sample-item {
+    flex-wrap: wrap;
   }
 
-  &.danger {
-    color: #ef4444;
-
-    &:hover {
-      background: rgba(239, 68, 68, 0.2);
-    }
-  }
-}
-
-// Modal styles
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #2a1520;
-  border-radius: 12px;
-  padding: 24px;
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-
-  h2 {
-    margin: 0 0 20px;
-    font-size: 18px;
-    color: #f2efe8;
-  }
-}
-
-.form-group {
-  margin-bottom: 16px;
-
-  label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  input {
+  .sample-actions {
     width: 100%;
-    padding: 10px 12px;
-    background: #1a0e15;
-    border: 1px solid rgba(122, 15, 62, 0.5);
-    border-radius: 6px;
-    color: #f2efe8;
-    font-size: 14px;
-
-    &:focus {
-      outline: none;
-      border-color: #ff3fb4;
-    }
-  }
-}
-
-.modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.btn-primary {
-  padding: 10px 20px;
-  background: #ff3fb4;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: #e0359e;
-  }
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: #f2efe8;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    justify-content: flex-end;
   }
 }
 </style>

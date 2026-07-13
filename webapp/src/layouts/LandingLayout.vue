@@ -55,7 +55,7 @@ onMounted(() => {
     sans-serif;
   color: var(--color-white);
   overflow: visible;
-  background: #060b17;
+  background: var(--color-landing-bg);
 }
 
 /* Content wrapper */
@@ -72,24 +72,6 @@ onMounted(() => {
 .landing-layout.loaded .layout-content {
   opacity: 1;
   transform: translateY(0);
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(6, 11, 23, 0.5);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 210, 105, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 210, 105, 0.5);
 }
 
 /* Selection styling */

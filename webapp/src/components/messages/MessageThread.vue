@@ -3,6 +3,7 @@ import { ref, nextTick, watch } from "vue";
 import type { DirectMessage, MessageUser } from "../../services/messages";
 import MessageItem from "./MessageItem.vue";
 import MessageInput from "./MessageInput.vue";
+import BaseSpinner from "../ui/BaseSpinner.vue";
 
 const props = defineProps<{
   user: MessageUser;
@@ -64,7 +65,7 @@ defineExpose({ scrollToBottom });
 
     <div ref="messagesContainer" class="messages-list">
       <div v-if="loading" class="loading-messages">
-        <div class="loading-spinner"></div>
+        <BaseSpinner size="large" color="accent3" />
       </div>
       <template v-else>
         <MessageItem
@@ -132,7 +133,7 @@ defineExpose({ scrollToBottom });
   font-weight: 700;
   font-size: 0.9rem;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(122, 15, 62, 0.4);
+  box-shadow: 0 4px 12px rgba(var(--color-accent3-rgb), 0.4);
 }
 
 .header-info {
@@ -183,8 +184,8 @@ defineExpose({ scrollToBottom });
 
 .hint {
   font-size: 0.875rem;
-  margin-top: 0.5rem !important;
-  font-weight: 400 !important;
+  margin-top: 0.5rem;
+  font-weight: 400;
   opacity: 0.6;
 }
 
@@ -193,21 +194,6 @@ defineExpose({ scrollToBottom });
   display: flex;
   justify-content: center;
   padding: 2rem;
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-border-secondary);
-  border-top-color: var(--color-accent3-hover);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ── Typing indicator ── */

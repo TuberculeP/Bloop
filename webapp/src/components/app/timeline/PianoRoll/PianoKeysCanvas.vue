@@ -154,7 +154,8 @@ onBeforeUnmount(() => {
   width: 180px;
   min-width: 180px;
   flex-shrink: 0;
-  background: #2a2a2a;
+  background: var(--color-piano-key-black);
+  /* stylelint-disable-next-line color-no-hex -- même bordure grise que la version DOM équivalente (PianoKeys.vue) */
   border-right: 2px solid #333;
   box-sizing: border-box;
   cursor: pointer;
