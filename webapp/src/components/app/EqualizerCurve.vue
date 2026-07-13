@@ -97,8 +97,7 @@ const draw = () => {
   const ctx = canvas.value?.getContext("2d");
   if (!ctx) return;
 
-  // Background
-  ctx.fillStyle = "#061b33";
+  ctx.fillStyle = "#0a1f33";
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
   // Grid
