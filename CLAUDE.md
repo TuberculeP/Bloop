@@ -36,6 +36,7 @@ pie-poc-2/
 | Piano Roll | `webapp/src/components/app/timeline/PianoRoll/CLAUDE.md` | Éditeur de notes |
 | Admin | `webapp/src/views/admin/CLAUDE.md` | Gestion users + samples |
 | Onboarding | `webapp/src/lib/onboarding/CLAUDE.md` | Tour guidé driver.js, gotchas de ciblage dynamique |
+| Design System | `webapp/src/styles/CLAUDE.md` | Tokens couleur/radius/shadow, composants UI partagés, garde-fous stylelint |
 
 ## Commandes
 
@@ -90,7 +91,7 @@ USER_SAMPLE_QUOTA_MB=250
 - **Stores** : Pinia Composition API
 - **Composants** : Vue 3 `<script setup>` + TypeScript
 - **Audio** : Classes TypeScript pures (pas de dépendance Vue)
-- **CSS** : SCSS scoped avec variables CSS (`--color-*`)
+- **CSS** : SCSS scoped avec variables CSS (`--color-*`) — voir `webapp/src/styles/CLAUDE.md` pour la liste des tokens et des composants partagés
 - **API** : REST avec réponses `{ status, message, body }`
 - **Icônes** : pas d'emoji dans le code (UI, commits, logs) — utiliser FontAwesome (`fas fa-*`, déjà chargé dans `webapp/index.html`)
 
