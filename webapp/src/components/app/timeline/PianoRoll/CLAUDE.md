@@ -172,10 +172,11 @@ clearAllHistory()           // Appelé par timelineStore.loadProject/createNew
 
 | Action | Interaction |
 |--------|-------------|
-| Ajouter note | Clic simple sur grille vide |
+| Ajouter note | Clic simple sur grille vide (largeur = dernier resize individuel, sinon taille de maille) |
+| Ajouter note (taille de maille) | Ctrl/Cmd+clic sur grille vide |
 | Supprimer note | Clic droit sur note |
 | Sélectionner | Ctrl/Cmd+clic sur note |
-| Sélection multiple | Ctrl/Cmd+drag (marquee) |
+| Sélection multiple | Shift+drag (marquee) |
 | Déselectionner | Clic droit sur zone vide ou Escape |
 | Drag notes | Glisser note(s) sélectionnée(s) |
 | Resize notes | Glisser le handle droit |

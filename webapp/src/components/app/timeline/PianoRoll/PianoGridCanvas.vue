@@ -26,7 +26,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "add-note", x: number, y: number): void;
+  (e: "add-note", x: number, y: number, useGridSize: boolean): void;
   (e: "remove-note", noteId: string): void;
   (
     e: "update-notes",
@@ -86,6 +86,7 @@ const {
     justFinishedInteracting.value = true;
   },
   () => snapStep.value,
+  (width) => timelineStore.setLastResizedNoteWidth(width),
 );
 
 // Drag composable
@@ -182,7 +183,7 @@ const handleMouseDown = (event: MouseEvent) => {
     } else {
       handleDragStart(event, note);
     }
-  } else if (event.ctrlKey || event.metaKey) {
+  } else if (event.shiftKey) {
     event.preventDefault();
     handleSelectionStart(event);
   }
@@ -211,7 +212,7 @@ const handleClick = (event: MouseEvent) => {
 
     if (col >= 0 && col < props.cols && row >= 0 && row < TOTAL_NOTES) {
       clearSelection();
-      emit("add-note", col, row);
+      emit("add-note", col, row, event.ctrlKey || event.metaKey);
     }
   }
 };

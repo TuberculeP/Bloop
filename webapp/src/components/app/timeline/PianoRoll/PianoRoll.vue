@@ -97,11 +97,15 @@ const handleAllNotesStop = (): void => {
   activePreviewNotes.value.clear();
 };
 
-const handleAddNote = (x: number, y: number): void => {
+const handleAddNote = (x: number, y: number, useGridSize: boolean): void => {
+  const gridSize = snapTicks(timelineStore.subdivision);
+  const width = useGridSize
+    ? gridSize
+    : (timelineStore.lastResizedNoteWidth ?? gridSize);
   const noteId = trackHistoryStore.recordAddNote(props.track.id, {
     x,
     y,
-    w: snapTicks(timelineStore.subdivision),
+    w: width,
   });
   if (noteId) {
     const noteName = noteIndexToName(y);

@@ -29,6 +29,7 @@ Architecture multi-pistes style GarageBand simplifiée pour les débutants :
 project: TimelineProject
 activeTrackId: string | null
 expandedTrackId: string | null  // Quelle piste a le piano roll ouvert
+lastResizedNoteWidth: number | null  // Aide d'édition éphémère (non persistée), voir PianoRoll/CLAUDE.md
 
 // Pistes
 createTrack(instrument, name?): string

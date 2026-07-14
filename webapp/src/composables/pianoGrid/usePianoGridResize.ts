@@ -16,6 +16,7 @@ export function usePianoGridResize(
   ) => void,
   onInteractionEnd: () => void,
   snapStep: () => number = () => 1,
+  onSingleNoteResizeEnd?: (width: number) => void,
 ) {
   const resizingState = ref<ResizingState | null>(null);
   const resizePreviewDelta = ref<number | null>(null);
@@ -82,6 +83,17 @@ export function usePianoGridResize(
           updates.push({ noteId, updates: { w: info.width + delta } });
         }
         onResizeEnd(updates);
+
+        // Resize d'une note individuelle (pas d'une sélection de plusieurs
+        // notes à la fois) : on retient sa largeur finale comme largeur par
+        // défaut pour la prochaine note posée au clic.
+        if (
+          resizingState.value.notesInitialWidth.size === 1 &&
+          onSingleNoteResizeEnd
+        ) {
+          const [info] = resizingState.value.notesInitialWidth.values();
+          onSingleNoteResizeEnd(info.width + delta);
+        }
       }
       onInteractionEnd();
     }

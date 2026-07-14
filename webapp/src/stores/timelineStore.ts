@@ -72,6 +72,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
   const metronomeEnabled = useUiLayoutPreference("metronome-enabled", false);
+  // Aide d'édition éphémère (non persistée) : dernière largeur donnée à une
+  // note via un resize individuel, utilisée comme largeur par défaut pour la
+  // prochaine note posée au clic dans le piano roll.
+  const lastResizedNoteWidth = ref<number | null>(null);
 
   // ============================================
   // Computed Properties
@@ -534,6 +538,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     } else {
       expandTrack(trackId);
     }
+  };
+
+  const setLastResizedNoteWidth = (width: number): void => {
+    lastResizedNoteWidth.value = width;
   };
 
   const toggleAutomationExpanded = (trackId: string): void => {
@@ -1060,6 +1068,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     expandedTrack,
     automationExpandedMaster,
     metronomeEnabled,
+    lastResizedNoteWidth,
 
     // Actions - Tracks
     createTrack,
@@ -1091,6 +1100,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     expandTrack,
     collapseTrack,
     toggleTrackExpanded,
+    setLastResizedNoteWidth,
     setActiveTrack,
     automationExpandedTrackId,
     toggleAutomationExpanded,
