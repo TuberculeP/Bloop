@@ -555,14 +555,18 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     lastResizedNoteWidth.value = width;
   };
 
+  const clamp = (value: number, min: number, max: number): number =>
+    Math.min(max, Math.max(min, value));
+
   const setZoomLevel = (value: number): void => {
-    zoomLevel.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
+    zoomLevel.value = clamp(value, ZOOM_MIN, ZOOM_MAX);
   };
 
   const setZoomWheelSpeed = (value: number): void => {
-    zoomWheelSpeed.value = Math.min(
+    zoomWheelSpeed.value = clamp(
+      value,
+      ZOOM_WHEEL_SPEED_MIN,
       ZOOM_WHEEL_SPEED_MAX,
-      Math.max(ZOOM_WHEEL_SPEED_MIN, value),
     );
   };
 
@@ -628,9 +632,6 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // ============================================
   // Actions - Mastering (Compresseur / Limiteur)
   // ============================================
-
-  const clamp = (value: number, min: number, max: number): number =>
-    Math.min(max, Math.max(min, value));
 
   const updateCompressor = (patch: Partial<MasterCompressorConfig>): void => {
     const current = project.value.compressor ?? cloneCompressorConfig();

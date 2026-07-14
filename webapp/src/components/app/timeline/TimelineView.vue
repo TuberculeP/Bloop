@@ -1094,11 +1094,10 @@ defineExpose({
   }
 }
 
-.mic-picker-dropdown {
+.mic-picker-dropdown,
+.zoom-settings-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
-  min-width: 220px;
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
   border-radius: var(--radius-md);
@@ -1107,7 +1106,13 @@ defineExpose({
   z-index: 100;
 }
 
-.mic-picker-header {
+.mic-picker-dropdown {
+  left: 0;
+  min-width: 220px;
+}
+
+.mic-picker-header,
+.zoom-settings-header {
   padding: 10px 14px;
   font-size: 11px;
   font-weight: 600;
@@ -1239,35 +1244,7 @@ defineExpose({
   }
 }
 
-.metronome-toggle {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    border-color: var(--color-accent2);
-    color: var(--color-white);
-  }
-
-  &.active {
-    background: var(--color-accent2);
-    border-color: var(--color-accent2);
-    color: var(--color-white);
-  }
-}
-
-.zoom-control {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+.metronome-toggle,
 .zoom-btn {
   width: 32px;
   height: 32px;
@@ -1283,6 +1260,18 @@ defineExpose({
     border-color: var(--color-accent2);
     color: var(--color-white);
   }
+}
+
+.metronome-toggle.active {
+  background: var(--color-accent2);
+  border-color: var(--color-accent2);
+  color: var(--color-white);
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .zoom-percent {
@@ -1306,27 +1295,8 @@ defineExpose({
 }
 
 .zoom-settings-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
   right: 0;
   min-width: 260px;
-  background: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-  z-index: 100;
-}
-
-.zoom-settings-header {
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.6);
-  background: var(--color-bg-primary-dark);
-  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .zoom-settings-row {
