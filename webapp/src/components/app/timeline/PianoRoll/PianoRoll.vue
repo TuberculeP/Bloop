@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from "vue";
+import { ref, computed, watchEffect, onBeforeUnmount } from "vue";
 import type { Track, MidiNote, NoteName } from "../../../../lib/utils/types";
 import { useTimelineStore } from "../../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../../stores/trackAudioStore";
@@ -18,26 +18,27 @@ const USE_CANVAS = true;
 
 const keysContainerRef = ref<HTMLElement | null>(null);
 const gridContainerRef = ref<HTMLElement | null>(null);
-let isSyncingScroll = false;
 
+// Sync basée sur la valeur plutôt qu'un flag+rAF : un flag temporel suppose
+// au plus un scroll par frame, ce qui casse sous charge (pendant le playback,
+// activeNotes change de référence à chaque frame et force un redraw canvas
+// continu) — un scroll réel arrivant pendant la fenêtre de verrouillage était
+// silencieusement ignoré, désynchronisant les deux conteneurs jusqu'à ce
+// qu'un scroll ultérieur écrase l'un avec la valeur périmée de l'autre
+// (symptôme : la vue des octaves "rollback"). Comparer les valeurs élimine
+// la boucle infinie sans jamais pouvoir perdre un événement.
 const syncScrollFromGrid = () => {
-  if (isSyncingScroll || !keysContainerRef.value || !gridContainerRef.value)
-    return;
-  isSyncingScroll = true;
-  keysContainerRef.value.scrollTop = gridContainerRef.value.scrollTop;
-  requestAnimationFrame(() => {
-    isSyncingScroll = false;
-  });
+  if (!keysContainerRef.value || !gridContainerRef.value) return;
+  if (keysContainerRef.value.scrollTop !== gridContainerRef.value.scrollTop) {
+    keysContainerRef.value.scrollTop = gridContainerRef.value.scrollTop;
+  }
 };
 
 const syncScrollFromKeys = () => {
-  if (isSyncingScroll || !keysContainerRef.value || !gridContainerRef.value)
-    return;
-  isSyncingScroll = true;
-  gridContainerRef.value.scrollTop = keysContainerRef.value.scrollTop;
-  requestAnimationFrame(() => {
-    isSyncingScroll = false;
-  });
+  if (!keysContainerRef.value || !gridContainerRef.value) return;
+  if (gridContainerRef.value.scrollTop !== keysContainerRef.value.scrollTop) {
+    gridContainerRef.value.scrollTop = keysContainerRef.value.scrollTop;
+  }
 };
 
 const props = defineProps<{
@@ -56,24 +57,38 @@ const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
 
 const activePreviewNotes = ref<Set<NoteName>>(new Set());
 
-const playbackActiveNotes = computed(() => {
-  if (!props.isPlaying) return new Set<NoteName>();
-  const activeNotes = new Set<NoteName>();
-  const intPosition = Math.floor(props.playbackPosition);
-  for (const note of props.track.notes) {
-    if (intPosition >= note.x && intPosition < note.x + note.w) {
-      activeNotes.add(noteIndexToName(note.y));
+const setsAreEqual = (a: Set<NoteName>, b: Set<NoteName>): boolean => {
+  if (a.size !== b.size) return false;
+  for (const note of a) {
+    if (!b.has(note)) return false;
+  }
+  return true;
+};
+
+// allActiveNotes ref réassigné seulement si son contenu change réellement
+// (pas juste à chaque tick de playbackPosition, qui bouge à 60fps) : cette
+// valeur est passée en prop à PianoGridCanvas/PianoKeysCanvas, dont les watch
+// déclenchent un redraw complet du canvas dès que la référence change. Avec
+// un computed recréant un Set à chaque frame (même quand aucune note n'a
+// réellement démarré/stoppé), les deux canvases redessinaient 60x/s, ce qui
+// sature le thread principal pendant le playback (lag au zoom, et scroll
+// vertical du piano roll qui "rollback" sous la charge — voir le fix de sync
+// scrollTop plus haut, insuffisant seul face à cette charge).
+const allActiveNotes = ref<Set<NoteName>>(new Set());
+
+watchEffect(() => {
+  const combined = new Set<NoteName>(activePreviewNotes.value);
+  if (props.isPlaying) {
+    const intPosition = Math.floor(props.playbackPosition);
+    for (const note of props.track.notes) {
+      if (intPosition >= note.x && intPosition < note.x + note.w) {
+        combined.add(noteIndexToName(note.y));
+      }
     }
   }
-  return activeNotes;
-});
-
-const allActiveNotes = computed(() => {
-  const combined = new Set<NoteName>(activePreviewNotes.value);
-  for (const note of playbackActiveNotes.value) {
-    combined.add(note);
+  if (!setsAreEqual(combined, allActiveNotes.value)) {
+    allActiveNotes.value = combined;
   }
-  return combined;
 });
 
 const getPreviewNoteId = (note: NoteName): string => `preview_${note}`;

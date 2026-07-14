@@ -5,7 +5,7 @@ import { useSampleFileDrop } from "../useSampleFileDrop";
 
 /** Drop de fichiers audio depuis l'OS directement sur la timeline : crée une piste audio et y place les samples. */
 export function useTimelineFileDrop(
-  colWidth: number,
+  colWidth: () => number,
   trackHeaderWidth: number,
 ) {
   const timelineStore = useTimelineStore();
@@ -34,7 +34,7 @@ export function useTimelineFileDrop(
     const rect = tracksContainerRef.value?.getBoundingClientRect();
     if (!rect) return;
     const x = Math.floor(
-      (event.clientX - rect.left - trackHeaderWidth) / colWidth,
+      (event.clientX - rect.left - trackHeaderWidth) / colWidth(),
     );
 
     const trackId = timelineStore.createTrack(

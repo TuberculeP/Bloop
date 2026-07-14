@@ -44,7 +44,7 @@ export interface PlaybackEmit {
  */
 export function useTimelinePlaybackEngine(
   emit: PlaybackEmit,
-  colWidth: number,
+  colWidth: () => number,
   trackHeaderWidth: number,
   onLoopEnd: () => boolean,
   onStop?: () => void,
@@ -69,11 +69,11 @@ export function useTimelinePlaybackEngine(
   );
 
   const cursorStyle = computed(() => ({
-    transform: `translateX(${currentPosition.value * colWidth + trackHeaderWidth}px)`,
+    transform: `translateX(${currentPosition.value * colWidth() + trackHeaderWidth}px)`,
   }));
 
   const checkpointStyle = computed(() => ({
-    left: `${checkpointPosition.value * colWidth + trackHeaderWidth}px`,
+    left: `${checkpointPosition.value * colWidth() + trackHeaderWidth}px`,
   }));
 
   const loopEndPosition = computed(() => {

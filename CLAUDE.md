@@ -95,6 +95,10 @@ USER_SAMPLE_QUOTA_MB=250
 - **API** : REST avec réponses `{ status, message, body }`
 - **Icônes** : pas d'emoji dans le code (UI, commits, logs) — utiliser FontAwesome (`fas fa-*`, déjà chargé dans `webapp/index.html`)
 
+## Vérification
+
+L'utilisateur teste systématiquement les changements manuellement dans son navigateur. Ne pas lancer le dev server, écrire des scripts e2e (Playwright) ou faire de captures d'écran pour vérifier une fonctionnalité, sauf demande explicite. Se limiter à `lint`/`vue-tsc`/`build` comme vérification automatisée.
+
 ## Domaines
 
 | Env | URL |
