@@ -252,7 +252,7 @@ onBeforeUnmount(() => {
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: 4px 8px;
+  padding: 4px 0;
   overflow: hidden;
 }
 
@@ -264,6 +264,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 4px;
+  padding: 0 8px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 

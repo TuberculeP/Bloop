@@ -131,7 +131,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
 
   const generateWaveformData = (
     buffer: AudioBuffer,
-    points: number = 128,
+    points: number = 1000,
   ): number[] => {
     const channelData = buffer.getChannelData(0);
     const blockSize = Math.floor(channelData.length / points);
