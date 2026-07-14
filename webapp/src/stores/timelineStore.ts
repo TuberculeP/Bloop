@@ -15,6 +15,7 @@ import type {
   AutomationPoint,
   MasterCompressorConfig,
   MasterLimiterConfig,
+  TimeSignature,
 } from "../lib/utils/types";
 import { TRACK_COLORS } from "../lib/utils/types";
 import {
@@ -24,11 +25,18 @@ import {
   DEFAULT_COMPRESSOR_CONFIG,
   DEFAULT_LIMITER_CONFIG,
 } from "../lib/audio/config";
+import {
+  DEFAULT_TIME_SIGNATURE,
+  DEFAULT_SUBDIVISION,
+  LEGACY_TO_TICKS_SCALE,
+  migrateLegacyProject,
+} from "../lib/audio/timeGrid";
 import { useProjectStore } from "./projectStore";
 import { useUiLayoutPreference } from "../composables/useUiLayoutStorage";
 
 const STORAGE_KEY = "bloop-timeline-project";
-const DEFAULT_COLS = 128; // 32 mesures
+const CURRENT_PROJECT_VERSION = "5.0";
+const DEFAULT_COLS = 128 * LEGACY_TO_TICKS_SCALE; // 8 mesures en 4/4
 const DEFAULT_TEMPO = 120;
 const DEFAULT_VOLUME = 100;
 const DEFAULT_REVERB = 20;
@@ -42,13 +50,15 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     tracks: [],
     cols: DEFAULT_COLS,
     tempo: DEFAULT_TEMPO,
+    timeSignature: { ...DEFAULT_TIME_SIGNATURE },
+    subdivision: DEFAULT_SUBDIVISION,
     volume: DEFAULT_VOLUME,
     reverb: DEFAULT_REVERB,
     eqBands: cloneEQBands(),
     compressor: cloneCompressorConfig(),
     limiter: cloneLimiterConfig(),
     automationLanes: [],
-    version: "4.0",
+    version: CURRENT_PROJECT_VERSION,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -73,6 +83,22 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     get: () => project.value.tempo,
     set: (value: number) => {
       project.value.tempo = value;
+      project.value.updatedAt = new Date();
+    },
+  });
+
+  const timeSignature = computed<TimeSignature>({
+    get: () => project.value.timeSignature ?? DEFAULT_TIME_SIGNATURE,
+    set: (value: TimeSignature) => {
+      project.value.timeSignature = value;
+      project.value.updatedAt = new Date();
+    },
+  });
+
+  const subdivision = computed({
+    get: () => project.value.subdivision ?? DEFAULT_SUBDIVISION,
+    set: (value: number) => {
+      project.value.subdivision = value;
       project.value.updatedAt = new Date();
     },
   });
@@ -817,12 +843,9 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         return false;
       }
 
-      // Vérifier la version - si ancienne version avec clips, on repart de zéro
-      if (data.version !== "4.0") {
-        console.log("Ancienne version détectée, création nouveau projet");
-        isLoadingProject.value = false;
-        return false;
-      }
+      // Migration vers la grille en ticks pour les projets antérieurs à ce chantier
+      migrateLegacyProject(data);
+      data.version = CURRENT_PROJECT_VERSION;
 
       // Convertir les dates
       data.createdAt = new Date(data.createdAt);
@@ -875,6 +898,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
   const loadProjectData = (data: TimelineProject): void => {
     isLoadingProject.value = true;
+
+    // Migration vers la grille en ticks pour les projets antérieurs à ce chantier
+    migrateLegacyProject(data);
+    data.version = CURRENT_PROJECT_VERSION;
 
     // Convertir les dates
     data.createdAt = new Date(data.createdAt);
@@ -962,13 +989,15 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       tracks: [],
       cols: DEFAULT_COLS,
       tempo: DEFAULT_TEMPO,
+      timeSignature: { ...DEFAULT_TIME_SIGNATURE },
+      subdivision: DEFAULT_SUBDIVISION,
       volume: DEFAULT_VOLUME,
       reverb: DEFAULT_REVERB,
       eqBands: cloneEQBands(),
       compressor: cloneCompressorConfig(),
       limiter: cloneLimiterConfig(),
       automationLanes: [],
-      version: "4.0",
+      version: CURRENT_PROJECT_VERSION,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -1015,6 +1044,8 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     tracks,
     sortedTracks,
     tempo,
+    timeSignature,
+    subdivision,
     volume,
     reverb,
     eqBands,

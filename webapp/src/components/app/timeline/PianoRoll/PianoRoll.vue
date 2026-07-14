@@ -9,9 +9,9 @@ import {
   NOTE_ROW_HEIGHT,
   noteIndexToName,
 } from "../../../../lib/audio/pianoRollConstants";
+import { snapTicks } from "../../../../lib/audio/timeGrid";
 import PianoKeys from "./PianoKeys.vue";
 import PianoKeysCanvas from "./PianoKeysCanvas.vue";
-import PianoGrid from "./PianoGrid.vue";
 import PianoGridCanvas from "./PianoGridCanvas.vue";
 
 const USE_CANVAS = true;
@@ -101,8 +101,7 @@ const handleAddNote = (x: number, y: number): void => {
   const noteId = trackHistoryStore.recordAddNote(props.track.id, {
     x,
     y,
-    w: 1,
-    h: 1,
+    w: snapTicks(timelineStore.subdivision),
   });
   if (noteId) {
     const noteName = noteIndexToName(y);
@@ -127,7 +126,6 @@ const handlePasteNotes = (
       x: note.x,
       y: note.y,
       w: note.w,
-      h: 1,
     });
   }
   trackHistoryStore.endBatch();
@@ -190,8 +188,7 @@ onBeforeUnmount(() => {
       class="piano-grid-container"
       @scroll="syncScrollFromGrid"
     >
-      <component
-        :is="USE_CANVAS ? PianoGridCanvas : PianoGrid"
+      <PianoGridCanvas
         :notes="track.notes"
         :cols="cols"
         :col-width="colWidth"

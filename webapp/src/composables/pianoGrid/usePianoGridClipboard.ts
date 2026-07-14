@@ -15,6 +15,7 @@ export function usePianoGridClipboard(
   cols: () => number,
   mouseGridPos: Ref<{ col: number; row: number }>,
   onPaste: (notes: Array<{ x: number; y: number; w: number }>) => void,
+  snapStep: () => number = () => 1,
 ) {
   const clipboard = ref<ClipboardNote[]>([]);
 
@@ -43,7 +44,9 @@ export function usePianoGridClipboard(
   const pasteNotes = async () => {
     if (clipboard.value.length === 0) return;
 
-    const baseX = mouseGridPos.value.col + 1;
+    const step = snapStep();
+    const snappedCol = Math.round(mouseGridPos.value.col / step) * step;
+    const baseX = snappedCol + step;
     const baseY = mouseGridPos.value.row;
 
     const notesToPaste: Array<{ x: number; y: number; w: number }> = [];

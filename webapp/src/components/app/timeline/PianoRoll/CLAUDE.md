@@ -6,9 +6,9 @@
 
 ```
 PianoRoll/
-├── PianoRoll.vue     # Orchestrateur (audio, history, emits vers parent)
-├── PianoGrid.vue     # Grille interactive (compose les composables)
-├── PianoKeys.vue     # Clavier vertical avec preview audio
+├── PianoRoll.vue        # Orchestrateur (audio, history, emits vers parent)
+├── PianoGridCanvas.vue  # Grille interactive canvas (compose les composables)
+├── PianoKeysCanvas.vue  # Clavier vertical canvas avec preview audio
 └── CLAUDE.md
 
 composables/pianoGrid/
@@ -26,9 +26,10 @@ stores/
 ## Composants
 
 ### PianoRoll.vue
-**Rôle** : Orchestrateur entre PianoKeys, PianoGrid et les stores.
+**Rôle** : Orchestrateur entre PianoKeysCanvas, PianoGridCanvas et les stores.
 
 - Reçoit `track`, `cols`, `colWidth`, `playbackPosition`, `isPlaying`
+- `cols`/`colWidth` sont exprimés en ticks (`TICKS_PER_BEAT = 96`, voir `lib/audio/timeGrid.ts`), pas en "colonnes"
 - Gère le **preview audio** des notes (clavier + playback)
 - Utilise `trackHistoryStore` pour wrapper les mutations avec undo/redo
 - Émet vers le parent : rien (mutations directes via stores)
@@ -43,14 +44,15 @@ handlePasteNotes(notes[])    // startBatch → mutations → endBatch
 handleUndo() / handleRedo()  // trackHistoryStore.undo/redo(trackId)
 ```
 
-### PianoGrid.vue
-**Rôle** : Grille interactive qui compose les 5 composables.
+### PianoGridCanvas.vue
+**Rôle** : Grille interactive canvas qui compose les 5 composables.
 
 - Reçoit `notes`, `cols`, `colWidth`, `color`, `activeNotes`, `trackId`
 - Émet : `add-note`, `remove-note`, `update-notes`, `delete-notes`, `paste-notes`, `undo`, `redo`
 - Gère le style des notes avec preview (drag/resize en temps réel)
+- Lit `timelineStore.subdivision` pour calculer le pas de snap (`snapTicks`, voir `lib/audio/timeGrid.ts`) transmis à `usePianoGridDrag`/`usePianoGridResize`/`usePianoGridClipboard`
 
-### PianoKeys.vue
+### PianoKeysCanvas.vue
 **Rôle** : Clavier vertical sticky avec preview audio.
 
 - Reçoit `activeNotes: Set<NoteName>`, `gridHeight`
@@ -83,13 +85,14 @@ Gère le resize groupé avec preview temps réel.
 ```typescript
 const {
   resizingState,      // { startX, notesInitialWidth: Map }
-  resizePreviewDelta, // Delta actuel (nombre de colonnes)
+  resizePreviewDelta, // Delta actuel (en ticks, snappé sur snapStep)
   isResizing,
   isNoteResizing,     // (noteId) => boolean
   handleResizeStart,  // Démarre le resize
   cleanup,
-} = usePianoGridResize(notes, selectedNotes, colWidth, cols, onResizeEnd, onInteractionEnd);
+} = usePianoGridResize(notes, selectedNotes, colWidth, cols, onResizeEnd, onInteractionEnd, snapStep);
 ```
+`snapStep` (= `snapTicks(subdivision)`) est optionnel (défaut 1 tick) et borne l'arrondi du delta au pas de grille choisi par l'utilisateur.
 
 ### usePianoGridDrag
 Gère le drag groupé avec contraintes et preview.
@@ -102,8 +105,9 @@ const {
   isNoteDragging,     // (noteId) => boolean
   handleDragStart,
   cleanup,
-} = usePianoGridDrag(notes, selectedNotes, colWidth, cols, onDragEnd, onInteractionEnd);
+} = usePianoGridDrag(notes, selectedNotes, colWidth, cols, onDragEnd, onInteractionEnd, snapStep);
 ```
+Même paramètre optionnel `snapStep` que `usePianoGridResize`.
 
 ### usePianoGridClipboard
 Gère copy/paste/duplicate avec position relative.
@@ -112,9 +116,9 @@ Gère copy/paste/duplicate avec position relative.
 const {
   clipboard,              // Notes copiées (positions relatives)
   copySelectedNotes,      // Copie avec ancre bottom-left
-  pasteNotes,             // Colle à position souris + 1 col
+  pasteNotes,             // Colle à position souris (snappée) + 1 pas de grille
   duplicateSelectedNotes, // Clone à droite de la sélection
-} = usePianoGridClipboard(notes, selectedNotes, cols, mouseGridPos, onPaste);
+} = usePianoGridClipboard(notes, selectedNotes, cols, mouseGridPos, onPaste, snapStep);
 ```
 
 ### usePianoGridKeyboard
@@ -176,7 +180,7 @@ clearAllHistory()           // Appelé par timelineStore.loadProject/createNew
 | Drag notes | Glisser note(s) sélectionnée(s) |
 | Resize notes | Glisser le handle droit |
 | Copier | Ctrl+C |
-| Coller | Ctrl+V (position souris + 1 col) |
+| Coller | Ctrl+V (position souris + 1 pas de grille) |
 | Dupliquer | Ctrl+D (clone à droite) |
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Shift+Z ou Ctrl+Y |

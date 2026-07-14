@@ -5,11 +5,15 @@ import {
   isOctaveStart,
   noteIndexToName,
 } from "../audio/pianoRollConstants";
+import { TICKS_PER_BEAT, ticksPerBar, snapTicks } from "../audio/timeGrid";
+import type { TimeSignature } from "../utils/types";
 
 export interface GridRenderConfig {
   cols: number;
   colWidth: number;
   trackColor: string;
+  timeSignature: TimeSignature;
+  subdivision: number;
 }
 
 export interface NoteRenderData {
@@ -135,8 +139,9 @@ export class PianoGridRenderer {
 
     ctx.strokeStyle = COLORS.cellBorderVertical;
     ctx.beginPath();
-    for (let col = 1; col <= config.cols; col++) {
-      const x = col * config.colWidth - 0.5;
+    const step = snapTicks(config.subdivision);
+    for (let tick = step; tick <= config.cols; tick += step) {
+      const x = tick * config.colWidth - 0.5;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
@@ -161,17 +166,21 @@ export class PianoGridRenderer {
     ctx.stroke();
   }
 
-  // Une ligne toutes les 4 colonnes = 1 temps. 1 ligne sur 4
-  // (= toutes les 4 temps = 1 mesure en 4/4) est marquée en rose clair.
+  // Une ligne à chaque temps (TICKS_PER_BEAT ticks), en rose clair sur le
+  // premier temps de chaque mesure (ticksPerBar selon la signature rythmique).
   private drawMeasureLines() {
     const { ctx, config } = this;
 
-    for (let measure = 0; measure <= Math.ceil(config.cols / 4); measure++) {
-      const x = measure * 4 * config.colWidth - 0.5;
-      const isBeatMarker = measure % 4 === 0;
+    const barLength = ticksPerBar(config.timeSignature);
+    const beatCount = Math.ceil(config.cols / TICKS_PER_BEAT);
+
+    for (let beat = 0; beat <= beatCount; beat++) {
+      const tick = beat * TICKS_PER_BEAT;
+      const x = tick * config.colWidth - 0.5;
+      const isBarStart = tick % barLength === 0;
 
       ctx.beginPath();
-      ctx.strokeStyle = isBeatMarker
+      ctx.strokeStyle = isBarStart
         ? COLORS.metronomeBeatLine
         : COLORS.measureLine;
       ctx.lineWidth = 1;

@@ -23,6 +23,7 @@ export function usePianoGridDrag(
     updates: Array<{ noteId: string; updates: Partial<MidiNote> }>,
   ) => void,
   onInteractionEnd: () => void,
+  snapStep: () => number = () => 1,
 ) {
   const dragState = ref<DragState | null>(null);
   const dragPreviewDeltas = ref<{ dx: number; dy: number } | null>(null);
@@ -75,7 +76,8 @@ export function usePianoGridDrag(
 
     const deltaX = event.clientX - dragState.value.startMouseX;
     const deltaY = event.clientY - dragState.value.startMouseY;
-    const rawDeltaCols = Math.round(deltaX / colWidth());
+    const step = snapStep();
+    const rawDeltaCols = Math.round(deltaX / colWidth() / step) * step;
     const rawDeltaRows = Math.round(deltaY / NOTE_ROW_HEIGHT);
 
     if (

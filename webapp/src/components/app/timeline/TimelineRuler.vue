@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useTimelineStore } from "../../../stores/timelineStore";
+import { ticksPerBar } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   cols: number;
@@ -11,11 +13,14 @@ const emit = defineEmits<{
   (e: "seek", position: number): void;
 }>();
 
+const timelineStore = useTimelineStore();
+
 const measures = computed(() => {
-  const measureCount = Math.ceil(props.cols / 4);
+  const barLength = ticksPerBar(timelineStore.timeSignature);
+  const measureCount = Math.ceil(props.cols / barLength);
   return Array.from({ length: measureCount }, (_, i) => ({
     number: i + 1,
-    position: i * 4 * props.colWidth,
+    position: i * barLength * props.colWidth,
   }));
 });
 

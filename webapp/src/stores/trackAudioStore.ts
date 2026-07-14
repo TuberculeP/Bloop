@@ -16,6 +16,7 @@ import { createInstrumentEngine } from "../lib/audio/instrumentFactory";
 import { createImpulseResponse, createEQFilter } from "../lib/audio/config";
 import { applyAutomationToChannel } from "../lib/audio/automation";
 import type { AutomatableParam } from "../lib/utils/types";
+import { ticksPerSecond } from "../lib/audio/timeGrid";
 
 interface TrackChannel {
   trackId: string;
@@ -222,10 +223,10 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       return;
     }
 
-    const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+    const tickRate = ticksPerSecond(timelineStore.tempo);
     const offsetInSeconds =
-      (clip.startOffset + playbackOffsetColumns) / stepsPerSecond;
-    const durationInSeconds = (clip.w - playbackOffsetColumns) / stepsPerSecond;
+      (clip.startOffset + playbackOffsetColumns) / tickRate;
+    const durationInSeconds = (clip.w - playbackOffsetColumns) / tickRate;
 
     engine.playClip(clip.id, buffer, offsetInSeconds, durationInSeconds);
   };

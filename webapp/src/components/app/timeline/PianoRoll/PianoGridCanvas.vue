@@ -13,6 +13,8 @@ import {
   usePianoGridClipboard,
   usePianoGridKeyboard,
 } from "../../../../composables/pianoGrid";
+import { useTimelineStore } from "../../../../stores/timelineStore";
+import { snapTicks } from "../../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -36,6 +38,8 @@ const emit = defineEmits<{
   (e: "redo"): void;
 }>();
 
+const timelineStore = useTimelineStore();
+
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const mouseGridPos = ref<{ col: number; row: number }>({ col: 0, row: 0 });
@@ -43,6 +47,8 @@ const justFinishedInteracting = ref(false);
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
+const subdivision = computed(() => timelineStore.subdivision);
+const snapStep = computed(() => snapTicks(subdivision.value));
 
 // Selection composable with containerRef
 const {
@@ -79,6 +85,7 @@ const {
   () => {
     justFinishedInteracting.value = true;
   },
+  () => snapStep.value,
 );
 
 // Drag composable
@@ -97,6 +104,7 @@ const {
   () => {
     justFinishedInteracting.value = true;
   },
+  () => snapStep.value,
 );
 
 // Clipboard composable
@@ -107,6 +115,7 @@ const { copySelectedNotes, pasteNotes, duplicateSelectedNotes } =
     () => props.cols,
     mouseGridPos,
     (notes) => emit("paste-notes", notes),
+    () => snapStep.value,
   );
 
 // Delete selected notes
@@ -135,6 +144,8 @@ const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
     colWidth: () => props.colWidth,
     notes: () => props.notes,
     trackColor: () => props.color,
+    timeSignature: () => timelineStore.timeSignature,
+    subdivision: () => subdivision.value,
     activeNotes: () => props.activeNotes,
     selectedNotes,
     dragState,
@@ -191,7 +202,8 @@ const handleClick = (event: MouseEvent) => {
   const note = getNoteAtPosition(x, y);
 
   if (!note) {
-    const col = Math.floor(x / props.colWidth);
+    const col =
+      Math.round(x / props.colWidth / snapStep.value) * snapStep.value;
     const row = Math.floor(y / NOTE_ROW_HEIGHT);
 
     if (col >= 0 && col < props.cols && row >= 0 && row < TOTAL_NOTES) {

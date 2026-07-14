@@ -93,9 +93,9 @@ Track {
 AudioClip {
   id: string
   sampleId: string    // Référence vers AudioSample
-  x: number           // Position sur la timeline (en colonnes)
-  w: number           // Largeur (en colonnes)
-  startOffset: number // Décalage dans le sample source
+  x: number           // Position sur la timeline (en ticks, 96 ticks/temps)
+  w: number           // Largeur (en ticks)
+  startOffset: number // Décalage dans le sample source (en ticks)
 }
 
 AudioSample {
@@ -105,20 +105,35 @@ AudioSample {
 
 MidiNote {
   i: string    // ID unique
-  x: number    // Position absolue sur la timeline (en colonnes)
+  x: number    // Position absolue sur la timeline (en ticks, 96 ticks/temps)
   y: number    // Hauteur de note (0-86, 0 = aigu)
-  w: number    // Durée (en colonnes)
-  h: number    // Toujours 1
+  w: number    // Durée (en ticks)
+}
+
+TimeSignature {
+  numerator: number    // Temps par mesure (ex: 7 pour 7/8)
+  denominator: number  // Valeur du temps (1,2,4,8,16,32)
 }
 
 TimelineProject {
-  name, tracks: Track[], cols, tempo, volume, reverb, eqBands,
-  version: "4.0", createdAt, updatedAt
+  name, tracks: Track[], cols, tempo,
+  timeSignature: TimeSignature,  // Défaut { numerator: 4, denominator: 4 }
+  subdivision: number,           // Résolution de snap (pas/temps), défaut 4 — UI uniquement, ne change pas le stockage des notes
+  volume, reverb, eqBands,
+  version: "5.0", createdAt, updatedAt
 }
 
 TRACK_COLORS // Palette de couleurs pour les pistes
 DEFAULT_EQ_BANDS // EQ 5 bandes par défaut (via cloneEQBands())
 ```
+
+Les positions (`x`/`w`/`cols`/`startOffset`) sont stockées dans une grille fixe en
+**ticks** (`TICKS_PER_BEAT = 96`, voir `lib/audio/timeGrid.ts`), indépendante de la
+signature rythmique et de la subdivision — ces deux derniers champs ne changent
+que l'affichage de la grille/du snap, jamais la position réelle des notes
+existantes. Les anciens projets (positions en "colonnes", 1 colonne = 1
+double-croche) sont migrés automatiquement au chargement (`timelineStore.ts`,
+`migrateLegacyProject`).
 
 ### Engines Audio (`lib/audio/engines/`)
 
@@ -237,9 +252,9 @@ Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre
 
 | Composant        | Rôle                                          |
 | ---------------- | --------------------------------------------- |
-| `PianoRoll.vue`  | Orchestrateur : audio preview, history, emits |
-| `PianoGrid.vue`  | Grille interactive (notes, drag, resize...)   |
-| `PianoKeys.vue`  | Clavier vertical avec preview au clic         |
+| `PianoRoll.vue`        | Orchestrateur : audio preview, history, emits |
+| `PianoGridCanvas.vue`  | Grille interactive (notes, drag, resize...)   |
+| `PianoKeys.vue`        | Clavier vertical avec preview au clic         |
 
 **Composables** (`composables/pianoGrid/`) :
 - `usePianoGridSelection` - selectedNotes + marquee selection
@@ -280,10 +295,12 @@ Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre
 ### Timeline/UI
 Définies dans `TimelineView.vue` et passées en props aux enfants (`TrackRow`, `TimelineRuler`, `MasterTrackRow`) — pas de fichier de constantes partagé pour la timeline (contrairement au piano roll, voir plus bas).
 ```typescript
-const COL_WIDTH = 20;            // Largeur d'une colonne (1 step)
+const PX_PER_BEAT = 80;                 // Densité visuelle de référence (1 temps)
+const COL_WIDTH = pxPerTick(PX_PER_BEAT); // px par tick, dérivé via lib/audio/timeGrid.ts
 const TRACK_HEADER_WIDTH = 180;  // Header sticky
 const TRACK_PREVIEW_HEIGHT = 60; // Hauteur preview notes
 ```
+`colWidth` est passé partout comme "px par tick" (et non plus "px par colonne") : `x_px = x_ticks * colWidth`. Voir `lib/audio/timeGrid.ts` pour `TICKS_PER_BEAT`, `ticksPerBar`, `snapTicks`, `ticksPerSecond`.
 
 ### Piano Roll (`lib/audio/pianoRollConstants.ts`)
 ```typescript
@@ -314,7 +331,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 
 - [ ] Synchronisation audio multi-pistes (timing précis)
 - [x] Gestion mémoire des engines (dispose correct)
-- [ ] Persistance localStorage avec le nouveau format v4.0
+- [ ] Persistance localStorage avec le nouveau format v5.0 (grille en ticks)
 - [ ] ElementarySynth non implémenté (fallback sur BasicSynth)
 
 ### Bugs résolus

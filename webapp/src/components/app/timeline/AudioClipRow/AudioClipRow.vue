@@ -10,6 +10,7 @@ import {
   useAudioClipKeyboard,
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
+import { ticksPerBar, ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
@@ -37,6 +38,8 @@ onMounted(() => {
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const clips = computed(() => props.track.clips ?? []);
+const barLength = computed(() => ticksPerBar(timelineStore.timeSignature));
+const measureCount = computed(() => Math.ceil(props.cols / barLength.value));
 
 const {
   selectedClipIds,
@@ -165,8 +168,8 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
   const loadedSample = audioLibraryStore.getSample(sampleId);
   if (!loadedSample) return;
 
-  const stepsPerSecond = (timelineStore.tempo / 60) * 4;
-  const durationInSteps = Math.ceil(loadedSample.duration * stepsPerSecond);
+  const tickRate = ticksPerSecond(timelineStore.tempo);
+  const durationInSteps = Math.ceil(loadedSample.duration * tickRate);
 
   trackHistoryStore.recordAddClip(
     props.track.id,
@@ -244,10 +247,10 @@ onBeforeUnmount(() => {
     >
       <div class="grid-lines">
         <div
-          v-for="i in Math.ceil(cols / 4)"
+          v-for="i in measureCount"
           :key="i"
           class="measure-line"
-          :style="{ left: `${(i - 1) * 4 * colWidth}px` }"
+          :style="{ left: `${(i - 1) * barLength * colWidth}px` }"
         />
       </div>
 

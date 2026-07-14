@@ -7,6 +7,7 @@ import { useTimelineStore } from "../../stores/timelineStore";
 import { getDefaultConfigForType } from "../../lib/audio/instrumentFactory";
 import { encodeWav } from "../../lib/audio/exportEncoders";
 import { useVoiceRecorder } from "../useVoiceRecorder";
+import { ticksPerSecond } from "../../lib/audio/timeGrid";
 
 export interface VoiceRecordingPlaybackDeps {
   isPlaying: Ref<boolean>;
@@ -101,10 +102,10 @@ export function useTimelineVoiceRecording(
     const config = getDefaultConfigForType("audioTrack");
     const trackId = timelineStore.createTrack(config, trackName);
 
-    const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+    const tickRate = ticksPerSecond(timelineStore.tempo);
     const durationInSteps = Math.max(
       1,
-      Math.ceil(loadedSample.duration * stepsPerSecond),
+      Math.ceil(loadedSample.duration * tickRate),
     );
 
     trackHistoryStore.recordAddClip(

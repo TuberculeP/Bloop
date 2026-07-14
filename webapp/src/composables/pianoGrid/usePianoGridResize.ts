@@ -15,6 +15,7 @@ export function usePianoGridResize(
     updates: Array<{ noteId: string; updates: Partial<MidiNote> }>,
   ) => void,
   onInteractionEnd: () => void,
+  snapStep: () => number = () => 1,
 ) {
   const resizingState = ref<ResizingState | null>(null);
   const resizePreviewDelta = ref<number | null>(null);
@@ -54,13 +55,14 @@ export function usePianoGridResize(
     if (!resizingState.value) return;
 
     const deltaX = event.clientX - resizingState.value.startX;
-    const rawDeltaCols = Math.round(deltaX / colWidth());
+    const step = snapStep();
+    const rawDeltaCols = Math.round(deltaX / colWidth() / step) * step;
 
     let minDelta = -Infinity;
     let maxDelta = Infinity;
 
     for (const [, info] of resizingState.value.notesInitialWidth) {
-      minDelta = Math.max(minDelta, 1 - info.width);
+      minDelta = Math.max(minDelta, step - info.width);
       maxDelta = Math.min(maxDelta, cols() - info.x - info.width);
     }
 

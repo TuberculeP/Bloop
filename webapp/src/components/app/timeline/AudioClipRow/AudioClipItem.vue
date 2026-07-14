@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import type { AudioClip } from "../../../../lib/utils/types";
 import { useAudioLibraryStore } from "../../../../stores/audioLibraryStore";
+import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import WaveformCanvas from "./WaveformCanvas.vue";
 
 const props = defineProps<{
@@ -169,7 +170,9 @@ onBeforeUnmount(() => {
         :waveform-data="sample.waveformData"
         :start-offset="clip.startOffset"
         :clip-width="clip.w"
-        :sample-duration-cols="Math.ceil(sample.duration * (tempo / 60) * 4)"
+        :sample-duration-cols="
+          Math.ceil(sample.duration * ticksPerSecond(tempo))
+        "
         :color="color"
       />
       <div v-else class="loading-placeholder" />

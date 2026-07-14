@@ -12,6 +12,11 @@ import type {
 } from "../../lib/utils/types";
 import { getAutomationValueAt } from "../../lib/audio/automation";
 import { noteIndexToName } from "../../lib/audio/pianoRollConstants";
+import {
+  TICKS_PER_BEAT,
+  ticksPerBar,
+  ticksPerSecond,
+} from "../../lib/audio/timeGrid";
 
 export interface PlaybackEmit {
   (
@@ -86,7 +91,8 @@ export function useTimelinePlaybackEngine(
     }
 
     if (lastEnd === 0) return timelineStore.project.cols;
-    return Math.ceil(lastEnd / 4) * 4;
+    const barLength = ticksPerBar(timelineStore.timeSignature);
+    return Math.ceil(lastEnd / barLength) * barLength;
   });
 
   const tryStartNote = (
@@ -180,12 +186,12 @@ export function useTimelinePlaybackEngine(
     osc.stop(now + 0.06);
   };
 
-  // 4 colonnes = 1 temps (noire), 16 colonnes = 1 mesure en 4/4
   const maybePlayMetronomeAt = (position: number) => {
     if (!timelineStore.metronomeEnabled) return;
     const intPosition = Math.floor(position);
-    if (intPosition % 4 !== 0) return;
-    playMetronomeClick(intPosition % 16 === 0);
+    if (intPosition % TICKS_PER_BEAT !== 0) return;
+    const barLength = ticksPerBar(timelineStore.timeSignature);
+    playMetronomeClick(intPosition % barLength === 0);
   };
 
   const stopAllActiveNotes = () => {
@@ -237,7 +243,7 @@ export function useTimelinePlaybackEngine(
     if (!isPlaying.value) return;
 
     const elapsed = (performance.now() - playbackStartTime.value) / 1000;
-    const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+    const stepsPerSecond = ticksPerSecond(timelineStore.tempo);
     let newPosition = checkpointPosition.value + elapsed * stepsPerSecond;
 
     if (newPosition >= loopEndPosition.value) {
