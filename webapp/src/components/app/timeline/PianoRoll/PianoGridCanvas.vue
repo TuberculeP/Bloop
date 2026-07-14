@@ -202,8 +202,11 @@ const handleClick = (event: MouseEvent) => {
   const note = getNoteAtPosition(x, y);
 
   if (!note) {
+    // Floor (pas round) : on veut la cellule de grille qui contient le clic,
+    // pas la ligne de grille la plus proche — sinon un clic dans la moitié
+    // droite d'une cellule crée la note sur la cellule suivante.
     const col =
-      Math.round(x / props.colWidth / snapStep.value) * snapStep.value;
+      Math.floor(x / props.colWidth / snapStep.value) * snapStep.value;
     const row = Math.floor(y / NOTE_ROW_HEIGHT);
 
     if (col >= 0 && col < props.cols && row >= 0 && row < TOTAL_NOTES) {
