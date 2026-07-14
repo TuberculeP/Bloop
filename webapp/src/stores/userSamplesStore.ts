@@ -22,7 +22,6 @@ interface ApiUserSample {
   filename: string;
   size: number;
   duration: number;
-  waveform: number[] | null;
   fullUrl: string;
   createdAt: string;
   usageCount?: number;
@@ -61,7 +60,6 @@ const toAudioSample = (s: ApiUserSample): AudioSample => ({
   folder: "personal",
   filename: s.filename,
   duration: s.duration,
-  waveformData: s.waveform ?? undefined,
   fullUrl: s.fullUrl,
 });
 

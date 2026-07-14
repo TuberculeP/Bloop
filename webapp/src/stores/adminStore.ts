@@ -36,7 +36,6 @@ interface AdminSample {
   name: string;
   filename: string;
   duration: number;
-  waveform: number[] | null;
   folderId: string;
   previewUrl: string | null;
   fullUrl: string | null;
@@ -281,7 +280,6 @@ export const useAdminStore = defineStore("admin", () => {
       name: string;
       filename: string;
       duration?: number;
-      waveform?: number[];
       previewUrl?: string;
       fullUrl?: string;
     },

@@ -24,9 +24,6 @@ export class UserSample {
   @Column("float", { default: 0 })
   duration: number;
 
-  @Column("simple-array", { nullable: true })
-  waveform: number[];
-
   @Column({ nullable: true })
   fullUrl: string;
 

@@ -11,6 +11,21 @@ const props = defineProps<{
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
+const BAR_WIDTH = 2;
+const BAR_GAP = 1;
+const MIN_BAR_HEIGHT = 2;
+
+const lightenHex = (hex: string, ratio: number): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return "rgba(255,255,255,0.7)";
+  const mix = (channel: number) =>
+    Math.round(channel + (255 - channel) * ratio);
+  const r = mix(parseInt(result[1], 16));
+  const g = mix(parseInt(result[2], 16));
+  const b = mix(parseInt(result[3], 16));
+  return `rgb(${r},${g},${b})`;
+};
+
 const drawWaveform = (): void => {
   const canvas = canvasRef.value;
   if (!canvas) return;
@@ -50,41 +65,27 @@ const drawWaveform = (): void => {
   if (visibleData.length === 0) return;
 
   const midY = height / 2;
+  const barStep = BAR_WIDTH + BAR_GAP;
+  const barCount = Math.max(1, Math.floor(width / barStep));
 
-  ctx.beginPath();
-  ctx.moveTo(0, midY);
+  ctx.fillStyle = lightenHex(props.color, 0.65);
 
-  for (let i = 0; i < visibleData.length; i++) {
-    const x = (i / visibleData.length) * width;
-    const y = midY - visibleData[i] * midY * 0.85;
-    ctx.lineTo(x, y);
-  }
+  for (let i = 0; i < barCount; i++) {
+    const dataStart = Math.floor((i / barCount) * visibleData.length);
+    const dataEnd = Math.max(
+      dataStart + 1,
+      Math.floor(((i + 1) / barCount) * visibleData.length),
+    );
 
-  for (let i = visibleData.length - 1; i >= 0; i--) {
-    const x = (i / visibleData.length) * width;
-    const y = midY + visibleData[i] * midY * 0.85;
-    ctx.lineTo(x, y);
-  }
-
-  ctx.closePath();
-
-  ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-  ctx.lineWidth = 1;
-
-  ctx.beginPath();
-  for (let i = 0; i < visibleData.length; i++) {
-    const x = (i / visibleData.length) * width;
-    const y = midY - visibleData[i] * midY * 0.85;
-    if (i === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
+    let amplitude = 0;
+    for (let j = dataStart; j < dataEnd; j++) {
+      amplitude = Math.max(amplitude, visibleData[j]);
     }
+
+    const barHeight = Math.max(MIN_BAR_HEIGHT, amplitude * midY * 0.85 * 2);
+    const x = i * barStep;
+    ctx.fillRect(x, midY - barHeight / 2, BAR_WIDTH, barHeight);
   }
-  ctx.stroke();
 };
 
 onMounted(() => {
@@ -97,6 +98,7 @@ watch(
     props.startOffset,
     props.clipWidth,
     props.sampleDurationCols,
+    props.color,
   ],
   () => {
     drawWaveform();
