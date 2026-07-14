@@ -76,6 +76,17 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // note via un resize individuel, utilisée comme largeur par défaut pour la
   // prochaine note posée au clic dans le piano roll.
   const lastResizedNoteWidth = ref<number | null>(null);
+  // Zoom horizontal de la timeline : préférence de vue par navigateur, pas
+  // une donnée de projet (non partagée entre collaborateurs).
+  const ZOOM_MIN = 0.25;
+  const ZOOM_MAX = 4;
+  const zoomLevel = useUiLayoutPreference("timeline-zoom", 1);
+  // Vitesse du zoom Ctrl+molette/pincement trackpad : le delta d'un geste de
+  // pincement macOS est bien plus faible que celui d'un clic de molette, d'où
+  // un réglage par utilisateur plutôt qu'une constante unique. 1-20, défaut 5.
+  const ZOOM_WHEEL_SPEED_MIN = 1;
+  const ZOOM_WHEEL_SPEED_MAX = 20;
+  const zoomWheelSpeed = useUiLayoutPreference("timeline-zoom-wheel-speed", 5);
 
   // ============================================
   // Computed Properties
@@ -542,6 +553,17 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
   const setLastResizedNoteWidth = (width: number): void => {
     lastResizedNoteWidth.value = width;
+  };
+
+  const setZoomLevel = (value: number): void => {
+    zoomLevel.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
+  };
+
+  const setZoomWheelSpeed = (value: number): void => {
+    zoomWheelSpeed.value = Math.min(
+      ZOOM_WHEEL_SPEED_MAX,
+      Math.max(ZOOM_WHEEL_SPEED_MIN, value),
+    );
   };
 
   const toggleAutomationExpanded = (trackId: string): void => {
@@ -1069,6 +1091,8 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     automationExpandedMaster,
     metronomeEnabled,
     lastResizedNoteWidth,
+    zoomLevel,
+    zoomWheelSpeed,
 
     // Actions - Tracks
     createTrack,
@@ -1101,6 +1125,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     collapseTrack,
     toggleTrackExpanded,
     setLastResizedNoteWidth,
+    setZoomLevel,
+    ZOOM_MIN,
+    ZOOM_MAX,
+    setZoomWheelSpeed,
+    ZOOM_WHEEL_SPEED_MIN,
+    ZOOM_WHEEL_SPEED_MAX,
     setActiveTrack,
     automationExpandedTrackId,
     toggleAutomationExpanded,

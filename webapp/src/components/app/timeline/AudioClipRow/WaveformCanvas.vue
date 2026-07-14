@@ -7,6 +7,7 @@ const props = defineProps<{
   clipWidth: number;
   sampleDurationCols: number;
   color: string;
+  colWidth: number;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -99,6 +100,7 @@ watch(
     props.clipWidth,
     props.sampleDurationCols,
     props.color,
+    props.colWidth,
   ],
   () => {
     drawWaveform();

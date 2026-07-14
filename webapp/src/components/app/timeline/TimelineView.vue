@@ -6,6 +6,7 @@ import {
   onBeforeUnmount,
   inject,
   watch,
+  nextTick,
   type Ref,
 } from "vue";
 import { storeToRefs } from "pinia";
@@ -37,6 +38,7 @@ import AddTrackButton from "./AddTrackButton.vue";
 import InstrumentSettings from "../instruments/InstrumentSettings.vue";
 import MasterSettings from "../instruments/MasterSettings.vue";
 import BaseButton from "../../ui/BaseButton.vue";
+import RangeSlider from "../../ui/RangeSlider.vue";
 import BaseModal from "../../ui/BaseModal.vue";
 import BaseSpinner from "../../ui/BaseSpinner.vue";
 import EmptyState from "../../ui/EmptyState.vue";
@@ -72,12 +74,19 @@ const toast = useToast();
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
 // Densité visuelle inchangée par rapport à l'ancien COL_WIDTH=20px/colonne
-// (colonne = 1/16 de temps) : 20 * 4 = 80px par temps.
-const PX_PER_BEAT = 80;
-const COL_WIDTH = pxPerTick(PX_PER_BEAT);
+// (colonne = 1/16 de temps) : 20 * 4 = 80px par temps, avant application du zoom.
+const BASE_PX_PER_BEAT = 80;
 const ROW_HEIGHT = 75;
 const TRACK_HEADER_WIDTH = 180;
 const DENOMINATOR_OPTIONS = [1, 2, 4, 8, 16, 32];
+const ZOOM_STEP_FACTOR = 1.25;
+// zoomWheelSpeed (réglage utilisateur, 1-20) est multiplié par cette unité
+// pour obtenir l'exposant réellement appliqué au delta de la molette/pincement.
+const ZOOM_WHEEL_SPEED_UNIT = 0.001;
+
+const colWidth = computed(() =>
+  pxPerTick(BASE_PX_PER_BEAT * timelineStore.zoomLevel),
+);
 
 const scrollLeft = ref(0);
 const scrollContainerRef = ref<HTMLElement | null>(null);
@@ -149,7 +158,7 @@ const onStop = () => {
 
 const playback = useTimelinePlaybackEngine(
   emit,
-  COL_WIDTH,
+  () => colWidth.value,
   TRACK_HEADER_WIDTH,
   onLoopEnd,
   onStop,
@@ -202,7 +211,7 @@ const {
   handleTracksContainerDragOver,
   handleTracksContainerDragLeave,
   handleTracksContainerDrop,
-} = useTimelineFileDrop(COL_WIDTH, TRACK_HEADER_WIDTH);
+} = useTimelineFileDrop(() => colWidth.value, TRACK_HEADER_WIDTH);
 
 const {
   isCloning,
@@ -291,6 +300,49 @@ const confirmRenameTrack = () => {
 const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement;
   scrollLeft.value = target.scrollLeft;
+};
+
+const zoomPercent = computed(() => Math.round(timelineStore.zoomLevel * 100));
+
+const setZoom = (value: number) => {
+  timelineStore.setZoomLevel(value);
+};
+
+const zoomIn = () => setZoom(timelineStore.zoomLevel * ZOOM_STEP_FACTOR);
+const zoomOut = () => setZoom(timelineStore.zoomLevel / ZOOM_STEP_FACTOR);
+const resetZoom = () => setZoom(1);
+
+const showZoomSettings = ref(false);
+const closeZoomSettings = () => {
+  showZoomSettings.value = false;
+};
+
+// Zoom centré sur la souris (Ctrl+molette, inclut le pinch trackpad qui met
+// ctrlKey=true dans Chrome/Firefox) : on garde le tick sous le curseur stable
+// en recalculant scrollLeft après que colWidth ait changé.
+const handleWheel = (event: WheelEvent) => {
+  if (!event.ctrlKey) return;
+  event.preventDefault();
+
+  const container = scrollContainerRef.value;
+  if (!container) return;
+
+  const rect = container.getBoundingClientRect();
+  const mouseOffsetInContainer = event.clientX - rect.left;
+  const tickUnderMouse =
+    (container.scrollLeft + mouseOffsetInContainer - TRACK_HEADER_WIDTH) /
+    colWidth.value;
+
+  const sensitivity = timelineStore.zoomWheelSpeed * ZOOM_WHEEL_SPEED_UNIT;
+  const factor = Math.exp(-event.deltaY * sensitivity);
+  setZoom(timelineStore.zoomLevel * factor);
+
+  nextTick(() => {
+    container.scrollLeft =
+      tickUnderMouse * colWidth.value +
+      TRACK_HEADER_WIDTH -
+      mouseOffsetInContainer;
+  });
 };
 
 watch(voiceRecorderError, (message) => {
@@ -542,6 +594,46 @@ defineExpose({
         <div class="position-display">
           {{ displayBarBeat.bar }}:{{ displayBarBeat.beat }}
         </div>
+        <div class="zoom-control">
+          <button class="zoom-btn" @click="zoomOut" title="Dézoomer">
+            <i class="fas fa-minus"></i>
+          </button>
+          <span
+            class="zoom-percent"
+            @click="resetZoom"
+            title="Réinitialiser le zoom (100%)"
+          >
+            {{ zoomPercent }}%
+          </span>
+          <button class="zoom-btn" @click="zoomIn" title="Zoomer">
+            <i class="fas fa-plus"></i>
+          </button>
+          <div class="zoom-settings" v-on-click-outside="closeZoomSettings">
+            <button
+              class="zoom-btn"
+              @click="showZoomSettings = !showZoomSettings"
+              title="Réglages du zoom"
+            >
+              <i class="fas fa-cog"></i>
+            </button>
+            <Transition name="fade">
+              <div v-if="showZoomSettings" class="zoom-settings-dropdown">
+                <div class="zoom-settings-header">Zoom</div>
+                <div class="zoom-settings-row">
+                  <label>Sensibilité molette / pincement</label>
+                  <RangeSlider
+                    :model-value="timelineStore.zoomWheelSpeed"
+                    :min="timelineStore.ZOOM_WHEEL_SPEED_MIN"
+                    :max="timelineStore.ZOOM_WHEEL_SPEED_MAX"
+                    :step="1"
+                    thumb-size="small"
+                    @update:model-value="timelineStore.setZoomWheelSpeed"
+                  />
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </div>
       </div>
       <div class="header-right">
         <AddTrackButton @add-track="handleAddTrack" />
@@ -618,10 +710,11 @@ defineExpose({
         ref="scrollContainerRef"
         class="timeline-scroll"
         @scroll="handleScroll"
+        @wheel="handleWheel"
       >
         <TimelineRuler
           :cols="displayCols"
-          :col-width="COL_WIDTH"
+          :col-width="colWidth"
           :scroll-left="scrollLeft"
           @seek="setCheckpoint"
         />
@@ -636,7 +729,7 @@ defineExpose({
         >
           <MasterTrackRow
             :cols="displayCols"
-            :col-width="COL_WIDTH"
+            :col-width="colWidth"
             :scroll-left="scrollLeft"
             @open-settings="showMasterSettings = true"
           />
@@ -646,7 +739,7 @@ defineExpose({
             :key="track.id"
             :track="track"
             :cols="displayCols"
-            :col-width="COL_WIDTH"
+            :col-width="colWidth"
             :row-height="ROW_HEIGHT"
             :is-expanded="track.id === timelineStore.expandedTrackId"
             :is-active="track.id === timelineStore.activeTrackId"
@@ -1166,6 +1259,84 @@ defineExpose({
     background: var(--color-accent2);
     border-color: var(--color-accent2);
     color: var(--color-white);
+  }
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent2);
+    color: var(--color-white);
+  }
+}
+
+.zoom-percent {
+  min-width: 44px;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    color: var(--color-white);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.zoom-settings {
+  position: relative;
+}
+
+.zoom-settings-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 260px;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.zoom-settings-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.zoom-settings-row {
+  padding: 12px 14px;
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
   }
 }
 

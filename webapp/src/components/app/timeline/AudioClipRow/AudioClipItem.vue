@@ -174,6 +174,7 @@ onBeforeUnmount(() => {
           Math.ceil(sample.duration * ticksPerSecond(tempo))
         "
         :color="color"
+        :col-width="colWidth"
       />
       <div v-else class="loading-placeholder" />
     </div>
