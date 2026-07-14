@@ -13,10 +13,9 @@ export type Note = {
 // Types pour le séquenceur de notes MIDI
 export interface MidiNote {
   i: string; // ID unique de la note
-  x: number; // Position horizontale (temps/position dans la séquence)
+  x: number; // Position horizontale (en ticks, TICKS_PER_BEAT par temps)
   y: number; // Position verticale (hauteur de note/pitch)
-  w: number; // Largeur (durée de la note)
-  h: number; // Hauteur (toujours 1 pour les notes MIDI)
+  w: number; // Largeur (durée de la note, en ticks)
 }
 
 export type NoteName = string; // Type pour les noms de notes comme "C4", "A#5", etc.
@@ -251,12 +250,19 @@ export interface Clip {
   updatedAt: Date;
 }
 
+export interface TimeSignature {
+  numerator: number; // Nombre de temps par mesure (ex: 7 pour 7/8)
+  denominator: number; // Valeur du temps (1,2,4,8,16,32 — ex: 8 pour 7/8)
+}
+
 export interface TimelineProject {
   id?: string;
   name: string;
   tracks: Track[];
-  cols: number; // Longueur totale de la timeline
+  cols: number; // Longueur totale de la timeline (en ticks)
   tempo: number; // BPM global
+  timeSignature: TimeSignature; // Signature rythmique (défaut 4/4)
+  subdivision: number; // Résolution de la grille de snap (pas par temps, ex: 4 = double-croches)
   volume: number; // Volume master (0-100)
   reverb: number; // Reverb master (0-100)
   eqBands?: EQBand[];

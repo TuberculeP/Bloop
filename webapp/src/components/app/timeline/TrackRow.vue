@@ -6,12 +6,9 @@ import { useTimelineStore } from "../../../stores/timelineStore";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import { useDropdown } from "../../../composables/useDropdown";
 import TrackHeader from "./TrackHeader.vue";
-import TrackTimelinePreview from "./TrackTimelinePreview.vue";
 import TrackTimelinePreviewCanvas from "./TrackTimelinePreviewCanvas.vue";
 import PianoRoll from "./PianoRoll/PianoRoll.vue";
 import AutomationLaneComponent from "./AutomationLane.vue";
-
-const USE_CANVAS = true;
 import { AudioClipRow } from "./AudioClipRow";
 
 const props = defineProps<{
@@ -102,8 +99,7 @@ const handleToggleAutomation = () => {
       @delete-track="emit('delete-track', track)"
     />
 
-    <component
-      :is="USE_CANVAS ? TrackTimelinePreviewCanvas : TrackTimelinePreview"
+    <TrackTimelinePreviewCanvas
       v-if="!isAudioTrack"
       :notes="track.notes"
       :cols="cols"

@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from "vue";
-import type { MidiNote, NoteName } from "../../lib/utils/types";
+import type { MidiNote, NoteName, TimeSignature } from "../../lib/utils/types";
 import {
   TOTAL_NOTES,
   NOTE_ROW_HEIGHT,
@@ -31,6 +31,8 @@ interface UsePianoGridCanvasConfig {
   colWidth: () => number;
   notes: () => MidiNote[];
   trackColor: () => string;
+  timeSignature: () => TimeSignature;
+  subdivision: () => number;
   activeNotes: () => Set<NoteName>;
   selectedNotes: Ref<Set<string>>;
   dragState: Ref<DragState | null>;
@@ -72,6 +74,8 @@ export function usePianoGridCanvas(
         cols: config.cols(),
         colWidth: config.colWidth(),
         trackColor: config.trackColor(),
+        timeSignature: config.timeSignature(),
+        subdivision: config.subdivision(),
       },
       width,
       height,
@@ -101,6 +105,8 @@ export function usePianoGridCanvas(
         cols: config.cols(),
         colWidth: config.colWidth(),
         trackColor: config.trackColor(),
+        timeSignature: config.timeSignature(),
+        subdivision: config.subdivision(),
       },
       width,
       height,
@@ -194,7 +200,16 @@ export function usePianoGridCanvas(
     { deep: true },
   );
 
-  watch([() => config.cols(), () => config.colWidth()], updateCanvasSize);
+  watch(
+    [
+      () => config.cols(),
+      () => config.colWidth(),
+      () => config.timeSignature(),
+      () => config.subdivision(),
+    ],
+    updateCanvasSize,
+    { deep: true },
+  );
 
   const getNoteAtPosition = (x: number, y: number): MidiNote | null => {
     if (!renderer.value) return null;

@@ -93,6 +93,8 @@ onMounted(() => {
       cols: props.cols,
       colWidth: props.colWidth,
       trackColor: props.trackColor,
+      timeSignature: timelineStore.timeSignature,
+      subdivision: timelineStore.subdivision,
     },
     width,
     LANE_HEIGHT,
@@ -113,28 +115,39 @@ watch(
   { deep: true },
 );
 
-watch([() => props.cols, () => props.colWidth, () => props.trackColor], () => {
-  const canvas = canvasRef.value;
-  if (!canvas || !rendererRef.value) return;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  const width = props.cols * props.colWidth;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${LANE_HEIGHT}px`;
-  canvas.width = width * dpr;
-  canvas.height = LANE_HEIGHT * dpr;
-  ctx.scale(dpr, dpr);
-  rendererRef.value.updateConfig(
-    {
-      cols: props.cols,
-      colWidth: props.colWidth,
-      trackColor: props.trackColor,
-    },
-    width,
-    LANE_HEIGHT,
-  );
-  renderFrame();
-});
+watch(
+  [
+    () => props.cols,
+    () => props.colWidth,
+    () => props.trackColor,
+    () => timelineStore.timeSignature,
+    () => timelineStore.subdivision,
+  ],
+  () => {
+    const canvas = canvasRef.value;
+    if (!canvas || !rendererRef.value) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const width = props.cols * props.colWidth;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${LANE_HEIGHT}px`;
+    canvas.width = width * dpr;
+    canvas.height = LANE_HEIGHT * dpr;
+    ctx.scale(dpr, dpr);
+    rendererRef.value.updateConfig(
+      {
+        cols: props.cols,
+        colWidth: props.colWidth,
+        trackColor: props.trackColor,
+        timeSignature: timelineStore.timeSignature,
+        subdivision: timelineStore.subdivision,
+      },
+      width,
+      LANE_HEIGHT,
+    );
+    renderFrame();
+  },
+);
 
 onBeforeUnmount(() => {
   rendererRef.value = null;

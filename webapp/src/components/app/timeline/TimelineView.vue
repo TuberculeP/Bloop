@@ -24,6 +24,12 @@ import { useTimelineExport } from "../../../composables/timelineView/useTimeline
 import { useTimelineVoiceRecording } from "../../../composables/timelineView/useTimelineVoiceRecording";
 import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
 import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
+import {
+  pxPerTick,
+  ticksPerBar,
+  barBeatFromTick,
+  SUBDIVISION_PRESETS,
+} from "../../../lib/audio/timeGrid";
 import TimelineRuler from "./TimelineRuler.vue";
 import TrackRow from "./TrackRow.vue";
 import MasterTrackRow from "./MasterTrackRow.vue";
@@ -65,10 +71,13 @@ const toast = useToast();
 
 const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
 
-const COL_WIDTH = 20;
+// Densité visuelle inchangée par rapport à l'ancien COL_WIDTH=20px/colonne
+// (colonne = 1/16 de temps) : 20 * 4 = 80px par temps.
+const PX_PER_BEAT = 80;
+const COL_WIDTH = pxPerTick(PX_PER_BEAT);
 const ROW_HEIGHT = 75;
 const TRACK_HEADER_WIDTH = 180;
-const TRAILING_COLS = 16;
+const DENOMINATOR_OPTIONS = [1, 2, 4, 8, 16, 32];
 
 const scrollLeft = ref(0);
 const scrollContainerRef = ref<HTMLElement | null>(null);
@@ -90,8 +99,29 @@ const displayCols = computed(() => {
       lastEnd = Math.max(lastEnd, clip.x + clip.w);
     }
   }
-  const minCols = Math.ceil(lastEnd / 4) * 4 + TRAILING_COLS;
+  const barLength = ticksPerBar(timelineStore.timeSignature);
+  const minCols = Math.ceil(lastEnd / barLength) * barLength + barLength;
   return Math.max(timelineStore.project.cols, minCols);
+});
+
+const timeSignatureNumerator = computed({
+  get: () => timelineStore.timeSignature.numerator,
+  set: (value: number) => {
+    timelineStore.timeSignature = {
+      ...timelineStore.timeSignature,
+      numerator: value,
+    };
+  },
+});
+
+const timeSignatureDenominator = computed({
+  get: () => timelineStore.timeSignature.denominator,
+  set: (value: number) => {
+    timelineStore.timeSignature = {
+      ...timelineStore.timeSignature,
+      denominator: value,
+    };
+  },
 });
 
 const exportModeProp = computed(() => props.exportMode);
@@ -134,6 +164,10 @@ const {
   togglePlayback,
   setCheckpoint,
 } = playback;
+
+const displayBarBeat = computed(() =>
+  barBeatFromTick(currentPosition.value, timelineStore.timeSignature),
+);
 
 exportFeature = useTimelineExport(playback, exportModeProp);
 const {
@@ -481,10 +515,32 @@ defineExpose({
             <i class="fas fa-stopwatch"></i>
           </button>
         </div>
+        <div class="time-signature-control">
+          <label>Sign.:</label>
+          <input
+            type="number"
+            v-model.number="timeSignatureNumerator"
+            min="1"
+            max="32"
+            step="1"
+          />
+          <span>/</span>
+          <select v-model.number="timeSignatureDenominator">
+            <option v-for="d in DENOMINATOR_OPTIONS" :key="d" :value="d">
+              {{ d }}
+            </option>
+          </select>
+        </div>
+        <div class="subdivision-control">
+          <label>Grille:</label>
+          <select v-model.number="timelineStore.subdivision">
+            <option v-for="s in SUBDIVISION_PRESETS" :key="s" :value="s">
+              1/{{ s }}
+            </option>
+          </select>
+        </div>
         <div class="position-display">
-          {{ Math.floor(currentPosition / 4) + 1 }}:{{
-            (Math.floor(currentPosition) % 4) + 1
-          }}
+          {{ displayBarBeat.bar }}:{{ displayBarBeat.beat }}
         </div>
       </div>
       <div class="header-right">
@@ -1054,6 +1110,39 @@ defineExpose({
       outline: none;
       border-color: var(--color-accent2);
     }
+  }
+}
+
+.time-signature-control,
+.subdivision-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  input,
+  select {
+    padding: 6px 8px;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-secondary-dark);
+    color: var(--color-white);
+    font-size: 14px;
+    text-align: center;
+    color-scheme: dark;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent2);
+    }
+  }
+
+  input {
+    width: 44px;
   }
 }
 

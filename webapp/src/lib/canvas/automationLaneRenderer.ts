@@ -1,10 +1,13 @@
-import type { AutomationPoint } from "../utils/types";
+import type { AutomationPoint, TimeSignature } from "../utils/types";
 import { getAutomationValueAt } from "../audio/automation";
+import { ticksPerBar, snapTicks } from "../audio/timeGrid";
 
 export interface AutomationRenderConfig {
   cols: number;
   colWidth: number;
   trackColor: string;
+  timeSignature: TimeSignature;
+  subdivision: number;
 }
 
 const COLORS = {
@@ -109,21 +112,24 @@ export class AutomationLaneRenderer {
     ctx.lineTo(this.width, this.height / 2);
     ctx.stroke();
 
-    // Step lines
+    // Step lines (résolution de snap)
     ctx.strokeStyle = COLORS.gridVertical;
     ctx.beginPath();
-    for (let col = 1; col <= config.cols; col++) {
-      const x = col * config.colWidth - 0.5;
+    const step = snapTicks(config.subdivision);
+    for (let tick = step; tick <= config.cols; tick += step) {
+      const x = tick * config.colWidth - 0.5;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
     ctx.stroke();
 
-    // Measure lines
+    // Measure lines (une par mesure, selon la signature rythmique)
     ctx.strokeStyle = COLORS.measureLine;
     ctx.beginPath();
-    for (let measure = 0; measure <= Math.ceil(config.cols / 4); measure++) {
-      const x = measure * 4 * config.colWidth - 0.5;
+    const barLength = ticksPerBar(config.timeSignature);
+    const barCount = Math.ceil(config.cols / barLength);
+    for (let measure = 0; measure <= barCount; measure++) {
+      const x = measure * barLength * config.colWidth - 0.5;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }

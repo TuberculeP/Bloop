@@ -13,6 +13,8 @@ import {
   usePianoGridClipboard,
   usePianoGridKeyboard,
 } from "../../../../composables/pianoGrid";
+import { useTimelineStore } from "../../../../stores/timelineStore";
+import { snapTicks } from "../../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -24,7 +26,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "add-note", x: number, y: number): void;
+  (e: "add-note", x: number, y: number, useGridSize: boolean): void;
   (e: "remove-note", noteId: string): void;
   (
     e: "update-notes",
@@ -36,6 +38,8 @@ const emit = defineEmits<{
   (e: "redo"): void;
 }>();
 
+const timelineStore = useTimelineStore();
+
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const mouseGridPos = ref<{ col: number; row: number }>({ col: 0, row: 0 });
@@ -43,6 +47,8 @@ const justFinishedInteracting = ref(false);
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
+const subdivision = computed(() => timelineStore.subdivision);
+const snapStep = computed(() => snapTicks(subdivision.value));
 
 // Selection composable with containerRef
 const {
@@ -79,6 +85,8 @@ const {
   () => {
     justFinishedInteracting.value = true;
   },
+  () => snapStep.value,
+  (width) => timelineStore.setLastResizedNoteWidth(width),
 );
 
 // Drag composable
@@ -97,6 +105,7 @@ const {
   () => {
     justFinishedInteracting.value = true;
   },
+  () => snapStep.value,
 );
 
 // Clipboard composable
@@ -107,6 +116,7 @@ const { copySelectedNotes, pasteNotes, duplicateSelectedNotes } =
     () => props.cols,
     mouseGridPos,
     (notes) => emit("paste-notes", notes),
+    () => snapStep.value,
   );
 
 // Delete selected notes
@@ -135,6 +145,8 @@ const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
     colWidth: () => props.colWidth,
     notes: () => props.notes,
     trackColor: () => props.color,
+    timeSignature: () => timelineStore.timeSignature,
+    subdivision: () => subdivision.value,
     activeNotes: () => props.activeNotes,
     selectedNotes,
     dragState,
@@ -171,7 +183,7 @@ const handleMouseDown = (event: MouseEvent) => {
     } else {
       handleDragStart(event, note);
     }
-  } else if (event.ctrlKey || event.metaKey) {
+  } else if (event.shiftKey) {
     event.preventDefault();
     handleSelectionStart(event);
   }
@@ -191,12 +203,16 @@ const handleClick = (event: MouseEvent) => {
   const note = getNoteAtPosition(x, y);
 
   if (!note) {
-    const col = Math.floor(x / props.colWidth);
+    // Floor (pas round) : on veut la cellule de grille qui contient le clic,
+    // pas la ligne de grille la plus proche — sinon un clic dans la moitié
+    // droite d'une cellule crée la note sur la cellule suivante.
+    const col =
+      Math.floor(x / props.colWidth / snapStep.value) * snapStep.value;
     const row = Math.floor(y / NOTE_ROW_HEIGHT);
 
     if (col >= 0 && col < props.cols && row >= 0 && row < TOTAL_NOTES) {
       clearSelection();
-      emit("add-note", col, row);
+      emit("add-note", col, row, event.ctrlKey || event.metaKey);
     }
   }
 };

@@ -2,6 +2,7 @@ import { useAudioLibraryStore } from "../stores/audioLibraryStore";
 import { useUserSamplesStore } from "../stores/userSamplesStore";
 import { useTimelineStore } from "../stores/timelineStore";
 import { useTrackHistoryStore } from "../stores/trackHistoryStore";
+import { ticksPerSecond } from "../lib/audio/timeGrid";
 
 export function useSampleFileDrop() {
   const audioLibraryStore = useAudioLibraryStore();
@@ -28,10 +29,10 @@ export function useSampleFileDrop() {
       const loadedSample = audioLibraryStore.getSample(sample.id);
       if (!loadedSample) continue;
 
-      const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+      const tickRate = ticksPerSecond(timelineStore.tempo);
       const durationInSteps = Math.max(
         1,
-        Math.ceil(loadedSample.duration * stepsPerSecond),
+        Math.ceil(loadedSample.duration * tickRate),
       );
 
       trackHistoryStore.recordAddClip(

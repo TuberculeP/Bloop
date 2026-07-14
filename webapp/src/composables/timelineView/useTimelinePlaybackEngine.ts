@@ -12,6 +12,11 @@ import type {
 } from "../../lib/utils/types";
 import { getAutomationValueAt } from "../../lib/audio/automation";
 import { noteIndexToName } from "../../lib/audio/pianoRollConstants";
+import {
+  TICKS_PER_BEAT,
+  ticksPerBar,
+  ticksPerSecond,
+} from "../../lib/audio/timeGrid";
 
 export interface PlaybackEmit {
   (
@@ -86,7 +91,8 @@ export function useTimelinePlaybackEngine(
     }
 
     if (lastEnd === 0) return timelineStore.project.cols;
-    return Math.ceil(lastEnd / 4) * 4;
+    const barLength = ticksPerBar(timelineStore.timeSignature);
+    return Math.ceil(lastEnd / barLength) * barLength;
   });
 
   const tryStartNote = (
@@ -108,26 +114,33 @@ export function useTimelinePlaybackEngine(
     emit("note-start", note, noteName, intPosition, track.id);
   };
 
-  // Playback - lit directement les notes des tracks (plus de clips)
-  const playNotesAtPosition = (position: number) => {
-    const intPosition = Math.floor(position);
-
+  // Playback - lit directement les notes des tracks (plus de clips).
+  // À TICKS_PER_BEAT=96, une frame (~16ms à 60fps) peut avancer de plusieurs
+  // ticks : on déclenche donc tout note-start/note-end dont le tick tombe dans
+  // la plage (fromExclusive, toInclusive] traversée depuis la frame précédente,
+  // plutôt qu'une égalité stricte sur le seul tick courant (qui en raterait
+  // la plupart).
+  const playNotesAtPosition = (fromExclusive: number, toInclusive: number) => {
     for (const track of timelineStore.getPlayableTracks()) {
       for (const note of track.notes) {
         tryStartNote(
           track,
           note,
-          intPosition,
-          (noteStart) => intPosition === noteStart,
+          toInclusive,
+          (noteStart) => noteStart > fromExclusive && noteStart <= toInclusive,
         );
 
         const noteKey = `${track.id}_${note.i}`;
         const noteEnd = note.x + note.w;
-        if (intPosition >= noteEnd && activeNotes.value.has(noteKey)) {
+        if (
+          noteEnd > fromExclusive &&
+          noteEnd <= toInclusive &&
+          activeNotes.value.has(noteKey)
+        ) {
           const noteName = noteIndexToName(note.y);
           trackAudioStore.stopNoteOnTrack(track.id, note.i);
           activeNotes.value.delete(noteKey);
-          emit("note-end", note, noteName, intPosition, track.id);
+          emit("note-end", note, noteName, toInclusive, track.id);
         }
       }
     }
@@ -180,12 +193,16 @@ export function useTimelinePlaybackEngine(
     osc.stop(now + 0.06);
   };
 
-  // 4 colonnes = 1 temps (noire), 16 colonnes = 1 mesure en 4/4
-  const maybePlayMetronomeAt = (position: number) => {
+  // Même logique de plage que playNotesAtPosition : on cherche le dernier
+  // tick de temps (multiple de TICKS_PER_BEAT) tombant dans (fromExclusive,
+  // toInclusive], plutôt qu'une égalité stricte sur le seul tick courant.
+  const maybePlayMetronomeAt = (fromExclusive: number, toInclusive: number) => {
     if (!timelineStore.metronomeEnabled) return;
-    const intPosition = Math.floor(position);
-    if (intPosition % 4 !== 0) return;
-    playMetronomeClick(intPosition % 16 === 0);
+    const lastBeatTick =
+      Math.floor(toInclusive / TICKS_PER_BEAT) * TICKS_PER_BEAT;
+    if (lastBeatTick <= fromExclusive) return;
+    const barLength = ticksPerBar(timelineStore.timeSignature);
+    playMetronomeClick(lastBeatTick % barLength === 0);
   };
 
   const stopAllActiveNotes = () => {
@@ -237,8 +254,9 @@ export function useTimelinePlaybackEngine(
     if (!isPlaying.value) return;
 
     const elapsed = (performance.now() - playbackStartTime.value) / 1000;
-    const stepsPerSecond = (timelineStore.tempo / 60) * 4;
+    const stepsPerSecond = ticksPerSecond(timelineStore.tempo);
     let newPosition = checkpointPosition.value + elapsed * stepsPerSecond;
+    let prevIntPosition = Math.floor(currentPosition.value);
 
     if (newPosition >= loopEndPosition.value) {
       if (onLoopEnd()) return;
@@ -246,21 +264,24 @@ export function useTimelinePlaybackEngine(
       stopAllActiveNotes();
       stopAllActiveClips();
       newPosition = 0;
+      // Le tick 0 est un nouveau départ, pas la suite du tick précédent (fin
+      // de boucle) : sans ce reset, la plage (prevIntPosition, 0] serait
+      // toujours vide/invalide et couperait le clic de métronome du downbeat.
+      prevIntPosition = -1;
       playbackStartTime.value =
         performance.now() + (checkpointPosition.value / stepsPerSecond) * 1000;
       triggerNotesAtPosition(newPosition);
       projectStore.markPlaybackLooped();
     }
 
-    const prevIntPosition = Math.floor(currentPosition.value);
     const newIntPosition = Math.floor(newPosition);
 
     currentPosition.value = newPosition;
 
     if (newIntPosition !== prevIntPosition) {
-      playNotesAtPosition(newPosition);
+      playNotesAtPosition(prevIntPosition, newIntPosition);
       playClipsAtPosition(newPosition);
-      maybePlayMetronomeAt(newPosition);
+      maybePlayMetronomeAt(prevIntPosition, newIntPosition);
     }
 
     applyAutomationAtPosition(newPosition);
@@ -279,7 +300,7 @@ export function useTimelinePlaybackEngine(
 
     triggerNotesAtPosition(currentPosition.value);
     playClipsAtPosition(currentPosition.value);
-    maybePlayMetronomeAt(currentPosition.value);
+    maybePlayMetronomeAt(currentPosition.value - 1, currentPosition.value);
 
     animationFrameId.value = requestAnimationFrame(animate);
   };

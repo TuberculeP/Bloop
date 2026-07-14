@@ -2,6 +2,8 @@
 import { ref, watch, onMounted } from "vue";
 import type { MidiNote } from "../../../lib/utils/types";
 import { TOTAL_NOTES } from "../../../lib/audio/pianoRollConstants";
+import { useTimelineStore } from "../../../stores/timelineStore";
+import { TICKS_PER_BEAT, ticksPerBar } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   (e: "dblclick"): void;
 }>();
 
+const timelineStore = useTimelineStore();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const isHovered = ref(false);
 let dpr = 1;
@@ -63,14 +66,17 @@ const render = () => {
   ctx.fillStyle = isHovered.value ? "#1f1119" : "#1a0e15";
   ctx.fillRect(0, 0, width, height);
 
-  // Une ligne toutes les 4 colonnes = 1 temps. 1 ligne sur 4
-  // (= toutes les 4 temps = 1 mesure en 4/4) est marquée en rose clair.
-  for (let i = 0; i <= Math.ceil(props.cols / 4); i++) {
-    const x = i * 4 * props.colWidth - 0.5;
-    const isBeatMarker = i % 4 === 0;
+  // Une ligne à chaque temps, marquée en rose clair sur le premier temps
+  // de chaque mesure (selon la signature rythmique du projet).
+  const barLength = ticksPerBar(timelineStore.timeSignature);
+  const beatCount = Math.ceil(props.cols / TICKS_PER_BEAT);
+  for (let beat = 0; beat <= beatCount; beat++) {
+    const tick = beat * TICKS_PER_BEAT;
+    const x = tick * props.colWidth - 0.5;
+    const isBarStart = tick % barLength === 0;
 
     ctx.beginPath();
-    ctx.strokeStyle = isBeatMarker
+    ctx.strokeStyle = isBarStart
       ? "rgba(170, 27, 86, 0.7)"
       : "rgba(122, 15, 62, 0.5)";
     ctx.lineWidth = 1;
@@ -111,9 +117,16 @@ const render = () => {
   ctx.globalAlpha = 1;
 };
 
-watch([() => props.notes, () => props.color, isHovered], render, {
-  deep: true,
-});
+watch(
+  [
+    () => props.notes,
+    () => props.color,
+    isHovered,
+    () => timelineStore.timeSignature,
+  ],
+  render,
+  { deep: true },
+);
 watch(
   [() => props.cols, () => props.colWidth, () => props.rowHeight],
   updateCanvasSize,

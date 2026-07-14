@@ -30,7 +30,7 @@ async function saveProject(project: Project, name: string, timeline: any) {
   project.name = name;
   project.data = {
     version: "bloop-mcp-v1",
-    format: "timeline-v2",
+    format: "timeline-v3",
     data: timeline,
   };
   const repo = pg.getRepository(Project);
@@ -91,10 +91,10 @@ export const createProjectTool = {
   name: "create_project",
   description:
     "Create a new bloop DAW project. Returns the created project ID. " +
-    "Timeline format: cols=128 means 32 measures at 4 cols/measure. " +
+    "Timeline positions are in ticks: 96 ticks = 1 beat. A bar = timeSignature.numerator * 96 ticks " +
+    "(e.g. 384 ticks per bar in 4/4). cols is the total timeline length in ticks, e.g. 3072 = 8 bars at 4/4. " +
     "InstrumentConfig examples: {type:'smplr',soundfont:'acoustic_grand_piano'}, {type:'basicSynth',oscillatorType:'sine'}, {type:'audioTrack'}. " +
-    "MidiNote format: {i:uuid, x:column, y:pitch_index, w:duration_cols, h:1} — y: 0=B7 (highest), 86=C0 (lowest), C4=39, D4=37, E4=35, F4=34, G4=32, A4=30, B4=28. " +
-    "At 120 BPM: 1 quarter note = 1 column.",
+    "MidiNote format: {i:uuid, x:tick, y:pitch_index, w:duration_ticks} — y: 0=B7 (highest), 86=C0 (lowest), C4=39, D4=37, E4=35, F4=34, G4=32, A4=30, B4=28.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -103,7 +103,21 @@ export const createProjectTool = {
       cols: {
         type: "number",
         description:
-          "Total timeline length in columns. 128 = 32 measures at 4/4.",
+          "Total timeline length in ticks (96 ticks/beat). 3072 = 8 bars at 4/4.",
+      },
+      timeSignature: {
+        type: "object",
+        description:
+          "Optional time signature, defaults to {numerator:4,denominator:4}. numerator: 1-32, denominator: 1|2|4|8|16|32.",
+        properties: {
+          numerator: { type: "number" },
+          denominator: { type: "number" },
+        },
+      },
+      subdivision: {
+        type: "number",
+        description:
+          "Optional grid/snap resolution (steps per beat), defaults to 4. Common values: 1,2,3,4,6,8,12,16,24,32.",
       },
       tracks: {
         type: "array",
@@ -125,7 +139,7 @@ export const createProjectTool = {
             notes: {
               type: "array",
               description:
-                "MidiNote array: [{i:uuid, x:col_position, y:pitch_index, w:duration_cols, h:1}]",
+                "MidiNote array: [{i:uuid, x:tick_position, y:pitch_index, w:duration_ticks}]",
               items: { type: "object" },
             },
           },
@@ -140,11 +154,15 @@ export const createProjectTool = {
       name,
       tempo,
       cols,
+      timeSignature = { numerator: 4, denominator: 4 },
+      subdivision = 4,
       tracks: inputTracks = [],
     } = args as {
       name: string;
       tempo: number;
       cols: number;
+      timeSignature?: { numerator: number; denominator: number };
+      subdivision?: number;
       tracks?: Array<{
         name: string;
         instrument: any;
@@ -174,15 +192,17 @@ export const createProjectTool = {
       tracks,
       cols,
       tempo,
+      timeSignature,
+      subdivision,
       volume: 80,
       reverb: 0,
-      version: "4.0",
+      version: "5.0",
     };
 
     const repo = pg.getRepository(Project);
     const project = repo.create({
       name,
-      data: { version: "bloop-mcp-v1", format: "timeline-v2", data: timeline },
+      data: { version: "bloop-mcp-v1", format: "timeline-v3", data: timeline },
       user,
       mcpEnabled: true,
     });
@@ -203,7 +223,7 @@ export const updateProjectTool = {
       tempo: { type: "number", description: "New BPM (optional)" },
       cols: {
         type: "number",
-        description: "New timeline length in columns (optional)",
+        description: "New timeline length in ticks (optional, 96 ticks/beat)",
       },
       volume: { type: "number", description: "Master volume 0-100 (optional)" },
       reverb: { type: "number", description: "Master reverb 0-100 (optional)" },
@@ -263,7 +283,7 @@ export const addTrackTool = {
       notes: {
         type: "array",
         description:
-          "Initial MIDI notes: [{i:uuid, x:column_position, y:pitch_index, w:duration_cols, h:1}].",
+          "Initial MIDI notes: [{i:uuid, x:tick_position, y:pitch_index, w:duration_ticks}] (96 ticks/beat).",
         items: { type: "object" },
       },
     },
@@ -347,10 +367,10 @@ export const setTrackNotesTool = {
   name: "set_track_notes",
   description:
     "Replace all MIDI notes on a track. This overwrites existing notes entirely. " +
-    "MidiNote format: {i: uuid_string, x: column_position, y: pitch_index, w: duration_cols, h: 1}. " +
+    "MidiNote format: {i: uuid_string, x: tick_position, y: pitch_index, w: duration_ticks}. " +
     "Pitch y-axis: 0=B7 (highest), 86=C0 (lowest). " +
     "C4 (middle C) = y:39. Semitone relationships: C4=39, D4=37, E4=35, F4=34, G4=32, A4=30, B4=28, C5=27. " +
-    "At 120 BPM: 1 measure = 4 columns, 1 quarter note = 1 col, 1 eighth note = 0.5 cols (use w:1 as minimum). " +
+    "96 ticks = 1 beat, regardless of tempo. 1 bar = timeSignature.numerator * 96 ticks (384 in 4/4). " +
     "Generate unique UUIDs for each note's i field.",
   inputSchema: {
     type: "object" as const,
@@ -360,24 +380,22 @@ export const setTrackNotesTool = {
       notes: {
         type: "array",
         description:
-          "Full notes array to set. Each note: {i: uuid, x: start_column, y: pitch_index_0_to_86, w: duration_cols, h: 1}",
+          "Full notes array to set. Each note: {i: uuid, x: start_tick, y: pitch_index_0_to_86, w: duration_ticks}",
         items: {
           type: "object",
           properties: {
             i: { type: "string", description: "Unique note ID (UUID)" },
-            x: { type: "number", description: "Start column position" },
+            x: { type: "number", description: "Start position in ticks" },
             y: {
               type: "number",
               description: "Pitch index 0-86 (0=B7, 86=C0, C4=39)",
             },
             w: {
               type: "number",
-              description:
-                "Duration in columns (1 = 1 quarter note at 4 cols/measure)",
+              description: "Duration in ticks (96 = 1 beat)",
             },
-            h: { type: "number", description: "Always 1" },
           },
-          required: ["i", "x", "y", "w", "h"],
+          required: ["i", "x", "y", "w"],
         },
       },
     },
@@ -407,8 +425,8 @@ export const addAudioClipTool = {
   description:
     "Add an audio clip to an audioTrack. The track's instrument must be {type:'audioTrack'}. " +
     "Use list_samples to get valid sampleIds. " +
-    "AudioClip format: {id: uuid, sampleId: sample_uuid, x: start_column, w: width_cols, startOffset: 0}. " +
-    "w (width) should match the sample duration converted to columns: at 120 BPM, 1 second ≈ 2 columns.",
+    "AudioClip format: {id: uuid, sampleId: sample_uuid, x: start_tick, w: width_ticks, startOffset: 0}. " +
+    "w (width) should match the sample duration converted to ticks: duration_ticks ≈ sample_duration_seconds * (tempo/60) * 96.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -420,16 +438,16 @@ export const addAudioClipTool = {
       sampleId: { type: "string", description: "Sample ID from list_samples" },
       x: {
         type: "number",
-        description: "Start column position on the timeline",
+        description: "Start position in ticks on the timeline",
       },
       w: {
         type: "number",
         description:
-          "Width in columns. At 120 BPM: 1 sec ≈ 2 cols, 4 cols = 1 measure. Use sample duration * 2 as a rough guide.",
+          "Width in ticks (96 ticks/beat). Use sample_duration_seconds * (tempo/60) * 96 as a rough guide.",
       },
       startOffset: {
         type: "number",
-        description: "Sample start offset in columns (usually 0)",
+        description: "Sample start offset in ticks (usually 0)",
       },
     },
     required: ["projectId", "trackId", "sampleId", "x", "w"],
