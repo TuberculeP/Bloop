@@ -93,6 +93,26 @@ const handleDeleteSelected = (): void => {
   selectedClipIds.value.clear();
 };
 
+const handleSplitSelected = (): void => {
+  if (selectedClipIds.value.size === 0) return;
+
+  const cutPosition = Math.round(props.playbackPosition);
+  const clipIdsToSplit = Array.from(selectedClipIds.value).filter((clipId) => {
+    const clip = clips.value.find((c) => c.id === clipId);
+    return !!clip && cutPosition > clip.x && cutPosition < clip.x + clip.w;
+  });
+  if (clipIdsToSplit.length === 0) return;
+
+  trackHistoryStore.startBatch(
+    props.track.id,
+    `Split ${clipIdsToSplit.length} clip(s)`,
+  );
+  for (const clipId of clipIdsToSplit) {
+    timelineStore.splitClipInTrack(props.track.id, clipId, cutPosition);
+  }
+  trackHistoryStore.endBatch();
+};
+
 useAudioClipKeyboard(
   selectedClipIds,
   {
@@ -103,12 +123,17 @@ useAudioClipKeyboard(
     onCopy: copySelectedClips,
     onPaste: pasteClips,
     onDuplicate: duplicateSelectedClips,
+    onSplit: handleSplitSelected,
   },
   isContainerFocused,
 );
 
 const handleClipSelect = (clipId: string, event: MouseEvent): void => {
   selectClip(clipId, event);
+  // preventDefault() sur le mousedown de l'item (voir AudioClipItem.vue) coupe
+  // la mise au focus native du navigateur : on la redéclenche explicitement
+  // pour que les raccourcis clavier scoped (delete/copy/split...) restent actifs.
+  containerRef.value?.focus();
 };
 
 const handleClipDelete = (clipId: string): void => {
@@ -193,6 +218,8 @@ const handleDragOver = (event: DragEvent): void => {
 const handleContainerMouseDown = (event: MouseEvent): void => {
   if (event.target !== containerRef.value) return;
   if (event.button !== 0) return;
+  event.preventDefault();
+  containerRef.value?.focus();
 
   if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
     clearSelection();

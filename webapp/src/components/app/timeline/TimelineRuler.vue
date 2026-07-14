@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed, onBeforeUnmount } from "vue";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { ticksPerBar } from "../../../lib/audio/timeGrid";
+import { ticksPerBar, snapToGrid } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   cols: number;
@@ -14,6 +14,9 @@ const emit = defineEmits<{
 }>();
 
 const timelineStore = useTimelineStore();
+const rulerRef = ref<HTMLElement | null>(null);
+const isSeeking = ref(false);
+const lastSeekPosition = ref<number | null>(null);
 
 const measures = computed(() => {
   const barLength = ticksPerBar(timelineStore.timeSignature);
@@ -24,12 +27,47 @@ const measures = computed(() => {
   }));
 });
 
-const handleClick = (event: MouseEvent) => {
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+const positionFromEvent = (event: MouseEvent): number => {
+  const rect = rulerRef.value!.getBoundingClientRect();
   const x = event.clientX - rect.left;
-  const position = Math.floor(x / props.colWidth);
-  emit("seek", Math.max(0, Math.min(position, props.cols - 1)));
+  const rawPosition = Math.max(
+    0,
+    Math.min(Math.floor(x / props.colWidth), props.cols - 1),
+  );
+  const snapped = snapToGrid(rawPosition, timelineStore.subdivision);
+  return Math.max(0, Math.min(snapped, props.cols - 1));
 };
+
+const emitSeek = (position: number): void => {
+  if (lastSeekPosition.value === position) return;
+  lastSeekPosition.value = position;
+  emit("seek", position);
+};
+
+const handleMouseMove = (event: MouseEvent): void => {
+  emitSeek(positionFromEvent(event));
+};
+
+const handleMouseUp = (): void => {
+  isSeeking.value = false;
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+};
+
+const handleMouseDown = (event: MouseEvent): void => {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  isSeeking.value = true;
+  emitSeek(positionFromEvent(event));
+
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
+};
+
+onBeforeUnmount(() => {
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+});
 </script>
 
 <template>
@@ -38,7 +76,12 @@ const handleClick = (event: MouseEvent) => {
     :style="{ minWidth: `${180 + cols * colWidth}px` }"
   >
     <div class="ruler-header">Pistes</div>
-    <div class="ruler-measures" @click="handleClick">
+    <div
+      ref="rulerRef"
+      class="ruler-measures"
+      :class="{ seeking: isSeeking }"
+      @mousedown="handleMouseDown"
+    >
       <div class="ruler-content" :style="{ width: `${cols * colWidth}px` }">
         <div
           v-for="measure in measures"
@@ -88,6 +131,10 @@ const handleClick = (event: MouseEvent) => {
 
   &:hover {
     background: var(--color-bg-daw-active);
+  }
+
+  &.seeking {
+    cursor: grabbing;
   }
 }
 

@@ -2,7 +2,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import type { AudioClip } from "../../../../lib/utils/types";
 import { useAudioLibraryStore } from "../../../../stores/audioLibraryStore";
-import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
+import { useTimelineStore } from "../../../../stores/timelineStore";
+import { snapTicks, ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import WaveformCanvas from "./WaveformCanvas.vue";
 
 const props = defineProps<{
@@ -28,6 +29,9 @@ const emit = defineEmits<{
 }>();
 
 const audioLibraryStore = useAudioLibraryStore();
+const timelineStore = useTimelineStore();
+
+const snapStep = computed(() => snapTicks(timelineStore.subdivision));
 
 const isDragging = ref(false);
 const isResizing = ref(false);
@@ -53,6 +57,7 @@ const sampleName = computed(() => sample.value?.name ?? "Loading...");
 
 const handleMouseDown = (event: MouseEvent): void => {
   if (event.button !== 0) return;
+  event.preventDefault();
   event.stopPropagation();
 
   emit("select", event);
@@ -96,7 +101,8 @@ const startResize = (side: "left" | "right", event: MouseEvent): void => {
 
 const handleMouseMove = (event: MouseEvent): void => {
   const deltaX = event.clientX - dragStartX.value;
-  const deltaCols = Math.round(deltaX / props.colWidth);
+  const step = snapStep.value;
+  const deltaCols = Math.round(deltaX / props.colWidth / step) * step;
 
   if (isDragging.value) {
     const newX = Math.max(0, initialClipState.value.x + deltaCols);

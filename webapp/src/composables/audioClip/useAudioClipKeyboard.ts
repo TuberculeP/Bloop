@@ -8,6 +8,7 @@ export interface KeyboardActions {
   onCopy: () => void;
   onPaste: () => void;
   onDuplicate: () => void;
+  onSplit: () => void;
 }
 
 export function useAudioClipKeyboard(
@@ -68,6 +69,12 @@ export function useAudioClipKeyboard(
     if ((event.ctrlKey || event.metaKey) && event.key === "d") {
       event.preventDefault();
       actions.onDuplicate();
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key === "e") {
+      event.preventDefault();
+      actions.onSplit();
       return;
     }
   };

@@ -503,6 +503,38 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     return true;
   };
 
+  const splitClipInTrack = (
+    trackId: string,
+    clipId: string,
+    cutPosition: number,
+  ): string | null => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    if (!track || !track.clips) return null;
+
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (!clip) return null;
+
+    // cutPosition doit être strictement à l'intérieur du clip
+    if (cutPosition <= clip.x || cutPosition >= clip.x + clip.w) return null;
+
+    const rightW = clip.x + clip.w - cutPosition;
+    const rightStartOffset = clip.startOffset + (cutPosition - clip.x);
+
+    clip.w = cutPosition - clip.x; // le clip existant devient la partie gauche
+
+    const rightClipId = addClipToTrack(trackId, {
+      sampleId: clip.sampleId,
+      x: cutPosition,
+      w: rightW,
+      startOffset: rightStartOffset,
+    });
+
+    track.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+
+    return rightClipId;
+  };
+
   const setTrackClips = (trackId: string, clips: AudioClip[]): boolean => {
     const track = project.value.tracks.find((t) => t.id === trackId);
     if (!track) return false;
@@ -1118,6 +1150,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     addClipToTrack,
     removeClipFromTrack,
     updateClipInTrack,
+    splitClipInTrack,
     setTrackClips,
     getTrackClipsAtPosition,
 
