@@ -15,9 +15,6 @@ export class AudioSample {
   @Column("float", { default: 0 })
   duration: number;
 
-  @Column("simple-array", { nullable: true })
-  waveform: number[];
-
   @ManyToOne(() => SampleFolder, (folder) => folder.samples, {
     onDelete: "CASCADE",
   })

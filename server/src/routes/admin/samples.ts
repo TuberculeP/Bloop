@@ -275,8 +275,7 @@ adminSamplesRouter.get("/folders/:folderId/samples", async (req, res) => {
 // POST /api/admin/samples/folders/:folderId/samples - Create sample (after upload)
 adminSamplesRouter.post("/folders/:folderId/samples", async (req, res) => {
   try {
-    const { name, filename, duration, waveform, previewUrl, fullUrl } =
-      req.body;
+    const { name, filename, duration, previewUrl, fullUrl } = req.body;
 
     if (!name || !filename) {
       res.status(400).json({ error: "Name and filename required" });
@@ -298,7 +297,6 @@ adminSamplesRouter.post("/folders/:folderId/samples", async (req, res) => {
       name,
       filename,
       duration: duration ?? 0,
-      waveform: waveform ?? null,
       folderId: req.params.folderId,
       previewUrl: previewUrl ?? null,
       fullUrl: fullUrl ?? null,
@@ -316,7 +314,7 @@ adminSamplesRouter.post("/folders/:folderId/samples", async (req, res) => {
 // PUT /api/admin/samples/samples/:id - Update sample
 adminSamplesRouter.put("/samples/:id", async (req, res) => {
   try {
-    const { name, duration, waveform, previewUrl, fullUrl } = req.body;
+    const { name, duration, previewUrl, fullUrl } = req.body;
     const repo = pg.getRepository(AudioSample);
 
     const sample = await repo.findOne({ where: { id: req.params.id } });
@@ -327,7 +325,6 @@ adminSamplesRouter.put("/samples/:id", async (req, res) => {
 
     if (name !== undefined) sample.name = name;
     if (duration !== undefined) sample.duration = duration;
-    if (waveform !== undefined) sample.waveform = waveform;
     if (previewUrl !== undefined) sample.previewUrl = previewUrl;
     if (fullUrl !== undefined) sample.fullUrl = fullUrl;
 

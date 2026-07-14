@@ -31,7 +31,6 @@ interface ApiSample {
   name: string;
   filename: string;
   duration: number;
-  waveform: number[] | null;
   folderId: string;
   previewUrl: string | null;
   fullUrl: string | null;
@@ -42,7 +41,6 @@ interface ApiSearchSample {
   name: string;
   filename: string;
   duration: number;
-  waveform: number[] | null;
   fullUrl: string | null;
   folder?: {
     id: string;
@@ -340,7 +338,6 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
       folder: folderId,
       filename: as.filename,
       duration: as.duration,
-      waveformData: as.waveform ?? undefined,
       fullUrl: as.fullUrl ?? "",
     }));
 
@@ -399,7 +396,6 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
       folder: as.folder?.name ?? "",
       filename: as.filename,
       duration: as.duration,
-      waveformData: as.waveform ?? undefined,
       fullUrl: as.fullUrl ?? "",
     }));
 
