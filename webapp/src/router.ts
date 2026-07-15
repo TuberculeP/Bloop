@@ -50,9 +50,13 @@ import BlogSearchResults from "./views/blog/BlogSearchResults.vue";
 import BlogPostDetail from "./views/blog/BlogPostDetail.vue";
 import ProfileView from "./views/profile/ProfileView.vue";
 import MessagesView from "./views/messages/MessagesView.vue";
+import LandingCgu from "./views/landing/LandingCgu.vue";
+import LandingCgv from "./views/landing/LandingCgv.vue";
 
 const routes = [
   { path: "/", component: LandingIndex, name: "landing-main" },
+  { path: "/cgu", component: LandingCgu, name: "landing-cgu" },
+  { path: "/cgv", component: LandingCgv, name: "landing-cgv" },
   { path: "/app", component: ProjectSelectorView, name: "app-main" },
   { path: "/app/sequencer", component: BloopApp, name: "app-sequencer" },
   { path: "/login", component: LoginView, name: "app-login" },

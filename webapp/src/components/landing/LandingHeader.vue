@@ -39,23 +39,12 @@
           >
             <button @click.stop="toggleProfileMenu" class="profile-btn">
               <span class="avatar-ring">
-                <span class="avatar">{{ userInitials }}</span>
+                <ProfileAvatar :user="user" size="small" />
               </span>
-              <span class="profile-name">{{
-                user?.firstName || "Profil"
-              }}</span>
-              <svg
-                class="dropdown-icon"
-                :class="{ rotated: showProfileMenu }"
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              <span class="profile-name">
+                {{ user?.firstName || "Profil" }}
+              </span>
+              <i class="fas fa-chevron-down" />
             </button>
 
             <Transition name="dropdown">
@@ -158,6 +147,7 @@ import apiClient from "../../lib/utils/apiClient";
 import gsap from "gsap";
 import LandingCtaButton from "./LandingCtaButton.vue";
 import { useDropdown } from "../../composables/useDropdown";
+import ProfileAvatar from "../shared/ProfileAvatar.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -184,13 +174,6 @@ const isMobileMenuOpen = ref(false);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const user = computed(() => authStore.user);
 const isAdmin = computed(() => user.value?.role === "ROLE_ADMIN");
-
-const userInitials = computed(() => {
-  if (!user.value) return "?";
-  const firstName = user.value.firstName || "";
-  const lastName = user.value.lastName || "";
-  return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-});
 
 // Menu handlers
 const toggleMobileMenu = () => {
@@ -491,7 +474,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50px;
@@ -511,42 +494,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.avatar-ring::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent),
-    var(--color-secondary)
-  );
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.profile-btn:hover .avatar-ring::before {
-  opacity: 1;
-}
-
-.avatar {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
-  );
-  border-radius: 50%;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--color-black);
 }
 
 .profile-name {

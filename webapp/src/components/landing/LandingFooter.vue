@@ -135,11 +135,11 @@
         </div>
         <div class="bottom-right">
           <a
-            href="#"
+            :href="link.link"
             class="legal-link"
             v-for="link in legalLinks"
-            :key="link"
-            >{{ link }}</a
+            :key="link.id"
+            >{{ link.title }}</a
           >
         </div>
       </div>
@@ -267,7 +267,18 @@ const footerLinks = [
   },
 ];
 
-const legalLinks = ["Confidentialité", "CGU", "Cookies", "Mentions légales"];
+const legalLinks = [
+  {
+    id: 1,
+    title: "CGU",
+    link: "/cgu",
+  },
+  {
+    id: 2,
+    title: "CGV",
+    link: "/cgv",
+  },
+];
 
 // Scroll handler
 const handleScroll = () => {
@@ -468,7 +479,6 @@ onUnmounted(() => {
 
 .column-title {
   font-size: 0.9rem;
-  font-weight: 600;
   color: var(--color-white);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -554,7 +564,6 @@ onUnmounted(() => {
 
 .newsletter-title {
   font-size: 1.25rem;
-  font-weight: 600;
   color: var(--color-white);
   margin-bottom: 0.5rem;
 }

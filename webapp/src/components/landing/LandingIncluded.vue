@@ -408,7 +408,6 @@ onUnmounted(() => {
 
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
   margin-bottom: 1rem;
 }
 
@@ -527,7 +526,6 @@ onUnmounted(() => {
 
 .card-title {
   font-size: 1.1rem;
-  font-weight: 600;
   color: var(--color-white);
   margin: 0 0 0.25rem 0;
   transition: all 0.3s ease;
@@ -629,7 +627,6 @@ onUnmounted(() => {
 
 .feature-title {
   font-size: 0.9rem;
-  font-weight: 600;
   color: var(--color-white);
   margin: 0 0 0.2rem 0;
 }

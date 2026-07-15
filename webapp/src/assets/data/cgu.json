@@ -1,0 +1,121 @@
+{
+  "documentTitle": "Conditions Générales d'Utilisation",
+  "shortName": "CGU",
+  "lastUpdated": "15 juillet 2026",
+  "intro": "",
+  "sections": [
+    {
+      "id": "1",
+      "title": "Objet",
+      "paragraphs": [
+        "Les présentes Conditions Générales d’Utilisation (CGU) ont pour objet de définir les modalités d’accès et d’utilisation de Bloop, service dédié à la création musicale, au partage de contenus et aux interactions entre utilisateurs."
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Acceptation des CGU",
+      "paragraphs": [
+        "L’inscription et l’utilisation de Bloop impliquent l’acceptation pleine et entière des présentes CGU. L’utilisateur reconnaît en avoir pris connaissance et s’engage à les respecter sans réserve."
+      ],
+      "list": []
+    },
+    {
+      "id": "3",
+      "title": "Description des services",
+      "paragraphs": [
+        "Bloop permet aux utilisateurs de créer, publier et partager des œuvres musicales, d’interagir avec d’autres membres via des fonctionnalités communautaires (commentaires, likes, échanges) et de collaborer sur des projets artistiques.",
+        "Bloop propose également différents niveaux d’accès (Freemium, Medium et Premium) donnant accès à des fonctionnalités variables."
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Accès au service",
+      "paragraphs": [
+        "L’accès à Bloop est conditionné par la création d’un compte personnel. L’utilisateur s’engage à fournir des informations exactes, complètes et à jour.",
+        "Il est seul responsable de la confidentialité de ses identifiants et de l’utilisation de son compte."
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Utilisation du service",
+      "paragraphs": [
+        "L’utilisateur s’engage à utiliser Bloop de manière loyale, conformément à la législation en vigueur et respectueuse des autres membres.",
+        "Il lui est notamment interdit de publier des contenus :"],
+      "list": [
+        "contraires à l’ordre public ou aux bonnes mœurs",
+        "portant atteinte aux droits de tiers",
+        "violant des droits de propriété intellectuelle"
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Contenus publiés par les utilisateurs",
+      "paragraphs": [
+        "Les utilisateurs peuvent publier des contenus musicaux, textuels ou visuels.",
+        "Ils garantissent qu’ils détiennent l’ensemble des droits nécessaires à leur diffusion. À ce titre, ils s’engagent à ne pas utiliser d’œuvres protégées sans autorisation, notamment des samples non libres de droits."]
+    },
+    {
+      "id": "7",
+      "title": "Propriété intellectuelle",
+      "paragraphs": [
+        "Les utilisateurs conservent la propriété des œuvres qu’ils publient sur Bloop.",
+        "Toutefois, en mettant en ligne un contenu, ils accordent à Bloop une licence non exclusive, gratuite et mondiale lui permettant d’héberger, reproduire, représenter et diffuser les contenus dans le cadre du fonctionnement et de la promotion du service."]
+    },
+    {
+      "id": "8",
+      "title": "Licences gratuites des contenus",
+      "paragraphs": [
+        "Les contenus publiés sur Bloop peuvent être accessibles sous une licence gratuite définie par le créateur.",
+        "Cette licence autorise l’écoute et le partage des œuvres au sein de Bloop. Toute utilisation en dehors de ce cadre, notamment à des fins commerciales, doit faire l’objet d’une autorisation expresse du créateur."]
+    },
+    {
+      "id": "9",
+      "title": "Fonctionnalités communautaires",
+      "paragraphs": [
+        "Bloop met à disposition des outils d’échange et d’interaction entre utilisateurs.",
+        "Chaque utilisateur est responsable des propos qu’il publie et s’engage à adopter un comportement respectueux. Bloop se réserve le droit de supprimer tout contenu ou message jugé inapproprié."]
+    },
+    {
+      "id": "10",
+      "title": "Collaboration entre utilisateurs",
+      "paragraphs": [
+        "Bloop permet la mise en relation entre utilisateurs pour des projets collaboratifs.",
+        "Les conditions de ces collaborations (répartition des droits, revenus, crédits) sont définies librement entre les parties. Bloop n’intervient pas dans ces accords et ne pourra être tenue responsable en cas de litige."]
+    },
+    {
+      "id": "11",
+      "title": "Responsabilité",
+      "paragraphs": [
+        "Bloop agit en qualité d’hébergeur de contenus. À ce titre, Bloop ne peut être tenue responsable des contenus publiés par les utilisateurs ni des interactions entre eux.",
+        "Bloop ne garantit pas la qualité des œuvres, ni le succès, la visibilité ou les retombées économiques des contenus diffusés."]
+    },
+    {
+      "id": "12",
+      "title": "Suspension et résiliation",
+      "paragraphs": [
+        "En cas de non-respect des présentes CGU, Bloop se réserve le droit de suspendre ou de supprimer le compte de l’utilisateur, sans préavis ni indemnité."
+      ]
+    },
+    {
+      "id": "13",
+      "title": "Données personnelles",
+      "paragraphs": [
+        "Les données personnelles collectées sont traitées conformément à la réglementation en vigueur, notamment le RGPD."
+      ]
+    },
+    {
+      "id": "14",
+      "title": "Modification des CGU",
+      "paragraphs": [
+        "Bloop se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle."
+      ]
+    } ,
+    {
+      "id": "15",
+      "title": "Droit applicable",
+      "paragraphs": [
+        "Les présentes CGU sont soumises au droit français. Tout litige sera soumis aux juridictions compétentes."
+      ]
+    }
+  ]
+}
