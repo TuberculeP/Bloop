@@ -17,9 +17,9 @@ Architecture multi-pistes style GarageBand simplifiée pour les débutants :
 
 | Store               | Fichier                       | Rôle                                                       |
 | ------------------- | ----------------------------- | ---------------------------------------------------------- |
-| `timelineStore`     | `stores/timelineStore.ts`     | Gestion des pistes et notes, état d'expansion              |
-| `trackAudioStore`   | `stores/trackAudioStore.ts`   | Routing audio par piste, EQ/Reverb par piste, instruments  |
-| `audioBusStore`     | `stores/audioBusStore.ts`     | Bus audio master, EQ global, reverb global                 |
+| `timelineStore`     | `stores/timelineStore.ts`     | Gestion des pistes et notes, pile d'effets, automation, état d'expansion |
+| `trackAudioStore`   | `stores/trackAudioStore.ts`   | Routing audio par piste, pile d'effets, instruments        |
+| `audioBusStore`     | `stores/audioBusStore.ts`     | Bus audio master, pile d'effets du master, export PCM      |
 | `trackHistoryStore` | `stores/trackHistoryStore.ts` | Undo/redo par piste (snapshots), batch operations          |
 
 #### timelineStore - API
@@ -38,8 +38,6 @@ updateTrack(trackId, updates): boolean
 setTrackMuted(trackId, muted): boolean
 setTrackSolo(trackId, solo): boolean
 setTrackVolume(trackId, volume): boolean
-setTrackReverb(trackId, reverb): boolean
-updateTrackEQBand(trackId, bandId, gain): boolean
 
 // Notes (directement sur la piste)
 addNoteToTrack(trackId, note): string | null
@@ -56,6 +54,21 @@ toggleTrackExpanded(trackId): void
 getPlayableTracks(): Track[]
 getNotesAtPosition(notes, position): MidiNote[]
 getTrackNotesAtPosition(trackId, position): MidiNote[]
+
+// Effets (pile réordonnable, tracks + master — trackId: string | "master")
+addEffect(trackId, type): string | null
+removeEffect(trackId, effectId): boolean
+reorderEffect(trackId, fromIndex, toIndex): boolean
+setEffectEnabled(trackId, effectId, enabled): boolean
+updateEffectParam(trackId, effectId, paramId, value): boolean
+
+// Automation (cible générique, tracks + master — trackId: string | "master")
+addAutomationLane(target: AutomationTarget): string | null
+removeAutomationLane(trackId, laneId): boolean
+addAutomationPoint(trackId, laneId, point): string | null
+updateAutomationPoint(trackId, laneId, pointId, updates): boolean
+removeAutomationPoint(trackId, laneId, pointId): boolean
+setAutomationPoints(trackId, laneId, points): boolean
 ```
 
 ### Types clés (`lib/utils/types.ts`)
@@ -82,12 +95,30 @@ EQBand {
   label: string       // Label affiché
 }
 
+// Un effet (EQ, reverb, compressor, limiter...) dans la pile d'une piste ou
+// du master — voir "Système d'effets" plus bas.
+EffectInstanceConfig {
+  id: string                       // uuid stable, sert d'ancre pour l'automation
+  type: string                     // clé du registre : "eq5" | "reverb" | "compressor" | "limiter"
+  enabled: boolean                 // bypass
+  params: Record<string, number>   // paramId -> valeur réelle (dB, %, etc.)
+}
+
+// Cible d'un paramètre automatisable — remplace l'ancien enum fermé
+// `AutomatableParam`.
+AutomationTarget {
+  trackId: string | "master"
+  effectId: string   // EffectInstanceConfig.id, ou "channel" (fader volume, hors pile)
+  paramId: string
+}
+
 Track {
-  id, name, instrument, color, volume, reverb,
-  eqBands: EQBand[],  // EQ 5 bandes par piste
+  id, name, instrument, color, volume,
+  effects: EffectInstanceConfig[],  // pile d'effets réordonnable (EQ, reverb, etc.)
   muted, solo, order,
   notes: MidiNote[]   // Notes avec positions absolues sur la timeline (MIDI tracks)
   clips?: AudioClip[] // Clips audio (audio tracks uniquement)
+  automationLanes: AutomationLane[]  // { id, target: AutomationTarget, points }
   createdAt, updatedAt
 }
 
@@ -120,8 +151,10 @@ TimelineProject {
   name, tracks: Track[], cols, tempo,
   timeSignature: TimeSignature,  // Défaut { numerator: 4, denominator: 4 }
   subdivision: number,           // Résolution de snap (pas/temps), défaut 4 — UI uniquement, ne change pas le stockage des notes
-  volume, reverb, eqBands,
-  version: "5.0", createdAt, updatedAt
+  volume,
+  effects: EffectInstanceConfig[],  // pile d'effets du bus master (EQ, reverb, compressor, limiter...)
+  automationLanes?: AutomationLane[],
+  version: "6.0", createdAt, updatedAt
 }
 
 TRACK_COLORS // Palette de couleurs pour les pistes
@@ -216,16 +249,35 @@ User sélectionne sample
 
 #### Routing Audio par piste (`trackAudioStore`)
 
-Chaque piste a sa propre chaîne audio :
+Chaque piste a sa propre chaîne audio, le volume restant hors de la pile d'effets (fader de channel strip, pas un insert réordonnable) :
 
 ```
-Engine → GainNode (volume) → EQ Filters (5 bandes) → DryGain → inputBus
-                                                   → WetGain → Convolver (reverb partagé)
+Engine → GainNode (volume) → EffectChain (pile réordonnable) → inputBus
 ```
 
-- **EQ 5 bandes** : Sub (60Hz), Bass (200Hz), Mid (1000Hz), Presence (3000Hz), Brilliance (10000Hz)
-- **Reverb** : Convolver partagé avec dry/wet mixing par piste
-- Les watchers synchronisent automatiquement les changements du store vers les nodes audio
+Le bus master suit la même logique dans `audioBusStore` : `inputBus → masterGain (volume) → EffectChain → destination`. Les deux stores partagent la même classe `EffectChain` (`lib/audio/effects/effectChain.ts`) — voir "Système d'effets" ci-dessous. Les watchers (scindés en un watcher structurel + un watcher de valeurs, voir le fichier) synchronisent automatiquement les changements du store vers les nodes audio.
+
+### Système d'effets (`lib/audio/effects/`)
+
+Pile d'effets réordonnable, commune aux pistes et au bus master (remplace l'ancien câblage figé EQ/Reverb/Compressor/Limiter). Interface volontairement proche, dans la forme, de Web Audio Modules (WAM) — sans viser sa conformité — pour garder la porte ouverte à un futur adaptateur de plugins tiers.
+
+```
+lib/audio/effects/
+  types.ts        # EffectInstance { id, type, input, output, getParams(), getParam(), dispose() }
+                  # EffectParamDescriptor (vivant, lié à l'audio) / EffectParamMeta (statique, pour l'UI)
+  registry.ts     # registerEffect/getEffectDefinition/listEffectDefinitions/createEffectInstance
+  effectChain.ts  # class EffectChain — reconstruction dynamique du graphe (rebuild/setEnabled/getParamDescriptor)
+  eq5.ts, reverb.ts, compressor.ts, limiter.ts  # effets intégrés
+  index.ts        # enregistre les 4 effets au chargement du module
+```
+
+- Chaque effet expose uniquement `{input, output}` + une liste de `EffectParamDescriptor` — le bypass (crossfade dry/wet sans clic) est géré une seule fois par `EffectChain`, pas par chaque effet.
+- La Reverb : IR générée une seule fois (`AudioBuffer` partagé), mais chaque instance a son propre `ConvolverNode` — contrôle indépendant par instance sans regénérer l'IR.
+- `EffectChain.rebuild(configs)` ne doit être appelé que sur ajout/suppression/réordre/bypass (rare) ; les changements de valeur de param passent par un watcher séparé qui écrit directement sur l'`AudioParam`/`setValue`, sans rebuild.
+- UI : `components/app/effects/{EffectRack,EffectSlot,EffectParamRow}.vue` — liste compacte par effet (nom, bypass, drag-to-reorder natif HTML5, supprimer), dépliable inline pour éditer les params (pas de modale séparée). Réutilisé identiquement par `InstrumentSettings.vue` (tracks) et `MasterSettings.vue` (master).
+- Automation généralisée : `AutomationTarget` (voir Types) remplace l'ancien enum fermé — n'importe quel paramètre de n'importe quel effet peut être automatisé. Une lane s'ajoute/se retire directement depuis le bouton "automatiser" de `EffectParamRow.vue` (plus de menu déroulant séparé dans le drawer d'automation) ; le drawer (`TrackRow.vue`/`MasterTrackRow.vue`) ne fait plus qu'afficher les lanes existantes et permettre leur suppression.
+
+Pour ajouter un nouvel effet : créer `lib/audio/effects/monEffet.ts` exportant un `EffectDefinition` (type, label, category, params: EffectParamMeta[], createDefaultParams(), create()), puis l'enregistrer dans `index.ts` via `registerEffect(...)`.
 
 ### Composants
 
@@ -268,8 +320,12 @@ Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre
 
 | Composant                | Rôle                                                    |
 | ------------------------ | ------------------------------------------------------- |
-| `InstrumentSettings.vue` | Panneau latéral : volume, reverb, EQ graphique, options |
-| `TrackEqualizer.vue`     | Canvas EQ 5 bandes interactif (drag points)             |
+| `InstrumentSettings.vue` | Panneau latéral : volume, pile d'effets (`EffectRack`), options instrument |
+| `TrackEqualizer.vue`     | Canvas EQ 5 bandes interactif (drag points), réutilisé par `EffectSlot.vue` |
+
+#### Effets (`components/app/effects/`)
+
+Voir [Système d'effets](#système-deffets-libaudioeffects) plus haut. `EffectRack.vue` / `EffectSlot.vue` / `EffectParamRow.vue` — réutilisés par `InstrumentSettings.vue` et `MasterSettings.vue`.
 
 ### Vue principale
 
@@ -351,7 +407,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 - [x] Undo/redo par piste (Ctrl+Z/Shift+Z, persiste si piano roll fermé)
 - [x] Sélection multiple (Ctrl+clic + marquee selection)
 - [ ] Export audio (WAV/MP3)
-- [x] EQ/Reverb par piste (dans InstrumentSettings)
+- [x] Pile d'effets réordonnable (EQ/Reverb/Compressor/Limiter) par piste et master
 - [ ] Zoom timeline
 - [ ] ADSR pour ElementarySynth
 - [x] Undertale soundfont engine avec ADSR

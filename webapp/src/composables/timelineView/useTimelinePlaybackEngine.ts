@@ -240,13 +240,13 @@ export function useTimelinePlaybackEngine(
       for (const lane of track.automationLanes ?? []) {
         if (lane.points.length === 0) continue;
         const value = getAutomationValueAt(lane.points, position);
-        trackAudioStore.applyAutomation(track.id, lane.parameter, value);
+        trackAudioStore.applyAutomation(track.id, lane.target, value);
       }
     }
     for (const lane of timelineStore.masterAutomationLanes) {
       if (lane.points.length === 0) continue;
       const value = getAutomationValueAt(lane.points, position);
-      audioBusStore.applyMasterAutomation(lane.parameter, value);
+      audioBusStore.applyMasterAutomation(lane.target, value);
     }
   };
 

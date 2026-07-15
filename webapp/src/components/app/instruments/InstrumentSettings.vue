@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type {
-  Track,
-  OscillatorType,
-  AutomatableParam,
-} from "../../../lib/utils/types";
+import type { Track, OscillatorType } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
-import TrackEqualizer from "./TrackEqualizer.vue";
 import RangeSlider from "../../ui/RangeSlider.vue";
+import EffectParamRow from "../effects/EffectParamRow.vue";
+import EffectRack from "../effects/EffectRack.vue";
 
 const props = defineProps<{
   track: Track;
@@ -127,20 +124,6 @@ const handleVolumeChange = (volume: number) => {
   timelineStore.setTrackVolume(props.track.id, volume);
 };
 
-const handleReverbChange = (reverb: number) => {
-  timelineStore.setTrackReverb(props.track.id, reverb);
-};
-
-const handleEQBandUpdate = (bandId: string, gain: number) => {
-  timelineStore.updateTrackEQBand(props.track.id, bandId, gain);
-};
-
-const hasAutomation = (param: AutomatableParam): boolean => {
-  return (
-    props.track.automationLanes?.some((l) => l.parameter === param) ?? false
-  );
-};
-
 const handleClose = () => {
   emit("close");
 };
@@ -160,46 +143,22 @@ const handleClose = () => {
 
           <div class="panel-body">
             <div class="setting-group">
-              <label class="setting-label">
-                Volume
-                <span v-if="hasAutomation('volume')" class="auto-badge"
-                  >AUTO</span
-                >
-              </label>
-              <RangeSlider
-                :model-value="track.volume"
+              <EffectParamRow
+                :track-id="track.id"
+                effect-id="channel"
+                param-id="volume"
+                label="Volume"
+                unit="%"
                 :min="0"
                 :max="100"
-                unit="%"
-                :disabled="hasAutomation('volume')"
+                :model-value="track.volume"
                 @update:model-value="handleVolumeChange"
               />
             </div>
 
             <div class="setting-group">
-              <label class="setting-label">
-                Reverb
-                <span v-if="hasAutomation('reverb')" class="auto-badge"
-                  >AUTO</span
-                >
-              </label>
-              <RangeSlider
-                :model-value="track.reverb ?? 0"
-                :min="0"
-                :max="100"
-                unit="%"
-                :disabled="hasAutomation('reverb')"
-                @update:model-value="handleReverbChange"
-              />
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">Égaliseur</label>
-              <TrackEqualizer
-                v-if="track.eqBands"
-                :bands="track.eqBands"
-                @update="handleEQBandUpdate"
-              />
+              <label class="setting-label">Effets</label>
+              <EffectRack :track-id="track.id" :effects="track.effects" />
             </div>
 
             <template v-if="instrumentType === 'basicSynth'">
@@ -415,17 +374,6 @@ const handleClose = () => {
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 8px;
-}
-
-.auto-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(255, 63, 180, 0.2);
-  color: var(--color-accent2);
-  border: 1px solid rgba(255, 63, 180, 0.4);
-  letter-spacing: 0.05em;
 }
 
 .waveform-selector {

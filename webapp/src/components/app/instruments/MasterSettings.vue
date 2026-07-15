@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTimelineStore } from "../../../stores/timelineStore";
-import TrackEqualizer from "./TrackEqualizer.vue";
-import RangeSlider from "../../ui/RangeSlider.vue";
+import EffectParamRow from "../effects/EffectParamRow.vue";
+import EffectRack from "../effects/EffectRack.vue";
 
 defineProps<{
   visible: boolean;
@@ -15,14 +15,6 @@ const timelineStore = useTimelineStore();
 
 const handleVolumeChange = (volume: number) => {
   timelineStore.volume = volume;
-};
-
-const handleReverbChange = (reverb: number) => {
-  timelineStore.reverb = reverb;
-};
-
-const handleEQBandUpdate = (bandId: string, gain: number) => {
-  timelineStore.updateEQBand(bandId, gain);
 };
 
 const handleClose = () => {
@@ -42,173 +34,25 @@ const handleClose = () => {
 
           <div class="panel-body">
             <div class="setting-group">
-              <label class="setting-label">Volume</label>
-              <RangeSlider
-                :model-value="timelineStore.volume"
+              <EffectParamRow
+                track-id="master"
+                effect-id="channel"
+                param-id="volume"
+                label="Volume"
+                unit="%"
                 :min="0"
                 :max="100"
-                unit="%"
+                :model-value="timelineStore.volume"
                 @update:model-value="handleVolumeChange"
               />
             </div>
 
             <div class="setting-group">
-              <label class="setting-label">Reverb</label>
-              <RangeSlider
-                :model-value="timelineStore.reverb"
-                :min="0"
-                :max="100"
-                unit="%"
-                @update:model-value="handleReverbChange"
+              <label class="setting-label">Effets</label>
+              <EffectRack
+                track-id="master"
+                :effects="timelineStore.masterEffects"
               />
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">Égaliseur</label>
-              <TrackEqualizer
-                :bands="timelineStore.eqBands"
-                @update="handleEQBandUpdate"
-              />
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">
-                Compresseur
-                <div class="toggle-switch">
-                  <input
-                    type="checkbox"
-                    :checked="timelineStore.compressor.enabled"
-                    @change="
-                      timelineStore.updateCompressor({
-                        enabled: ($event.target as HTMLInputElement).checked,
-                      })
-                    "
-                  />
-                </div>
-              </label>
-              <div class="compressor-controls">
-                <div class="mini-slider">
-                  <span class="mini-label">Threshold</span>
-                  <RangeSlider
-                    :model-value="timelineStore.compressor.threshold"
-                    :min="-100"
-                    :max="0"
-                    thumb-size="small"
-                    :disabled="!timelineStore.compressor.enabled"
-                    :display-value="`${timelineStore.compressor.threshold}dB`"
-                    @update:model-value="
-                      (v) => timelineStore.updateCompressor({ threshold: v })
-                    "
-                  />
-                </div>
-                <div class="mini-slider">
-                  <span class="mini-label">Ratio</span>
-                  <RangeSlider
-                    :model-value="timelineStore.compressor.ratio"
-                    :min="1"
-                    :max="20"
-                    :step="0.5"
-                    thumb-size="small"
-                    :disabled="!timelineStore.compressor.enabled"
-                    :display-value="`${timelineStore.compressor.ratio}:1`"
-                    @update:model-value="
-                      (v) => timelineStore.updateCompressor({ ratio: v })
-                    "
-                  />
-                </div>
-                <div class="mini-slider">
-                  <span class="mini-label">Attack</span>
-                  <RangeSlider
-                    :model-value="timelineStore.compressor.attack"
-                    :min="0"
-                    :max="1"
-                    :step="0.001"
-                    thumb-size="small"
-                    :disabled="!timelineStore.compressor.enabled"
-                    :display-value="`${timelineStore.compressor.attack.toFixed(3)}s`"
-                    @update:model-value="
-                      (v) => timelineStore.updateCompressor({ attack: v })
-                    "
-                  />
-                </div>
-                <div class="mini-slider">
-                  <span class="mini-label">Release</span>
-                  <RangeSlider
-                    :model-value="timelineStore.compressor.release"
-                    :min="0"
-                    :max="1"
-                    :step="0.01"
-                    thumb-size="small"
-                    :disabled="!timelineStore.compressor.enabled"
-                    :display-value="`${timelineStore.compressor.release.toFixed(2)}s`"
-                    @update:model-value="
-                      (v) => timelineStore.updateCompressor({ release: v })
-                    "
-                  />
-                </div>
-                <div class="mini-slider">
-                  <span class="mini-label">Knee</span>
-                  <RangeSlider
-                    :model-value="timelineStore.compressor.knee"
-                    :min="0"
-                    :max="40"
-                    thumb-size="small"
-                    :disabled="!timelineStore.compressor.enabled"
-                    :display-value="`${timelineStore.compressor.knee}dB`"
-                    @update:model-value="
-                      (v) => timelineStore.updateCompressor({ knee: v })
-                    "
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">
-                Limiteur
-                <div class="toggle-switch">
-                  <input
-                    type="checkbox"
-                    :checked="timelineStore.limiter.enabled"
-                    @change="
-                      timelineStore.updateLimiter({
-                        enabled: ($event.target as HTMLInputElement).checked,
-                      })
-                    "
-                  />
-                </div>
-              </label>
-              <div class="compressor-controls">
-                <div class="mini-slider">
-                  <span class="mini-label">Threshold</span>
-                  <RangeSlider
-                    :model-value="timelineStore.limiter.threshold"
-                    :min="-100"
-                    :max="0"
-                    thumb-size="small"
-                    :disabled="!timelineStore.limiter.enabled"
-                    :display-value="`${timelineStore.limiter.threshold}dB`"
-                    @update:model-value="
-                      (v) => timelineStore.updateLimiter({ threshold: v })
-                    "
-                  />
-                </div>
-                <div class="mini-slider">
-                  <span class="mini-label">Release</span>
-                  <RangeSlider
-                    :model-value="timelineStore.limiter.release"
-                    :min="0"
-                    :max="1"
-                    :step="0.01"
-                    thumb-size="small"
-                    :disabled="!timelineStore.limiter.enabled"
-                    :display-value="`${timelineStore.limiter.release.toFixed(2)}s`"
-                    @update:model-value="
-                      (v) => timelineStore.updateLimiter({ release: v })
-                    "
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -288,28 +132,6 @@ const handleClose = () => {
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 8px;
-}
-
-.toggle-switch input {
-  cursor: pointer;
-}
-
-.compressor-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.mini-slider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  .mini-label {
-    width: 60px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-  }
 }
 
 .slide-enter-active,
