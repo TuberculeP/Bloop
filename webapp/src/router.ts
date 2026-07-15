@@ -16,14 +16,14 @@ async function authGuard(to: any, from: any, next: any) {
   const authStore = useAuthStore();
   const check = await apiClient.get<{ user: User }>("/auth/check");
   if (check.error) {
-    next({ name: "app-login", query: { redirect: to.name } });
+    next({ name: "app-login", query: { redirect: to.fullPath } });
     return;
   }
   if (check.data && check.data.user) {
     authStore.user = check.data.user;
     next();
   } else {
-    next({ name: "app-login", query: { redirect: to.name } });
+    next({ name: "app-login", query: { redirect: to.fullPath } });
   }
 }
 
@@ -32,7 +32,7 @@ async function adminGuard(to: any, from: any, next: any) {
   const check = await apiClient.get<{ user: User }>("/auth/check");
 
   if (check.error || !check.data?.user) {
-    next({ name: "app-login", query: { redirect: to.name } });
+    next({ name: "app-login", query: { redirect: to.fullPath } });
     return;
   }
 

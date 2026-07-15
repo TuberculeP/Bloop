@@ -14,7 +14,11 @@ const router = useRouter();
 const redirect = router.currentRoute.value.query.redirect as string;
 
 function handleSuccess() {
-  router.push({ name: redirect ?? "landing-main" });
+  if (redirect && redirect.startsWith("/")) {
+    router.push(redirect);
+  } else {
+    router.push({ name: "landing-main" });
+  }
 }
 </script>
 

@@ -182,14 +182,9 @@ authRouter.get(
     if (state) {
       try {
         const decoded = Buffer.from(state, "base64").toString("utf-8");
-        const routeToPathMap: Record<string, string> = {
-          "app-main": "/app",
-          "app-sequencer": "/app/sequencer",
-          "app-blog": "/blog",
-          profile: "/profile",
-          messages: "/messages",
-        };
-        redirectPath = routeToPathMap[decoded] || "/";
+        if (decoded.startsWith("/") && !decoded.startsWith("//")) {
+          redirectPath = decoded;
+        }
       } catch {
         redirectPath = "/";
       }
