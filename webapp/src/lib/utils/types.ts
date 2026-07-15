@@ -200,14 +200,25 @@ export interface SamplePack {
   folders: SampleFolder[];
 }
 
-export type AutomatableParam =
-  | "volume"
-  | "reverb"
-  | "eq_sub"
-  | "eq_bass"
-  | "eq_mid"
-  | "eq_presence"
-  | "eq_brilliance";
+// Un effet en cours d'exécution dans la pile d'une piste ou du bus master.
+// `params` stocke des valeurs réelles (dB, %, etc.), pas normalisées — voir
+// `lib/audio/effects/types.ts` (EffectParamDescriptor) pour la résolution
+// dynamique min/max côté audio.
+export interface EffectInstanceConfig {
+  id: string; // uuid stable, sert d'ancre pour l'automation (AutomationTarget.effectId)
+  type: string; // clé du registre, ex: "eq5" | "reverb" | "compressor" | "limiter"
+  enabled: boolean; // bypass
+  params: Record<string, number>;
+}
+
+// Cible d'un paramètre automatisable : une piste (ou "master") + un effet de
+// sa pile (ou la sentinelle "channel" pour le fader de volume, qui n'est pas
+// dans la pile d'effets) + un paramètre de cet effet.
+export interface AutomationTarget {
+  trackId: string | "master";
+  effectId: string; // EffectInstanceConfig.id, ou "channel" (fader volume)
+  paramId: string; // paramId de l'effet, ou "volume" si effectId === "channel"
+}
 
 export interface AutomationPoint {
   id: string;
@@ -217,7 +228,7 @@ export interface AutomationPoint {
 
 export interface AutomationLane {
   id: string;
-  parameter: AutomatableParam;
+  target: AutomationTarget;
   points: AutomationPoint[];
 }
 
@@ -227,8 +238,7 @@ export interface Track {
   instrument: InstrumentConfig;
   color: string;
   volume: number; // 0-100
-  reverb: number; // 0-100 (wet/dry mix)
-  eqBands: EQBand[]; // EQ 5 bandes par piste
+  effects: EffectInstanceConfig[]; // pile d'effets réordonnable (EQ, reverb, etc.)
   muted: boolean;
   solo: boolean;
   order: number;
@@ -264,11 +274,8 @@ export interface TimelineProject {
   timeSignature: TimeSignature; // Signature rythmique (défaut 4/4)
   subdivision: number; // Résolution de la grille de snap (pas par temps, ex: 4 = double-croches)
   volume: number; // Volume master (0-100)
-  reverb: number; // Reverb master (0-100)
-  eqBands?: EQBand[];
-  compressor?: MasterCompressorConfig;
-  limiter?: MasterLimiterConfig;
-  automationLanes?: AutomationLane[]; // Automation du bus master (volume/reverb/EQ)
+  effects: EffectInstanceConfig[]; // pile d'effets du bus master (EQ, reverb, compressor, limiter...)
+  automationLanes?: AutomationLane[]; // Automation du bus master (volume + effets)
   usedSamples?: Record<string, AudioSample>; // Samples utilisés par les audio clips
   version: string;
   createdAt: Date;

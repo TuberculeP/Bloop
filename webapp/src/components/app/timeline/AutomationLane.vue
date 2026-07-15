@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  shallowRef,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
 import type { AutomationLane } from "../../../lib/utils/types";
 import { AutomationLaneRenderer } from "../../../lib/canvas/automationLaneRenderer";
 import {
   useAutomationLane,
   type AutomationLaneActions,
 } from "../../../composables/useAutomationLane";
-import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
+import { getEffectDefinition } from "../../../lib/audio/effects";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useRafSchedule } from "../../../composables/useRafSchedule";
 
@@ -29,32 +36,43 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const rendererRef = shallowRef<AutomationLaneRenderer | null>(null);
 const dpr = window.devicePixelRatio || 1;
 
-const paramConfig = AUTOMATABLE_PARAMS[props.lane.parameter];
-
 const timelineStore = useTimelineStore();
 
-const actions: AutomationLaneActions = props.trackId
-  ? {
-      addPoint: (laneId, point) =>
-        timelineStore.addAutomationPoint(props.trackId!, laneId, point),
-      updatePoint: (laneId, pointId, updates) =>
-        timelineStore.updateAutomationPoint(
-          props.trackId!,
-          laneId,
-          pointId,
-          updates,
-        ),
-      removePoint: (laneId, pointId) =>
-        timelineStore.removeAutomationPoint(props.trackId!, laneId, pointId),
-      setPoints: (laneId, points) =>
-        timelineStore.setAutomationPoints(props.trackId!, laneId, points),
-    }
-  : {
-      addPoint: timelineStore.addMasterAutomationPoint,
-      updatePoint: timelineStore.updateMasterAutomationPoint,
-      removePoint: timelineStore.removeMasterAutomationPoint,
-      setPoints: timelineStore.setMasterAutomationPoints,
-    };
+const resolvedTrackId = props.trackId ?? "master";
+
+// Résout dynamiquement le libellé de la cible (pseudo-effet "channel" pour le
+// fader de volume, sinon label du paramètre déclaré par l'effet visé) plutôt
+// que de dépendre d'un enum fermé de paramètres.
+const paramLabel = computed<string>(() => {
+  const target = props.lane.target;
+  if (target.effectId === "channel") return "Vol";
+
+  const effects = props.trackId
+    ? (timelineStore.tracks.find((t) => t.id === props.trackId)?.effects ?? [])
+    : timelineStore.masterEffects;
+  const effectConfig = effects.find((e) => e.id === target.effectId);
+  const definition = effectConfig
+    ? getEffectDefinition(effectConfig.type)
+    : undefined;
+  const paramMeta = definition?.params.find((p) => p.id === target.paramId);
+  return paramMeta?.shortLabel ?? paramMeta?.label ?? target.paramId;
+});
+
+const actions: AutomationLaneActions = {
+  addPoint: (laneId, point) =>
+    timelineStore.addAutomationPoint(resolvedTrackId, laneId, point),
+  updatePoint: (laneId, pointId, updates) =>
+    timelineStore.updateAutomationPoint(
+      resolvedTrackId,
+      laneId,
+      pointId,
+      updates,
+    ),
+  removePoint: (laneId, pointId) =>
+    timelineStore.removeAutomationPoint(resolvedTrackId, laneId, pointId),
+  setPoints: (laneId, points) =>
+    timelineStore.setAutomationPoints(resolvedTrackId, laneId, points),
+};
 
 const interaction = useAutomationLane(
   actions,
@@ -175,7 +193,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="automation-lane-wrapper">
     <div class="lane-header">
-      <span class="lane-param-label">{{ paramConfig.shortLabel }}</span>
+      <span class="lane-param-label">{{ paramLabel }}</span>
       <button
         class="lane-remove-btn"
         title="Supprimer la lane"

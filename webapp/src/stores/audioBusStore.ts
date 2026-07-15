@@ -2,19 +2,9 @@ import { defineStore } from "pinia";
 import { ref, watch, computed } from "vue";
 import { useSequencerStore } from "./sequencerStore";
 import { useTimelineStore } from "./timelineStore";
-import {
-  createImpulseResponse,
-  createEQFilter,
-  DEFAULT_EQ_BANDS,
-  DEFAULT_COMPRESSOR_CONFIG,
-  DEFAULT_LIMITER_CONFIG,
-} from "../lib/audio/config";
+import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
-import type {
-  MasterCompressorConfig,
-  MasterLimiterConfig,
-  AutomatableParam,
-} from "../lib/utils/types";
+import type { AutomationTarget } from "../lib/utils/types";
 import type { TrackChannel } from "../lib/audio/automationTypes";
 
 export const useAudioBusStore = defineStore("audioBusStore", () => {
@@ -32,45 +22,19 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
   const audioContext = new (window.AudioContext ||
     (window as any).webkitAudioContext)();
   const inputBus = audioContext.createGain();
-  const compressor = audioContext.createDynamicsCompressor();
   const masterGain = audioContext.createGain();
-  const dryGain = audioContext.createGain();
-  const wetGain = audioContext.createGain();
-  const reverbBoost = audioContext.createGain();
-  const convolver = audioContext.createConvolver();
-  const sumBus = audioContext.createGain();
-  const limiter = audioContext.createDynamicsCompressor();
+  const effectsOutput = audioContext.createGain();
 
   inputBus.gain.value = 1;
   masterGain.gain.value = 1;
-  dryGain.gain.value = 1;
-  wetGain.gain.value = 0;
-  reverbBoost.gain.value = 1.5;
-  sumBus.gain.value = 1;
-  convolver.buffer = createImpulseResponse(audioContext);
-
-  const eqFilters = new Map<string, BiquadFilterNode>();
-  const filters = DEFAULT_EQ_BANDS.map((band) => {
-    const filter = createEQFilter(audioContext, band);
-    eqFilters.set(band.id, filter);
-    return filter;
-  });
+  effectsOutput.gain.value = 1;
 
   // Chaîne de mastering :
-  // inputBus → EQ → compressor → masterGain (volume) → [dry + wet reverb] → sumBus → limiter → destination
-  inputBus.connect(filters[0]);
-  filters.reduce((prev, curr) => (prev.connect(curr), curr));
-  filters[filters.length - 1].connect(compressor);
-  compressor.connect(masterGain);
-
-  masterGain.connect(dryGain).connect(sumBus);
-  masterGain
-    .connect(convolver)
-    .connect(reverbBoost)
-    .connect(wetGain)
-    .connect(sumBus);
-
-  sumBus.connect(limiter).connect(audioContext.destination);
+  // inputBus -> masterGain (volume) -> pile d'effets réordonnable -> destination
+  inputBus.connect(masterGain);
+  const effectsChain = new EffectChain(audioContext, masterGain, effectsOutput);
+  effectsChain.rebuild(timelineStore.project.effects ?? []);
+  effectsOutput.connect(audioContext.destination);
 
   const isInitialized = ref(true);
 
@@ -85,71 +49,54 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     (v) => setGain(masterGain, v / 100),
     { immediate: true },
   );
-  // Reverb master : s'ajoute aux reverbs par-piste (sends + reverb de bus, comme un vrai DAW)
+
+  // Watcher structurel : ajout/suppression/réordre/bypass d'un effet du bus
+  // master -> rebuild complet de la chaîne (voir EffectChain.rebuild). Le
+  // sequencerStore legacy n'a jamais eu de pile d'effets (compressor/limiter
+  // étaient déjà master-only via timelineStore.project) : pas de fallback
+  // activeStore nécessaire ici, comme pour les anciens watchers
+  // compressor/limiter.
   watch(
-    () => activeStore.value.reverb,
-    (v) => setGain(wetGain, v / 100),
-    { immediate: true },
-  );
-  watch(
-    [() => activeStore.value, () => activeStore.value.eqBands],
-    ([, bands]) =>
-      bands.forEach((b) => {
-        const f = eqFilters.get(b.id);
-        if (f && Number.isFinite(b.gain))
-          f.gain.setValueAtTime(b.gain, audioContext.currentTime);
-      }),
-    { immediate: true, deep: true },
+    () =>
+      (timelineStore.project.effects ?? [])
+        .map((e) => `${e.id}:${e.type}:${e.enabled}`)
+        .join("|"),
+    () => effectsChain.rebuild(timelineStore.project.effects ?? []),
   );
 
-  const applyCompressor = (config: MasterCompressorConfig) => {
-    const t = audioContext.currentTime;
-    if (!config.enabled) {
-      // Bypass transparent : ratio 1:1, aucune réduction de gain
-      compressor.threshold.setValueAtTime(0, t);
-      compressor.ratio.setValueAtTime(1, t);
-      compressor.knee.setValueAtTime(0, t);
-      return;
-    }
-    compressor.threshold.setValueAtTime(config.threshold, t);
-    compressor.ratio.setValueAtTime(config.ratio, t);
-    compressor.attack.setValueAtTime(config.attack, t);
-    compressor.release.setValueAtTime(config.release, t);
-    compressor.knee.setValueAtTime(config.knee, t);
-  };
-
-  const applyLimiter = (config: MasterLimiterConfig) => {
-    const t = audioContext.currentTime;
-    if (!config.enabled) {
-      limiter.threshold.setValueAtTime(0, t);
-      limiter.ratio.setValueAtTime(1, t);
-      return;
-    }
-    // Limiteur = compresseur configuré en brickwall (knee dur, ratio élevé, attack quasi instantané)
-    limiter.threshold.setValueAtTime(config.threshold, t);
-    limiter.ratio.setValueAtTime(20, t);
-    limiter.knee.setValueAtTime(0, t);
-    limiter.attack.setValueAtTime(0.001, t);
-    limiter.release.setValueAtTime(config.release, t);
-  };
-
+  // Watcher des valeurs de param (pas de rebuild)
   watch(
-    () => timelineStore.project.compressor,
-    (config) => applyCompressor(config ?? DEFAULT_COMPRESSOR_CONFIG),
-    { immediate: true, deep: true },
-  );
-  watch(
-    () => timelineStore.project.limiter,
-    (config) => applyLimiter(config ?? DEFAULT_LIMITER_CONFIG),
-    { immediate: true, deep: true },
+    () => timelineStore.project.effects,
+    (effects) => {
+      for (const effect of effects ?? []) {
+        for (const [paramId, value] of Object.entries(effect.params)) {
+          const descriptor = effectsChain.getParamDescriptor(
+            effect.id,
+            paramId,
+          );
+          if (!descriptor) continue;
+          if (descriptor.audioParam) {
+            descriptor.audioParam.setValueAtTime(
+              value,
+              audioContext.currentTime,
+            );
+          } else {
+            descriptor.setValue?.(value, audioContext);
+          }
+        }
+      }
+    },
+    { deep: true },
   );
 
   const ensureAudioContextResumed = async () => {
     if (audioContext.state === "suspended") await audioContext.resume();
   };
 
-  // Capture PCM brute pour l'export : on tape le signal juste après le limiter
-  // plutôt que de passer par un MediaRecorder (qui ré-encoderait en Opus/AAC,
+  // Capture PCM brute pour l'export : on tape la sortie de la pile d'effets
+  // (plutôt qu'un node nommé en dur comme l'ancien `limiter`, qui n'était pas
+  // garanti d'être le dernier node une fois la pile réordonnable) et plutôt
+  // que de passer par un MediaRecorder (qui ré-encoderait en Opus/AAC,
   // empilant une compression lossy inutile avant l'encodage WAV/MP3 final).
   const PCM_CAPTURE_BUFFER_SIZE = 4096;
   const PCM_CAPTURE_CHANNELS = 2;
@@ -177,14 +124,14 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     // le son en sortie audible.
     captureSilentGain = audioContext.createGain();
     captureSilentGain.gain.value = 0;
-    limiter.connect(captureProcessor);
+    effectsOutput.connect(captureProcessor);
     captureProcessor.connect(captureSilentGain);
     captureSilentGain.connect(audioContext.destination);
   };
 
   const stopPcmCapture = (): AudioBuffer => {
     if (captureProcessor) {
-      limiter.disconnect(captureProcessor);
+      effectsOutput.disconnect(captureProcessor);
       captureProcessor.disconnect();
     }
     captureSilentGain?.disconnect();
@@ -212,22 +159,19 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     return buffer;
   };
 
-  // Channel virtuel du bus master, au même format que les TrackChannel par piste,
-  // pour réutiliser applyAutomationToChannel telle quelle (volume/reverb/EQ).
+  // Channel virtuel du bus master, au même format que les TrackChannel par
+  // piste, pour réutiliser applyAutomationToChannel telle quelle.
   const masterChannel: TrackChannel = {
     trackId: "master",
     gainNode: masterGain,
-    eqFilters,
-    eqChain: filters,
-    dryGain,
-    wetGain,
+    effectsChain,
   };
 
   const applyMasterAutomation = (
-    param: AutomatableParam,
+    target: AutomationTarget,
     value: number,
   ): void => {
-    applyAutomationToChannel(param, value, masterChannel, audioContext);
+    applyAutomationToChannel(target, value, masterChannel, audioContext);
   };
 
   return {

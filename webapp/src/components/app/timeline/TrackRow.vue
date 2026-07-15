@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { vOnClickOutside } from "@vueuse/components";
-import type { Track, AutomatableParam } from "../../../lib/utils/types";
+import type { Track } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
-import { useDropdown } from "../../../composables/useDropdown";
 import TrackHeader from "./TrackHeader.vue";
 import TrackTimelinePreviewCanvas from "./TrackTimelinePreviewCanvas.vue";
 import PianoRoll from "./PianoRoll/PianoRoll.vue";
@@ -40,30 +37,19 @@ const isAudioTrack = computed(
   () => props.track.instrument.type === "audioTrack",
 );
 
-const {
-  isOpen: showAddLaneMenu,
-  toggle: toggleAddLaneMenu,
-  close: closeAddLaneMenu,
-} = useDropdown();
-
 const isAutomationExpanded = computed(
   () => timelineStore.automationExpandedTrackId === props.track.id,
 );
 
-const usedParams = computed(
-  () => new Set(props.track.automationLanes?.map((l) => l.parameter) ?? []),
+// Le bouton "Auto" n'a plus d'utilité sans lane à afficher/masquer (la
+// création se fait désormais depuis le menu de chaque effet) — sauf si le
+// drawer est déjà ouvert (ex: dernière lane retirée), pour garder un moyen
+// de le refermer.
+const showAutomationToggle = computed(
+  () =>
+    (props.track.automationLanes?.length ?? 0) > 0 ||
+    isAutomationExpanded.value,
 );
-
-const availableParams = computed(() =>
-  (Object.keys(AUTOMATABLE_PARAMS) as AutomatableParam[]).filter(
-    (p) => !usedParams.value.has(p),
-  ),
-);
-
-const handleAddLane = (param: AutomatableParam) => {
-  timelineStore.addAutomationLane(props.track.id, param);
-  closeAddLaneMenu();
-};
 
 const handleRemoveLane = (laneId: string) => {
   timelineStore.removeAutomationLane(props.track.id, laneId);
@@ -71,7 +57,6 @@ const handleRemoveLane = (laneId: string) => {
 
 const handleToggleAutomation = () => {
   timelineStore.toggleAutomationExpanded(props.track.id);
-  closeAddLaneMenu();
 };
 </script>
 
@@ -145,48 +130,10 @@ const handleToggleAutomation = () => {
         :scroll-left="scrollLeft"
         @remove="handleRemoveLane(lane.id)"
       />
-      <div class="drawer-add-bar">
-        <div class="add-lane-wrapper" v-on-click-outside="closeAddLaneMenu">
-          <button
-            class="add-lane-btn"
-            :disabled="availableParams.length === 0"
-            title="Ajouter un paramètre"
-            @click.stop="toggleAddLaneMenu"
-          >
-            +
-            <svg
-              width="12"
-              height="10"
-              viewBox="0 0 12 10"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M0 8 C2 8 2 2 4 2 C6 2 6 6 8 5 C10 4 10 2 12 2"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                fill="none"
-              />
-            </svg>
-          </button>
-          <div v-if="showAddLaneMenu" class="add-lane-menu">
-            <button
-              v-for="param in availableParams"
-              :key="param"
-              class="add-lane-menu-item"
-              @click="handleAddLane(param)"
-            >
-              {{ AUTOMATABLE_PARAMS[param].label }}
-            </button>
-          </div>
-        </div>
-        <div class="drawer-add-spacer" />
-      </div>
     </div>
 
     <!-- Toggle automation button -->
-    <div class="automation-toggle-row">
+    <div v-if="showAutomationToggle" class="automation-toggle-row">
       <button
         class="automation-toggle-btn"
         :class="{ active: isAutomationExpanded }"
@@ -272,22 +219,6 @@ const handleToggleAutomation = () => {
   border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
 }
 
-.drawer-add-bar {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.15);
-}
-
-.drawer-add-bar > :first-child {
-  padding: 4px 8px;
-  display: flex;
-  align-items: center;
-}
-
-.drawer-add-spacer {
-  background: var(--color-bg-primary-dark);
-}
-
 .automation-toggle-row {
   grid-column: 1 / -1;
   display: grid;
@@ -338,68 +269,5 @@ const handleToggleAutomation = () => {
 
 .automation-toggle-spacer {
   background: var(--color-bg-daw-deep);
-}
-
-.add-lane-wrapper {
-  position: relative;
-}
-
-.add-lane-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 7px;
-  border: 1px solid rgba(var(--color-accent3-rgb), 0.4);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.35);
-  cursor: pointer;
-  transition: all 0.1s;
-  line-height: 1;
-
-  &:hover:not(:disabled) {
-    color: rgba(255, 255, 255, 0.7);
-    border-color: rgba(255, 63, 180, 0.5);
-    background: rgba(255, 63, 180, 0.05);
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: default;
-  }
-}
-
-.add-lane-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 100;
-  background: var(--color-bg-daw-dropdown);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 6px;
-  padding: 4px 0;
-  min-width: 140px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
-.add-lane-menu-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 6px 12px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background 0.1s;
-
-  &:hover {
-    background: rgba(255, 63, 180, 0.1);
-    /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
-    color: #fff;
-  }
 }
 </style>

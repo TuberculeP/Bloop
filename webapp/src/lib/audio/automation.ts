@@ -1,61 +1,5 @@
-import type { AutomatableParam, AutomationPoint } from "../utils/types";
+import type { AutomationPoint, AutomationTarget } from "../utils/types";
 import type { TrackChannel } from "./automationTypes";
-
-export interface AutomationParamConfig {
-  label: string;
-  shortLabel: string;
-  unit: string;
-  // Converts normalizedValue (0-1) to the display value
-  toDisplay: (normalized: number) => string;
-}
-
-export const AUTOMATABLE_PARAMS: Record<
-  AutomatableParam,
-  AutomationParamConfig
-> = {
-  volume: {
-    label: "Volume",
-    shortLabel: "Vol",
-    unit: "%",
-    toDisplay: (v) => `${Math.round(v * 100)}%`,
-  },
-  reverb: {
-    label: "Reverb",
-    shortLabel: "Rvb",
-    unit: "%",
-    toDisplay: (v) => `${Math.round(v * 100)}%`,
-  },
-  eq_sub: {
-    label: "EQ Sub",
-    shortLabel: "Sub",
-    unit: "dB",
-    toDisplay: (v) => `${Math.round(v * 36 - 18)}dB`,
-  },
-  eq_bass: {
-    label: "EQ Bass",
-    shortLabel: "Bass",
-    unit: "dB",
-    toDisplay: (v) => `${Math.round(v * 36 - 18)}dB`,
-  },
-  eq_mid: {
-    label: "EQ Mid",
-    shortLabel: "Mid",
-    unit: "dB",
-    toDisplay: (v) => `${Math.round(v * 36 - 18)}dB`,
-  },
-  eq_presence: {
-    label: "EQ Presence",
-    shortLabel: "Pres",
-    unit: "dB",
-    toDisplay: (v) => `${Math.round(v * 36 - 18)}dB`,
-  },
-  eq_brilliance: {
-    label: "EQ Brilliance",
-    shortLabel: "Bril",
-    unit: "dB",
-    toDisplay: (v) => `${Math.round(v * 36 - 18)}dB`,
-  },
-};
 
 function catmullRom(
   p0: number,
@@ -102,8 +46,12 @@ export function getAutomationValueAt(
   return Math.max(0, Math.min(1, value));
 }
 
+// Résout la cible d'automation contre la chaîne d'effets vivante du channel :
+// le cas "channel"/"volume" est un pseudo-effet réservé au fader (hors de la
+// pile d'effets, voir AutomationTarget), tout le reste passe par le
+// descripteur de paramètre exposé par l'EffectInstance visée.
 export function applyAutomationToChannel(
-  param: AutomatableParam,
+  target: AutomationTarget,
   normalizedValue: number,
   channel: TrackChannel,
   audioCtx: AudioContext,
@@ -111,35 +59,24 @@ export function applyAutomationToChannel(
   const now = audioCtx.currentTime;
   const smoothTime = 0.01;
 
-  switch (param) {
-    case "volume": {
-      const gain = Math.max(0.001, normalizedValue);
-      channel.gainNode.gain.setTargetAtTime(gain, now, smoothTime);
-      break;
-    }
-    case "reverb": {
-      const reverbAmount = normalizedValue;
-      const dryValue = Math.max(0.001, 1 - reverbAmount * 0.5);
-      channel.dryGain.gain.setTargetAtTime(dryValue, now, smoothTime);
-      if (reverbAmount < 0.001) {
-        channel.wetGain.gain.setValueAtTime(0, now);
-      } else {
-        channel.wetGain.gain.setTargetAtTime(reverbAmount, now, smoothTime);
-      }
-      break;
-    }
-    case "eq_sub":
-    case "eq_bass":
-    case "eq_mid":
-    case "eq_presence":
-    case "eq_brilliance": {
-      const bandId = param.replace("eq_", "");
-      const filter = channel.eqFilters.get(bandId);
-      if (filter) {
-        const db = normalizedValue * 36 - 18;
-        filter.gain.setTargetAtTime(db, now, smoothTime);
-      }
-      break;
-    }
+  if (target.effectId === "channel") {
+    const gain = Math.max(0.001, normalizedValue);
+    channel.gainNode.gain.setTargetAtTime(gain, now, smoothTime);
+    return;
+  }
+
+  const descriptor = channel.effectsChain.getParamDescriptor(
+    target.effectId,
+    target.paramId,
+  );
+  if (!descriptor) return;
+
+  const value =
+    descriptor.min + normalizedValue * (descriptor.max - descriptor.min);
+
+  if (descriptor.audioParam) {
+    descriptor.audioParam.setTargetAtTime(value, now, smoothTime);
+  } else {
+    descriptor.setValue?.(value, audioCtx);
   }
 }

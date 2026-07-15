@@ -5,26 +5,22 @@ import { useAudioBusStore } from "./audioBusStore";
 import type { EngineState, InstrumentEngine } from "../lib/audio/engines/types";
 import type {
   AudioClip,
+  AutomationTarget,
   InstrumentConfig,
   NoteName,
   Track,
-  EQBand,
 } from "../lib/utils/types";
 import { useAudioLibraryStore } from "./audioLibraryStore";
 import { AudioClipEngine } from "../lib/audio/engines/audio-clip";
 import { createInstrumentEngine } from "../lib/audio/instrumentFactory";
-import { createImpulseResponse, createEQFilter } from "../lib/audio/config";
+import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
-import type { AutomatableParam } from "../lib/utils/types";
 import { ticksPerSecond } from "../lib/audio/timeGrid";
 
 interface TrackChannel {
   trackId: string;
   gainNode: GainNode;
-  eqFilters: Map<string, BiquadFilterNode>;
-  eqChain: BiquadFilterNode[];
-  dryGain: GainNode;
-  wetGain: GainNode;
+  effectsChain: EffectChain;
   engine: InstrumentEngine;
   unsubscribeState: () => void;
 }
@@ -40,48 +36,16 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
 
   const { audioContext, inputBus, ensureAudioContextResumed } = audioBusStore;
 
-  // Convolver partagé pour la reverb de toutes les pistes
-  const trackConvolver = markRaw(audioContext.createConvolver());
-  const trackReverbBoost = markRaw(audioContext.createGain());
-  trackConvolver.buffer = createImpulseResponse(audioContext);
-  trackReverbBoost.gain.value = 1.5;
-  trackConvolver.connect(trackReverbBoost).connect(inputBus);
-
   const createTrackChannel = (track: Track): TrackChannel => {
     // Volume principal
     const gainNode = markRaw(audioContext.createGain());
     gainNode.gain.value = track.volume / 100;
 
-    // EQ 5 bandes
-    const eqFilters = new Map<string, BiquadFilterNode>();
-    const eqChain: BiquadFilterNode[] = [];
-
-    for (const band of track.eqBands ?? []) {
-      const filter = markRaw(createEQFilter(audioContext, band));
-      eqFilters.set(band.id, filter);
-      eqChain.push(filter);
-    }
-
-    // Dry/Wet pour reverb
-    const dryGain = markRaw(audioContext.createGain());
-    const wetGain = markRaw(audioContext.createGain());
-    const reverbAmount = (track.reverb ?? 0) / 100;
-    dryGain.gain.value = 1 - reverbAmount * 0.5;
-    wetGain.gain.value = reverbAmount;
-
-    // Chaîne audio: gainNode → EQ filters → dry/wet split
-    if (eqChain.length > 0) {
-      gainNode.connect(eqChain[0]);
-      eqChain.reduce((prev, curr) => (prev.connect(curr), curr));
-      const lastFilter = eqChain[eqChain.length - 1];
-      lastFilter.connect(dryGain);
-      lastFilter.connect(wetGain);
-    } else {
-      gainNode.connect(dryGain);
-      gainNode.connect(wetGain);
-    }
-    dryGain.connect(inputBus);
-    wetGain.connect(trackConvolver);
+    // Pile d'effets réordonnable (EQ, reverb, etc.) : gainNode -> effets -> inputBus
+    const effectsChain = markRaw(
+      new EffectChain(audioContext, gainNode, inputBus),
+    );
+    effectsChain.rebuild(track.effects);
 
     const engine = markRaw(
       createInstrumentEngine(audioContext, gainNode, track.instrument),
@@ -96,10 +60,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const channel: TrackChannel = {
       trackId: track.id,
       gainNode,
-      eqFilters,
-      eqChain,
-      dryGain,
-      wetGain,
+      effectsChain,
       engine,
       unsubscribeState,
     };
@@ -116,13 +77,8 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     if (channel) {
       channel.unsubscribeState();
       channel.engine.dispose();
-      // Déconnecter toute la chaîne audio
+      channel.effectsChain.dispose();
       channel.gainNode.disconnect();
-      for (const filter of channel.eqChain) {
-        filter.disconnect();
-      }
-      channel.dryGain.disconnect();
-      channel.wetGain.disconnect();
       trackChannels.value.delete(trackId);
       trackEngineStates.value.delete(trackId);
     }
@@ -264,52 +220,36 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
   };
 
-  const updateTrackReverb = (trackId: string, reverb: number): void => {
-    const channel = trackChannels.value.get(trackId);
-    if (channel) {
-      const reverbAmount = reverb / 100;
-      const dryValue = Math.max(0.001, 1 - reverbAmount * 0.5);
-
-      channel.dryGain.gain.exponentialRampToValueAtTime(
-        dryValue,
-        audioContext.currentTime + 0.05,
-      );
-
-      // Pour wetGain: si 0, utiliser setValueAtTime (exponentialRamp ne peut pas atteindre 0)
-      if (reverbAmount === 0) {
-        channel.wetGain.gain.setValueAtTime(0, audioContext.currentTime);
-      } else {
-        channel.wetGain.gain.exponentialRampToValueAtTime(
-          reverbAmount,
-          audioContext.currentTime + 0.05,
-        );
-      }
-    }
-  };
-
-  const updateTrackEQBand = (
+  // Rebuild complet de la pile d'effets (ajout/suppression/réordre/bypass) —
+  // rare comparé aux mises à jour de valeurs de param, cf. les deux watchers
+  // séparés dans `initialize()`.
+  const updateTrackEffects = (
     trackId: string,
-    bandId: string,
-    gain: number,
+    effects: Track["effects"],
   ): void => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
-      const filter = channel.eqFilters.get(bandId);
-      if (filter && Number.isFinite(gain)) {
-        filter.gain.setValueAtTime(gain, audioContext.currentTime);
-      }
+      channel.effectsChain.rebuild(effects);
     }
   };
 
-  const updateTrackEQBands = (trackId: string, bands: EQBand[]): void => {
+  const updateTrackEffectParam = (
+    trackId: string,
+    effectId: string,
+    paramId: string,
+    value: number,
+  ): void => {
     const channel = trackChannels.value.get(trackId);
-    if (channel) {
-      for (const band of bands) {
-        const filter = channel.eqFilters.get(band.id);
-        if (filter && Number.isFinite(band.gain)) {
-          filter.gain.setValueAtTime(band.gain, audioContext.currentTime);
-        }
-      }
+    if (!channel) return;
+    const descriptor = channel.effectsChain.getParamDescriptor(
+      effectId,
+      paramId,
+    );
+    if (!descriptor) return;
+    if (descriptor.audioParam) {
+      descriptor.audioParam.setValueAtTime(value, audioContext.currentTime);
+    } else {
+      descriptor.setValue?.(value, audioContext);
     }
   };
 
@@ -325,12 +265,12 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
 
   const applyAutomation = (
     trackId: string,
-    param: AutomatableParam,
+    target: AutomationTarget,
     normalizedValue: number,
   ): void => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
-      applyAutomationToChannel(param, normalizedValue, channel, audioContext);
+      applyAutomationToChannel(target, normalizedValue, channel, audioContext);
     }
   };
 
@@ -396,28 +336,39 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       ),
     );
 
-    // Watcher pour la reverb par piste
+    // Watcher structurel : ajout/suppression/réordre/bypass d'un effet ->
+    // rebuild complet de la chaîne. Scindé du watcher de valeurs ci-dessous
+    // pour ne pas reconstruire tout le graphe à chaque simple changement de
+    // param (voir EffectChain.rebuild).
     watcherStopHandles.push(
       watch(
-        () => timelineStore.tracks.map((t) => ({ id: t.id, reverb: t.reverb })),
-        (tracksReverbs) => {
-          for (const { id, reverb } of tracksReverbs) {
-            updateTrackReverb(id, reverb ?? 0);
+        () =>
+          timelineStore.tracks.map((t) => ({
+            id: t.id,
+            signature: t.effects
+              .map((e) => `${e.id}:${e.type}:${e.enabled}`)
+              .join("|"),
+          })),
+        () => {
+          for (const track of timelineStore.tracks) {
+            updateTrackEffects(track.id, track.effects);
           }
         },
         { deep: true },
       ),
     );
 
-    // Watcher pour l'EQ par piste
+    // Watcher des valeurs de param (pas de rebuild)
     watcherStopHandles.push(
       watch(
         () =>
-          timelineStore.tracks.map((t) => ({ id: t.id, eqBands: t.eqBands })),
-        (tracksEQs) => {
-          for (const { id, eqBands } of tracksEQs) {
-            if (eqBands) {
-              updateTrackEQBands(id, eqBands);
+          timelineStore.tracks.map((t) => ({ id: t.id, effects: t.effects })),
+        (tracksEffects) => {
+          for (const { id, effects } of tracksEffects) {
+            for (const effect of effects) {
+              for (const [paramId, value] of Object.entries(effect.params)) {
+                updateTrackEffectParam(id, effect.id, paramId, value);
+              }
             }
           }
         },
@@ -458,9 +409,8 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     stopAllClips,
 
     updateTrackVolume,
-    updateTrackReverb,
-    updateTrackEQBand,
-    updateTrackEQBands,
+    updateTrackEffects,
+    updateTrackEffectParam,
     updateTrackInstrument,
     applyAutomation,
 
