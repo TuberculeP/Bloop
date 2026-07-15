@@ -127,9 +127,20 @@ watch(
   render,
   { deep: true },
 );
+
+let resizeScheduled = false;
+const scheduleResize = (): void => {
+  if (resizeScheduled) return;
+  resizeScheduled = true;
+  requestAnimationFrame(() => {
+    updateCanvasSize();
+    resizeScheduled = false;
+  });
+};
+
 watch(
   [() => props.cols, () => props.colWidth, () => props.rowHeight],
-  updateCanvasSize,
+  scheduleResize,
 );
 
 onMounted(() => {

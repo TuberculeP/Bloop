@@ -174,20 +174,33 @@ export class PianoGridRenderer {
     const barLength = ticksPerBar(config.timeSignature);
     const beatCount = Math.ceil(config.cols / TICKS_PER_BEAT);
 
+    ctx.lineWidth = 1;
+
+    // Un beginPath/stroke par couleur (2 au total) plutôt que par ligne : à
+    // fort zoom, beatCount reste constant (dépend de cols, pas de colWidth)
+    // mais chaque stroke() séparé a un coût fixe non négligeable répété à
+    // chaque redraw.
+    ctx.beginPath();
+    ctx.strokeStyle = COLORS.measureLine;
     for (let beat = 0; beat <= beatCount; beat++) {
       const tick = beat * TICKS_PER_BEAT;
+      if (tick % barLength === 0) continue;
       const x = tick * config.colWidth - 0.5;
-      const isBarStart = tick % barLength === 0;
-
-      ctx.beginPath();
-      ctx.strokeStyle = isBarStart
-        ? COLORS.metronomeBeatLine
-        : COLORS.measureLine;
-      ctx.lineWidth = 1;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
-      ctx.stroke();
     }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = COLORS.metronomeBeatLine;
+    for (let beat = 0; beat <= beatCount; beat++) {
+      const tick = beat * TICKS_PER_BEAT;
+      if (tick % barLength !== 0) continue;
+      const x = tick * config.colWidth - 0.5;
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, this.height);
+    }
+    ctx.stroke();
   }
 
   private drawNotes(notes: NoteRenderData[]) {

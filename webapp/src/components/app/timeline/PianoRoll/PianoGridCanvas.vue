@@ -138,9 +138,8 @@ usePianoGridKeyboard(selectedNotes, {
 });
 
 // Canvas composable
-const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
-  canvasRef,
-  {
+const { initCanvas, getNoteAtPosition, isOnResizeHandle, containerSize } =
+  usePianoGridCanvas(canvasRef, {
     cols: () => props.cols,
     colWidth: () => props.colWidth,
     notes: () => props.notes,
@@ -154,8 +153,7 @@ const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
     resizingState,
     resizePreviewDelta,
     selectionRect,
-  },
-);
+  });
 
 // Event handlers adapted for Canvas
 const handleMouseMove = (event: MouseEvent) => {
@@ -254,7 +252,10 @@ onBeforeUnmount(() => {
       dragging: isDragging,
       selecting: isSelecting,
     }"
-    :style="{ width: `${gridWidth}px`, height: `${gridHeight}px` }"
+    :style="{
+      width: `${containerSize.width}px`,
+      height: `${containerSize.height}px`,
+    }"
   >
     <canvas
       ref="canvasRef"

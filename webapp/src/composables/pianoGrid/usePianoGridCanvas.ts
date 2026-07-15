@@ -47,6 +47,14 @@ export function usePianoGridCanvas(
   config: UsePianoGridCanvasConfig,
 ) {
   const renderer = ref<PianoGridRenderer | null>(null);
+  // Taille du wrapper DOM (reflow), mise à jour uniquement dans le même
+  // chemin throttlé (rAF) que le resize du canvas — sinon le binding de
+  // style du wrapper suit la réactivité Vue brute et reflow à chaque tick de
+  // zoom, indépendamment du throttle appliqué au canvas lui-même.
+  const containerSize = ref({
+    width: config.cols() * config.colWidth(),
+    height: TOTAL_NOTES * NOTE_ROW_HEIGHT,
+  });
   let renderScheduled = false;
   let dpr = 1;
 
@@ -58,6 +66,7 @@ export function usePianoGridCanvas(
 
     const width = config.cols() * config.colWidth();
     const height = TOTAL_NOTES * NOTE_ROW_HEIGHT;
+    containerSize.value = { width, height };
 
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
@@ -95,6 +104,7 @@ export function usePianoGridCanvas(
 
     const width = config.cols() * config.colWidth();
     const height = TOTAL_NOTES * NOTE_ROW_HEIGHT;
+    containerSize.value = { width, height };
 
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
@@ -205,6 +215,16 @@ export function usePianoGridCanvas(
     { deep: true },
   );
 
+  let resizeScheduled = false;
+  const scheduleResize = () => {
+    if (resizeScheduled) return;
+    resizeScheduled = true;
+    requestAnimationFrame(() => {
+      updateCanvasSize();
+      resizeScheduled = false;
+    });
+  };
+
   watch(
     [
       () => config.cols(),
@@ -212,7 +232,7 @@ export function usePianoGridCanvas(
       () => config.timeSignature(),
       () => config.subdivision(),
     ],
-    updateCanvasSize,
+    scheduleResize,
     { deep: true },
   );
 
@@ -257,5 +277,6 @@ export function usePianoGridCanvas(
     scheduleRender,
     getNoteAtPosition,
     isOnResizeHandle,
+    containerSize,
   };
 }
