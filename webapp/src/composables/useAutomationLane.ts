@@ -1,6 +1,7 @@
 import { ref, onMounted, onBeforeUnmount, type Ref } from "vue";
 import type { AutomationLane, AutomationPoint } from "../lib/utils/types";
 import type { AutomationLaneRenderer } from "../lib/canvas/automationLaneRenderer";
+import { snapToGrid } from "../lib/audio/timeGrid";
 
 const DRAG_THRESHOLD = 4;
 const DUPLICATE_OFFSET = 4;
@@ -26,6 +27,7 @@ export function useAutomationLane(
   rendererRef: Ref<AutomationLaneRenderer | null>,
   scrollLeft: () => number,
   cols: () => number,
+  subdivision: () => number,
 ) {
   const hoveredPointId = ref<string | null>(null);
   const selectedPointIds = ref<Set<string>>(new Set());
@@ -35,8 +37,16 @@ export function useAutomationLane(
     currentX: number;
     currentY: number;
   } | null>(null);
+  // Aperçu local pendant le drag d'un point (groupe) : le store n'est
+  // committé qu'une seule fois au mouseup pour éviter un JSON.stringify +
+  // localStorage.setItem de tout le projet à chaque pixel de déplacement.
+  const previewPoints = ref<Map<string, { x: number; y: number }> | null>(null);
 
   let canvas: HTMLCanvasElement | null = null;
+  // Rect du canvas mis en cache le temps d'une interaction (mousedown ->
+  // mouseup) pour éviter un getBoundingClientRect() (reflow) à chaque pixel
+  // de mousemove pendant un drag.
+  let cachedRect: DOMRect | null = null;
 
   const undoStack: AutomationPoint[][] = [];
   const redoStack: AutomationPoint[][] = [];
@@ -84,15 +94,16 @@ export function useAutomationLane(
 
   const getCanvasCoords = (
     event: MouseEvent,
+    rect?: DOMRect,
   ): { x: number; y: number } | null => {
     if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const r = rect ?? canvas.getBoundingClientRect();
+    return { x: event.clientX - r.left, y: event.clientY - r.top };
   };
 
   const handleMouseMove = (event: MouseEvent): void => {
     const renderer = rendererRef.value;
-    const coords = getCanvasCoords(event);
+    const coords = getCanvasCoords(event, cachedRect ?? undefined);
     if (!coords || !renderer) return;
 
     if (pendingDrag) {
@@ -122,12 +133,14 @@ export function useAutomationLane(
         const deltaX = cur.x - pendingDrag.startGridX;
         const deltaY = cur.y - pendingDrag.startGridY;
 
+        const preview = new Map<string, { x: number; y: number }>();
         for (const [pid, initial] of pendingDrag.groupInitial) {
-          actions.updatePoint(lane.id, pid, {
-            x: Math.max(0, Math.round(initial.x + deltaX)),
+          preview.set(pid, {
+            x: Math.max(0, snapToGrid(initial.x + deltaX, subdivision())),
             y: Math.max(0, Math.min(1, initial.y + deltaY)),
           });
         }
+        previewPoints.value = preview;
         return;
       }
     }
@@ -139,7 +152,8 @@ export function useAutomationLane(
   const handleMouseDown = (event: MouseEvent): void => {
     if (event.button !== 0) return;
     const renderer = rendererRef.value;
-    const coords = getCanvasCoords(event);
+    cachedRect = canvas?.getBoundingClientRect() ?? null;
+    const coords = getCanvasCoords(event, cachedRect ?? undefined);
     if (!coords || !renderer) return;
 
     const isCtrl = event.ctrlKey || event.metaKey;
@@ -211,9 +225,20 @@ export function useAutomationLane(
     isDragging = false;
   };
 
+  // Commit unique de l'aperçu de drag de groupe (voir previewPoints) — appelé
+  // au mouseup normal ainsi qu'au mouseleave (voir handleMouseLeave).
+  const commitPreviewPoints = (): void => {
+    if (!pendingDrag?.groupInitial || !previewPoints.value) return;
+    for (const [pid, pos] of previewPoints.value) {
+      actions.updatePoint(lane.id, pid, { x: pos.x, y: pos.y });
+    }
+  };
+
   const handleMouseUp = (event: MouseEvent): void => {
     const renderer = rendererRef.value;
-    const coords = getCanvasCoords(event);
+    const coords = getCanvasCoords(event, cachedRect ?? undefined);
+
+    commitPreviewPoints();
 
     if (pendingDrag && !isDragging && coords && renderer) {
       if (!pendingDrag.isMarquee && pendingDrag.pointId === null) {
@@ -224,7 +249,7 @@ export function useAutomationLane(
           scrollLeft(),
         );
         const pointId = actions.addPoint(lane.id, {
-          x: Math.max(0, Math.round(x)),
+          x: Math.max(0, snapToGrid(x, subdivision())),
           y,
         });
         if (pointId) selectedPointIds.value = new Set([pointId]);
@@ -248,8 +273,10 @@ export function useAutomationLane(
       marqueeRect.value = null;
     }
 
+    previewPoints.value = null;
     pendingDrag = null;
     isDragging = false;
+    cachedRect = null;
   };
 
   const handleDblClick = (event: MouseEvent): void => {
@@ -268,10 +295,17 @@ export function useAutomationLane(
 
   const handleMouseLeave = (): void => {
     hoveredPointId.value = null;
+    // mousemove/mouseup ne sont attachés qu'au canvas : si la souris sort
+    // pendant un drag de groupe, aucun mouseup ne suivra — on committe donc
+    // l'aperçu en cours ici pour ne pas perdre le déplacement.
+    commitPreviewPoints();
+    previewPoints.value = null;
     if (!isDragging) {
-      pendingDrag = null;
       marqueeRect.value = null;
     }
+    pendingDrag = null;
+    isDragging = false;
+    cachedRect = null;
   };
 
   const deleteSelected = () => {
@@ -355,6 +389,7 @@ export function useAutomationLane(
     hoveredPointId,
     selectedPointIds,
     marqueeRect,
+    previewPoints,
     setCanvas,
     handleMouseMove,
     handleMouseDown,

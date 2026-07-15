@@ -3,7 +3,12 @@ import { ref, watch, onMounted } from "vue";
 import type { MidiNote } from "../../../lib/utils/types";
 import { TOTAL_NOTES } from "../../../lib/audio/pianoRollConstants";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { TICKS_PER_BEAT, ticksPerBar } from "../../../lib/audio/timeGrid";
+import {
+  TICKS_PER_BEAT,
+  ticksPerBar,
+  getVisibleTickRange,
+} from "../../../lib/audio/timeGrid";
+import { useRafSchedule } from "../../../composables/useRafSchedule";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -11,6 +16,8 @@ const props = defineProps<{
   colWidth: number;
   rowHeight: number;
   color: string;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -27,7 +34,7 @@ const initCanvas = () => {
   if (!canvas) return;
 
   dpr = window.devicePixelRatio || 1;
-  const width = props.cols * props.colWidth;
+  const width = props.viewportWidth;
   const height = props.rowHeight;
 
   canvas.style.width = `${width}px`;
@@ -42,7 +49,7 @@ const updateCanvasSize = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
 
-  const width = props.cols * props.colWidth;
+  const width = props.viewportWidth;
   const height = props.rowHeight;
 
   canvas.style.width = `${width}px`;
@@ -53,6 +60,10 @@ const updateCanvasSize = () => {
   render();
 };
 
+// Le canvas ne couvre plus que le viewport visible (largeur bornée à
+// viewportWidth, pas cols*colWidth) : on traduit le contexte de -scrollLeft
+// et on borne les boucles (temps, notes) à la plage de ticks visible, comme
+// pianoGridRenderer.ts pour le piano roll.
 const render = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
@@ -60,17 +71,38 @@ const render = () => {
   const ctx = canvas.getContext("2d")!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const width = props.cols * props.colWidth;
+  const width = props.viewportWidth;
   const height = props.rowHeight;
+  const scrollLeft = props.scrollLeft;
 
-  ctx.fillStyle = isHovered.value ? "#1f1119" : "#1a0e15";
-  ctx.fillRect(0, 0, width, height);
+  // Fond transparent (comme pianoGridRenderer.ts) : on laisse l'arrière-plan
+  // réel du site transparaître au lieu de peindre une couleur opaque en dur,
+  // avec juste un léger survol semi-transparent au hover.
+  ctx.clearRect(0, 0, width, height);
+  if (isHovered.value) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  ctx.save();
+  ctx.translate(-scrollLeft, 0);
+
+  const [visibleTickStart, visibleTickEnd] = getVisibleTickRange(
+    scrollLeft,
+    width,
+    props.colWidth,
+    props.cols,
+  );
 
   // Une ligne à chaque temps, marquée en rose clair sur le premier temps
   // de chaque mesure (selon la signature rythmique du projet).
   const barLength = ticksPerBar(timelineStore.timeSignature);
-  const beatCount = Math.ceil(props.cols / TICKS_PER_BEAT);
-  for (let beat = 0; beat <= beatCount; beat++) {
+  const beatStart = Math.max(0, Math.floor(visibleTickStart / TICKS_PER_BEAT));
+  const beatEnd = Math.min(
+    Math.ceil(props.cols / TICKS_PER_BEAT),
+    Math.ceil(visibleTickEnd / TICKS_PER_BEAT),
+  );
+  for (let beat = beatStart; beat <= beatEnd; beat++) {
     const tick = beat * TICKS_PER_BEAT;
     const x = tick * props.colWidth - 0.5;
     const isBarStart = tick % barLength === 0;
@@ -85,38 +117,48 @@ const render = () => {
     ctx.stroke();
   }
 
-  if (props.notes.length === 0) return;
+  if (props.notes.length > 0) {
+    let minY = TOTAL_NOTES;
+    let maxY = 0;
+    for (const note of props.notes) {
+      if (note.y < minY) minY = note.y;
+      if (note.y > maxY) maxY = note.y;
+    }
 
-  let minY = TOTAL_NOTES;
-  let maxY = 0;
-  for (const note of props.notes) {
-    if (note.y < minY) minY = note.y;
-    if (note.y > maxY) maxY = note.y;
+    const padding = 2;
+    minY = Math.max(0, minY - padding);
+    maxY = Math.min(TOTAL_NOTES - 1, maxY + padding);
+
+    const range = Math.max(maxY - minY + 1, 5);
+    const noteHeight = Math.max(2, Math.min(height / range - 1, 8));
+
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = props.color;
+
+    for (const note of props.notes) {
+      if (note.x + note.w < visibleTickStart || note.x > visibleTickEnd) {
+        continue;
+      }
+      const x = note.x * props.colWidth;
+      const y = ((note.y - minY) / range) * (height - noteHeight);
+      const w = Math.max(note.w * props.colWidth - 1, 2);
+
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, noteHeight, 1);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
   }
 
-  const padding = 2;
-  minY = Math.max(0, minY - padding);
-  maxY = Math.min(TOTAL_NOTES - 1, maxY + padding);
-
-  const range = Math.max(maxY - minY + 1, 5);
-  const noteHeight = Math.max(2, Math.min(height / range - 1, 8));
-
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = props.color;
-
-  for (const note of props.notes) {
-    const x = note.x * props.colWidth;
-    const y = ((note.y - minY) / range) * (height - noteHeight);
-    const w = Math.max(note.w * props.colWidth - 1, 2);
-
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, noteHeight, 1);
-    ctx.fill();
-  }
-
-  ctx.globalAlpha = 1;
+  ctx.restore();
 };
 
+const scheduleRender = useRafSchedule(render);
+
+// scrollLeft est un nombre : un watch séparé (sans deep) évite qu'un scroll
+// ne déclenche une traversée profonde de `notes` à chaque tick simplement
+// pour détecter le changement de ce scalaire.
 watch(
   [
     () => props.notes,
@@ -124,12 +166,21 @@ watch(
     isHovered,
     () => timelineStore.timeSignature,
   ],
-  render,
+  scheduleRender,
   { deep: true },
 );
+watch(() => props.scrollLeft, scheduleRender);
+
+const scheduleResize = useRafSchedule(updateCanvasSize);
+
 watch(
-  [() => props.cols, () => props.colWidth, () => props.rowHeight],
-  updateCanvasSize,
+  [
+    () => props.cols,
+    () => props.colWidth,
+    () => props.rowHeight,
+    () => props.viewportWidth,
+  ],
+  scheduleResize,
 );
 
 onMounted(() => {
@@ -140,6 +191,7 @@ onMounted(() => {
 <template>
   <div
     class="track-timeline"
+    :style="{ width: `${viewportWidth}px` }"
     @dblclick="emit('dblclick')"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
@@ -150,7 +202,14 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .track-timeline {
-  position: relative;
+  // Bornée à la largeur du viewport visible (pas cols*colWidth) et épinglée
+  // juste après la colonne de header, comme TrackHeader.vue et
+  // .piano-grid-container (PianoRoll.vue) : rien entre cet élément et
+  // .timeline-scroll ne définit d'overflow, donc `sticky` se résout bien
+  // contre lui.
+  position: sticky;
+  left: 180px;
+  z-index: 5;
   cursor: pointer;
 
   canvas {

@@ -49,6 +49,24 @@ export const barBeatFromTick = (
 export const pxPerTick = (pxPerBeat: number): number =>
   pxPerBeat / TICKS_PER_BEAT;
 
+// Plage de ticks visible dans un canvas virtualisé (piano roll, preview de
+// piste) : marge d'une colonne de part et d'autre de la plage strictement
+// visible pour éviter qu'une note pile à la frontière du viewport disparaisse
+// ou devienne non cliquable.
+export const getVisibleTickRange = (
+  scrollLeft: number,
+  viewportWidth: number,
+  colWidth: number,
+  cols: number,
+): [number, number] => {
+  const start = Math.max(0, Math.floor(scrollLeft / colWidth) - 1);
+  const end = Math.min(
+    cols,
+    Math.ceil((scrollLeft + viewportWidth) / colWidth) + 1,
+  );
+  return [start, end];
+};
+
 // Un projet est "ancien format" (positions en colonnes de double-croche) s'il
 // n'a pas encore de timeSignature/subdivision — indépendamment du champ version.
 export const isLegacyProject = (data: Partial<TimelineProject>): boolean =>

@@ -38,6 +38,12 @@ const isResizing = ref(false);
 const resizeSide = ref<"left" | "right">("right");
 const dragStartX = ref(0);
 const initialClipState = ref({ x: 0, w: 0, startOffset: 0 });
+// Aperçu local pendant le drag/resize : le store n'est committé qu'une seule
+// fois au mouseup (voir handleMouseUp) pour éviter un JSON.stringify +
+// localStorage.setItem de tout le projet à chaque pixel de déplacement.
+const previewClip = ref<{ x: number; w: number; startOffset: number } | null>(
+  null,
+);
 
 onMounted(() => {
   audioLibraryStore.loadSample(props.clip.sampleId);
@@ -45,9 +51,11 @@ onMounted(() => {
 
 const sample = computed(() => audioLibraryStore.getSample(props.clip.sampleId));
 
+const displayClip = computed(() => previewClip.value ?? props.clip);
+
 const clipStyle = computed(() => ({
-  left: `${props.clip.x * props.colWidth}px`,
-  width: `${Math.max(props.clip.w * props.colWidth, 20)}px`,
+  left: `${displayClip.value.x * props.colWidth}px`,
+  width: `${Math.max(displayClip.value.w * props.colWidth, 20)}px`,
   height: `${props.rowHeight - 16}px`,
   top: "8px",
   backgroundColor: props.color,
@@ -106,17 +114,19 @@ const handleMouseMove = (event: MouseEvent): void => {
 
   if (isDragging.value) {
     const newX = Math.max(0, initialClipState.value.x + deltaCols);
-    emit("move", newX);
+    previewClip.value = {
+      x: newX,
+      w: initialClipState.value.w,
+      startOffset: initialClipState.value.startOffset,
+    };
   } else if (isResizing.value) {
     if (resizeSide.value === "right") {
       const newW = Math.max(1, initialClipState.value.w + deltaCols);
-      emit(
-        "resize",
-        "right",
-        initialClipState.value.x,
-        newW,
-        initialClipState.value.startOffset,
-      );
+      previewClip.value = {
+        x: initialClipState.value.x,
+        w: newW,
+        startOffset: initialClipState.value.startOffset,
+      };
     } else {
       const effectiveDelta = Math.min(deltaCols, initialClipState.value.w - 1);
       const newX = initialClipState.value.x + effectiveDelta;
@@ -125,15 +135,38 @@ const handleMouseMove = (event: MouseEvent): void => {
         initialClipState.value.startOffset + effectiveDelta;
 
       if (newX >= 0 && newW >= 1 && newStartOffset >= 0) {
-        emit("resize", "left", newX, newW, newStartOffset);
+        previewClip.value = { x: newX, w: newW, startOffset: newStartOffset };
       }
     }
   }
 };
 
 const handleMouseUp = (): void => {
+  const preview = previewClip.value;
+  const initial = initialClipState.value;
+  const hasChanged =
+    preview !== null &&
+    (preview.x !== initial.x ||
+      preview.w !== initial.w ||
+      preview.startOffset !== initial.startOffset);
+
+  if (hasChanged && preview) {
+    if (isDragging.value) {
+      emit("move", preview.x);
+    } else if (isResizing.value) {
+      emit(
+        "resize",
+        resizeSide.value,
+        preview.x,
+        preview.w,
+        preview.startOffset,
+      );
+    }
+  }
+
   isDragging.value = false;
   isResizing.value = false;
+  previewClip.value = null;
 
   document.removeEventListener("mousemove", handleMouseMove);
   document.removeEventListener("mouseup", handleMouseUp);
@@ -174,8 +207,8 @@ onBeforeUnmount(() => {
       <WaveformCanvas
         v-if="sample?.waveformData"
         :waveform-data="sample.waveformData"
-        :start-offset="clip.startOffset"
-        :clip-width="clip.w"
+        :start-offset="displayClip.startOffset"
+        :clip-width="displayClip.w"
         :sample-duration-cols="
           Math.ceil(sample.duration * ticksPerSecond(tempo))
         "

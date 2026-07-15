@@ -8,6 +8,7 @@ import {
 } from "../../../composables/useAutomationLane";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import { useTimelineStore } from "../../../stores/timelineStore";
+import { useRafSchedule } from "../../../composables/useRafSchedule";
 
 const props = defineProps<{
   trackId?: string; // absent = lane du bus master
@@ -61,17 +62,29 @@ const interaction = useAutomationLane(
   rendererRef,
   () => props.scrollLeft,
   () => props.cols,
+  () => timelineStore.subdivision,
 );
+
+const displayedPoints = () => {
+  const preview = interaction.previewPoints.value;
+  if (!preview) return props.lane.points;
+  return props.lane.points.map((p) => {
+    const pos = preview.get(p.id);
+    return pos ? { ...p, x: pos.x, y: pos.y } : p;
+  });
+};
 
 const renderFrame = () => {
   if (!rendererRef.value) return;
   rendererRef.value.render(
-    props.lane.points,
+    displayedPoints(),
     interaction.hoveredPointId.value,
     interaction.selectedPointIds.value,
   );
   rendererRef.value.renderMarquee(interaction.marqueeRect.value);
 };
+
+const scheduleRender = useRafSchedule(renderFrame);
 
 onMounted(() => {
   const canvas = canvasRef.value;
@@ -110,10 +123,38 @@ watch(
     interaction.hoveredPointId,
     interaction.selectedPointIds,
     interaction.marqueeRect,
+    interaction.previewPoints,
   ],
-  renderFrame,
+  scheduleRender,
   { deep: true },
 );
+
+const resizeCanvas = () => {
+  const canvas = canvasRef.value;
+  if (!canvas || !rendererRef.value) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const width = props.cols * props.colWidth;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${LANE_HEIGHT}px`;
+  canvas.width = width * dpr;
+  canvas.height = LANE_HEIGHT * dpr;
+  ctx.scale(dpr, dpr);
+  rendererRef.value.updateConfig(
+    {
+      cols: props.cols,
+      colWidth: props.colWidth,
+      trackColor: props.trackColor,
+      timeSignature: timelineStore.timeSignature,
+      subdivision: timelineStore.subdivision,
+    },
+    width,
+    LANE_HEIGHT,
+  );
+  renderFrame();
+};
+
+const scheduleResize = useRafSchedule(resizeCanvas);
 
 watch(
   [
@@ -123,30 +164,7 @@ watch(
     () => timelineStore.timeSignature,
     () => timelineStore.subdivision,
   ],
-  () => {
-    const canvas = canvasRef.value;
-    if (!canvas || !rendererRef.value) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const width = props.cols * props.colWidth;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${LANE_HEIGHT}px`;
-    canvas.width = width * dpr;
-    canvas.height = LANE_HEIGHT * dpr;
-    ctx.scale(dpr, dpr);
-    rendererRef.value.updateConfig(
-      {
-        cols: props.cols,
-        colWidth: props.colWidth,
-        trackColor: props.trackColor,
-        timeSignature: timelineStore.timeSignature,
-        subdivision: timelineStore.subdivision,
-      },
-      width,
-      LANE_HEIGHT,
-    );
-    renderFrame();
-  },
+  scheduleResize,
 );
 
 onBeforeUnmount(() => {

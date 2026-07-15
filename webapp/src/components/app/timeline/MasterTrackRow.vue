@@ -58,11 +58,11 @@ const handleToggleAutomation = () => {
 </script>
 
 <template>
-  <div>
-    <div
-      class="master-track-row"
-      :style="{ minWidth: `${180 + props.cols * props.colWidth}px` }"
-    >
+  <div
+    class="master-track-row-wrapper"
+    :style="{ minWidth: `${180 + props.cols * props.colWidth}px` }"
+  >
+    <div class="master-track-row">
       <MasterTrackHeader @open-settings="emit('open-settings')" />
       <div class="master-track-zone" />
     </div>

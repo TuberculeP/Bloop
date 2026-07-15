@@ -110,12 +110,25 @@ export class PianoKeysRenderer {
     }
   }
 
-  render(activeNotes: Set<NoteName>) {
+  render(activeNotes: Set<NoteName>, scrollTop = 0) {
     const { ctx } = this;
     ctx.clearRect(0, 0, this.width, this.height);
 
-    const whiteKeyRects = this.keyRects.filter((k) => !k.isBlack);
-    const blackKeyRects = this.keyRects.filter((k) => k.isBlack);
+    // Marge d'une ligne de part et d'autre de la plage strictement visible,
+    // comme pianoGridRenderer.ts, pour éviter un effet de bord à la frontière
+    // du viewport.
+    const visibleTop = scrollTop - NOTE_ROW_HEIGHT;
+    const visibleBottom = scrollTop + this.height + NOTE_ROW_HEIGHT;
+
+    ctx.save();
+    ctx.translate(0, -scrollTop);
+
+    const whiteKeyRects = this.keyRects.filter(
+      (k) => !k.isBlack && k.y + k.h >= visibleTop && k.y <= visibleBottom,
+    );
+    const blackKeyRects = this.keyRects.filter(
+      (k) => k.isBlack && k.y + k.h >= visibleTop && k.y <= visibleBottom,
+    );
 
     for (const key of whiteKeyRects) {
       this.drawWhiteKey(key, activeNotes.has(key.note));
@@ -124,6 +137,8 @@ export class PianoKeysRenderer {
     for (const key of blackKeyRects) {
       this.drawBlackKey(key, activeNotes.has(key.note));
     }
+
+    ctx.restore();
   }
 
   private drawWhiteKey(key: KeyRect, isActive: boolean) {

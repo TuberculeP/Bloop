@@ -21,6 +21,7 @@ const props = defineProps<{
   playbackPosition: number;
   isPlaying: boolean;
   scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -106,6 +107,8 @@ const handleToggleAutomation = () => {
       :col-width="colWidth"
       :row-height="rowHeight"
       :color="track.color"
+      :scroll-left="scrollLeft"
+      :viewport-width="viewportWidth"
       @dblclick="emit('toggle-expand', track)"
     />
 
@@ -116,6 +119,8 @@ const handleToggleAutomation = () => {
       :col-width="colWidth"
       :playback-position="playbackPosition"
       :is-playing="isPlaying"
+      :scroll-left="scrollLeft"
+      :viewport-width="viewportWidth"
     />
 
     <AudioClipRow

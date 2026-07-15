@@ -90,6 +90,13 @@ const colWidth = computed(() =>
 
 const scrollLeft = ref(0);
 const scrollContainerRef = ref<HTMLElement | null>(null);
+// Largeur visible de .timeline-scroll (hors header 180px), utilisée par le
+// piano roll pour virtualiser son canvas (ne rendre que la tranche visible).
+// Un ResizeObserver est nécessaire plutôt que window.resize seul : le
+// panneau audiothèque redimensionnable au drag change cette largeur sans
+// déclencher de resize de la fenêtre.
+const viewportWidth = ref(0);
+let scrollContainerResizeObserver: ResizeObserver | null = null;
 
 const settingsTrack = ref<Track | null>(null);
 const showSettings = ref(false);
@@ -373,11 +380,23 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
+
+  if (scrollContainerRef.value) {
+    viewportWidth.value =
+      scrollContainerRef.value.clientWidth - TRACK_HEADER_WIDTH;
+    scrollContainerResizeObserver = new ResizeObserver(() => {
+      if (!scrollContainerRef.value) return;
+      viewportWidth.value =
+        scrollContainerRef.value.clientWidth - TRACK_HEADER_WIDTH;
+    });
+    scrollContainerResizeObserver.observe(scrollContainerRef.value);
+  }
 });
 
 onBeforeUnmount(() => {
   stopPlayback();
   window.removeEventListener("keydown", handleKeydown);
+  scrollContainerResizeObserver?.disconnect();
 });
 
 defineExpose({
@@ -715,7 +734,6 @@ defineExpose({
         <TimelineRuler
           :cols="displayCols"
           :col-width="colWidth"
-          :scroll-left="scrollLeft"
           @seek="setCheckpoint"
         />
 
@@ -746,6 +764,7 @@ defineExpose({
             :playback-position="currentPosition"
             :is-playing="isPlaying"
             :scroll-left="scrollLeft"
+            :viewport-width="viewportWidth"
             @toggle-mute="handleToggleMute"
             @toggle-solo="handleToggleSolo"
             @select-track="handleSelectTrack"

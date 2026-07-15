@@ -889,6 +889,35 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     }
   };
 
+  // Le watcher deep sur `project` déclenche saveToLocalStorage() à chaque
+  // mutation, y compris les mutations à la volée pendant un drag (clip,
+  // note, point d'automation). JSON.stringify + localStorage.setItem sur
+  // tout le projet est synchrone et coûteux : on le debounce pour ne pas
+  // bloquer le thread principal (et donc la boucle rAF du playback) en
+  // rafale. `flushSaveToLocalStorage` garantit qu'on ne perd pas les
+  // dernières modifications si l'utilisateur ferme l'onglet juste après.
+  let saveDebounceId: ReturnType<typeof setTimeout> | null = null;
+  const SAVE_DEBOUNCE_MS = 500;
+
+  const scheduleSaveToLocalStorage = (): void => {
+    if (saveDebounceId) clearTimeout(saveDebounceId);
+    saveDebounceId = setTimeout(() => {
+      saveDebounceId = null;
+      saveToLocalStorage();
+    }, SAVE_DEBOUNCE_MS);
+  };
+
+  const flushSaveToLocalStorage = (): void => {
+    if (!saveDebounceId) return;
+    clearTimeout(saveDebounceId);
+    saveDebounceId = null;
+    saveToLocalStorage();
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", flushSaveToLocalStorage);
+  }
+
   const loadFromLocalStorage = (): boolean => {
     isLoadingProject.value = true;
     try {
@@ -1091,7 +1120,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   watch(
     project,
     () => {
-      saveToLocalStorage();
+      scheduleSaveToLocalStorage();
       // Ne pas marquer comme "changed" pendant le chargement d'un projet
       if (!isLoadingProject.value) {
         const projectStore = useProjectStore();
