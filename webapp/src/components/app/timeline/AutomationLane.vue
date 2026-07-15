@@ -61,6 +61,7 @@ const interaction = useAutomationLane(
   rendererRef,
   () => props.scrollLeft,
   () => props.cols,
+  () => timelineStore.subdivision,
 );
 
 const displayedPoints = () => {

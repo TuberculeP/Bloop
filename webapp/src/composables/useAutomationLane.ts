@@ -1,6 +1,7 @@
 import { ref, onMounted, onBeforeUnmount, type Ref } from "vue";
 import type { AutomationLane, AutomationPoint } from "../lib/utils/types";
 import type { AutomationLaneRenderer } from "../lib/canvas/automationLaneRenderer";
+import { snapToGrid } from "../lib/audio/timeGrid";
 
 const DRAG_THRESHOLD = 4;
 const DUPLICATE_OFFSET = 4;
@@ -26,6 +27,7 @@ export function useAutomationLane(
   rendererRef: Ref<AutomationLaneRenderer | null>,
   scrollLeft: () => number,
   cols: () => number,
+  subdivision: () => number,
 ) {
   const hoveredPointId = ref<string | null>(null);
   const selectedPointIds = ref<Set<string>>(new Set());
@@ -134,7 +136,7 @@ export function useAutomationLane(
         const preview = new Map<string, { x: number; y: number }>();
         for (const [pid, initial] of pendingDrag.groupInitial) {
           preview.set(pid, {
-            x: Math.max(0, Math.round(initial.x + deltaX)),
+            x: Math.max(0, snapToGrid(initial.x + deltaX, subdivision())),
             y: Math.max(0, Math.min(1, initial.y + deltaY)),
           });
         }
@@ -242,7 +244,7 @@ export function useAutomationLane(
           scrollLeft(),
         );
         const pointId = actions.addPoint(lane.id, {
-          x: Math.max(0, Math.round(x)),
+          x: Math.max(0, snapToGrid(x, subdivision())),
           y,
         });
         if (pointId) selectedPointIds.value = new Set([pointId]);
