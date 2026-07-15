@@ -89,6 +89,16 @@ const drawWaveform = (): void => {
   }
 };
 
+let renderScheduled = false;
+const scheduleDraw = (): void => {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    drawWaveform();
+    renderScheduled = false;
+  });
+};
+
 onMounted(() => {
   drawWaveform();
 });
@@ -102,9 +112,7 @@ watch(
     props.color,
     props.colWidth,
   ],
-  () => {
-    drawWaveform();
-  },
+  scheduleDraw,
   { deep: true },
 );
 </script>

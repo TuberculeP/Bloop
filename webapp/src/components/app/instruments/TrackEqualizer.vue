@@ -3,8 +3,6 @@
     <canvas
       ref="canvas"
       class="eq-canvas"
-      :width="WIDTH"
-      :height="HEIGHT"
       @mousedown="onMouseDown"
       @mousemove="onMouseMove"
       @mouseup="onMouseUp"
@@ -31,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
+const dpr = window.devicePixelRatio || 1;
 
 let isDragging = false;
 let draggedId: string | null = null;
@@ -223,8 +222,28 @@ const draw = () => {
   });
 };
 
-watch(() => props.bands, draw, { deep: true });
-onMounted(draw);
+let renderScheduled = false;
+const scheduleDraw = (): void => {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    draw();
+    renderScheduled = false;
+  });
+};
+
+watch(() => props.bands, scheduleDraw, { deep: true });
+
+onMounted(() => {
+  const el = canvas.value;
+  if (!el) return;
+  el.style.width = `${WIDTH}px`;
+  el.style.height = `${HEIGHT}px`;
+  el.width = WIDTH * dpr;
+  el.height = HEIGHT * dpr;
+  el.getContext("2d")?.scale(dpr, dpr);
+  draw();
+});
 </script>
 
 <style scoped lang="scss">

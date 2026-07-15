@@ -88,6 +88,11 @@ export function usePianoGridCanvas(
     const canvas = canvasRef.value;
     if (!canvas || !renderer.value) return;
 
+    // Relu à chaque resize (pas seulement à l'init) : sur un setup
+    // multi-écrans avec des échelles différentes, déplacer la fenêtre entre
+    // deux écrans change devicePixelRatio sans démonter le composant.
+    dpr = window.devicePixelRatio || 1;
+
     const width = config.cols() * config.colWidth();
     const height = TOTAL_NOTES * NOTE_ROW_HEIGHT;
 

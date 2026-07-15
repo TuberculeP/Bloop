@@ -6,7 +6,6 @@ import { ticksPerBar, snapToGrid } from "../../../lib/audio/timeGrid";
 const props = defineProps<{
   cols: number;
   colWidth: number;
-  scrollLeft: number;
 }>();
 
 const emit = defineEmits<{

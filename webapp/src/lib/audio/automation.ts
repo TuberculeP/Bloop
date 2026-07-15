@@ -73,24 +73,28 @@ function catmullRom(
   );
 }
 
+// `points` doit déjà être trié par x — invariant maintenu par le store
+// (updateAutomationPoint/setAutomationPoints trient à chaque mutation) et par
+// les appelants (automationLaneRenderer pré-trie avant d'appeler). Retrier
+// ici coûterait un O(n log n) répété des milliers de fois par frame de
+// playback (une lane par piste, 60x/s) ou par rendu de courbe (steps par
+// rendu).
 export function getAutomationValueAt(
   points: AutomationPoint[],
   x: number,
 ): number {
   if (points.length === 0) return 0.5;
 
-  const sorted = [...points].sort((a, b) => a.x - b.x);
+  if (x <= points[0].x) return points[0].y;
+  if (x >= points[points.length - 1].x) return points[points.length - 1].y;
 
-  if (x <= sorted[0].x) return sorted[0].y;
-  if (x >= sorted[sorted.length - 1].x) return sorted[sorted.length - 1].y;
-
-  const rightIdx = sorted.findIndex((p) => p.x > x);
-  const p1 = sorted[rightIdx - 1];
-  const p2 = sorted[rightIdx];
+  const rightIdx = points.findIndex((p) => p.x > x);
+  const p1 = points[rightIdx - 1];
+  const p2 = points[rightIdx];
 
   // Clamp neighboring points for Catmull-Rom tangent calculation
-  const p0 = sorted[rightIdx - 2] ?? p1;
-  const p3 = sorted[rightIdx + 1] ?? p2;
+  const p0 = points[rightIdx - 2] ?? p1;
+  const p3 = points[rightIdx + 1] ?? p2;
 
   const t = (x - p1.x) / (p2.x - p1.x);
   const value = catmullRom(p0.y, p1.y, p2.y, p3.y, t);

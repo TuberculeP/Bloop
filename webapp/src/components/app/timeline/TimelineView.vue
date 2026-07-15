@@ -715,7 +715,6 @@ defineExpose({
         <TimelineRuler
           :cols="displayCols"
           :col-width="colWidth"
-          :scroll-left="scrollLeft"
           @seek="setCheckpoint"
         />
 

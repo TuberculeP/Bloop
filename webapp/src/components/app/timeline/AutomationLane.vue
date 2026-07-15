@@ -63,10 +63,29 @@ const interaction = useAutomationLane(
   () => props.cols,
 );
 
+const displayedPoints = () => {
+  const preview = interaction.previewPoints.value;
+  if (!preview) return props.lane.points;
+  return props.lane.points.map((p) => {
+    const pos = preview.get(p.id);
+    return pos ? { ...p, x: pos.x, y: pos.y } : p;
+  });
+};
+
+let renderScheduled = false;
+const scheduleRender = () => {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderFrame();
+    renderScheduled = false;
+  });
+};
+
 const renderFrame = () => {
   if (!rendererRef.value) return;
   rendererRef.value.render(
-    props.lane.points,
+    displayedPoints(),
     interaction.hoveredPointId.value,
     interaction.selectedPointIds.value,
   );
@@ -110,8 +129,9 @@ watch(
     interaction.hoveredPointId,
     interaction.selectedPointIds,
     interaction.marqueeRect,
+    interaction.previewPoints,
   ],
-  renderFrame,
+  scheduleRender,
   { deep: true },
 );
 

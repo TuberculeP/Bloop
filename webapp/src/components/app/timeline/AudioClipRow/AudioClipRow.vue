@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
       <div
         v-if="isPlaying"
         class="playback-cursor"
-        :style="{ left: `${playbackPosition * colWidth}px` }"
+        :style="{ transform: `translateX(${playbackPosition * colWidth}px)` }"
       />
 
       <AudioClipItem
@@ -352,10 +352,12 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 0;
   bottom: 0;
+  left: 0;
   width: 2px;
   background: var(--color-status-error);
   z-index: 100;
   pointer-events: none;
+  will-change: transform;
 }
 
 .selection-rect {
