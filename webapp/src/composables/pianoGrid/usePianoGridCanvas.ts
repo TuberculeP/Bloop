@@ -40,6 +40,10 @@ interface UsePianoGridCanvasConfig {
   resizingState: Ref<ResizingState | null>;
   resizePreviewDelta: Ref<number | null>;
   selectionRect: Ref<SelectionRect | null>;
+  scrollLeft: () => number;
+  scrollTop: () => number;
+  viewportWidth: () => number;
+  viewportHeight: () => number;
 }
 
 export function usePianoGridCanvas(
@@ -47,12 +51,16 @@ export function usePianoGridCanvas(
   config: UsePianoGridCanvasConfig,
 ) {
   const renderer = ref<PianoGridRenderer | null>(null);
-  // Taille du wrapper DOM (reflow), mise à jour uniquement dans le même
-  // chemin throttlé (rAF) que le resize du canvas — sinon le binding de
-  // style du wrapper suit la réactivité Vue brute et reflow à chaque tick de
-  // zoom, indépendamment du throttle appliqué au canvas lui-même.
+  // Taille du wrapper DOM (spacer) : donne au conteneur natif sa vraie plage
+  // de scroll vertical (hauteur complète de la grille), mais plus sa largeur
+  // complète — le conteneur (.piano-grid-container) est maintenant épinglé
+  // (sticky) et borné à la largeur du viewport visible, donc le spacer n'a
+  // besoin d'être large que de cette même largeur. Mis à jour uniquement
+  // dans le même chemin throttlé (rAF) que le resize du canvas — sinon le
+  // binding de style du wrapper suit la réactivité Vue brute et reflow à
+  // chaque tick de zoom, indépendamment du throttle appliqué au canvas.
   const containerSize = ref({
-    width: config.cols() * config.colWidth(),
+    width: config.viewportWidth(),
     height: TOTAL_NOTES * NOTE_ROW_HEIGHT,
   });
   let renderScheduled = false;
@@ -64,9 +72,9 @@ export function usePianoGridCanvas(
 
     dpr = window.devicePixelRatio || 1;
 
-    const width = config.cols() * config.colWidth();
-    const height = TOTAL_NOTES * NOTE_ROW_HEIGHT;
-    containerSize.value = { width, height };
+    const width = config.viewportWidth();
+    const height = config.viewportHeight();
+    containerSize.value = { width, height: TOTAL_NOTES * NOTE_ROW_HEIGHT };
 
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
@@ -102,9 +110,9 @@ export function usePianoGridCanvas(
     // deux écrans change devicePixelRatio sans démonter le composant.
     dpr = window.devicePixelRatio || 1;
 
-    const width = config.cols() * config.colWidth();
-    const height = TOTAL_NOTES * NOTE_ROW_HEIGHT;
-    containerSize.value = { width, height };
+    const width = config.viewportWidth();
+    const height = config.viewportHeight();
+    containerSize.value = { width, height: TOTAL_NOTES * NOTE_ROW_HEIGHT };
 
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
@@ -197,7 +205,13 @@ export function usePianoGridCanvas(
       };
     }
 
-    renderer.value.render(noteData, activeRows, selRect);
+    renderer.value.render(
+      noteData,
+      activeRows,
+      selRect,
+      config.scrollLeft(),
+      config.scrollTop(),
+    );
   };
 
   watch(
@@ -210,6 +224,8 @@ export function usePianoGridCanvas(
       config.resizingState,
       config.resizePreviewDelta,
       config.selectionRect,
+      () => config.scrollLeft(),
+      () => config.scrollTop(),
     ],
     scheduleRender,
     { deep: true },
@@ -231,6 +247,8 @@ export function usePianoGridCanvas(
       () => config.colWidth(),
       () => config.timeSignature(),
       () => config.subdivision(),
+      () => config.viewportWidth(),
+      () => config.viewportHeight(),
     ],
     scheduleResize,
     { deep: true },

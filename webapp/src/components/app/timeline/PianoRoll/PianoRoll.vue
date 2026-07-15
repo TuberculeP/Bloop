@@ -19,6 +19,16 @@ const USE_CANVAS = true;
 const keysContainerRef = ref<HTMLElement | null>(null);
 const gridContainerRef = ref<HTMLElement | null>(null);
 
+// Hauteur fixe du viewport piano roll (voir .piano-roll-wrapper ci-dessous) :
+// PianoGridCanvas/PianoKeysCanvas n'ont plus besoin de rendre que cette
+// tranche visible plutôt que la hauteur complète de la grille (1392px).
+const PIANO_ROLL_VIEWPORT_HEIGHT = 400;
+
+// scrollTop courant, utilisé par PianoGridCanvas/PianoKeysCanvas pour savoir
+// quelle tranche verticale peindre (canvas maintenant dimensionné au
+// viewport, plus à la grille complète).
+const scrollTop = ref(0);
+
 // Sync basée sur la valeur plutôt qu'un flag+rAF : un flag temporel suppose
 // au plus un scroll par frame, ce qui casse sous charge (pendant le playback,
 // activeNotes change de référence à chaque frame et force un redraw canvas
@@ -26,11 +36,16 @@ const gridContainerRef = ref<HTMLElement | null>(null);
 // silencieusement ignoré, désynchronisant les deux conteneurs jusqu'à ce
 // qu'un scroll ultérieur écrase l'un avec la valeur périmée de l'autre
 // (symptôme : la vue des octaves "rollback"). Comparer les valeurs élimine
-// la boucle infinie sans jamais pouvoir perdre un événement.
+// la boucle infinie sans jamais pouvoir perdre un événement. Le même garde-fou
+// protège maintenant aussi la mise à jour de `scrollTop` (qui déclenche un
+// redraw canvas) pour ne pas réintroduire cette classe de bug.
 const syncScrollFromGrid = () => {
   if (!keysContainerRef.value || !gridContainerRef.value) return;
   if (keysContainerRef.value.scrollTop !== gridContainerRef.value.scrollTop) {
     keysContainerRef.value.scrollTop = gridContainerRef.value.scrollTop;
+  }
+  if (scrollTop.value !== gridContainerRef.value.scrollTop) {
+    scrollTop.value = gridContainerRef.value.scrollTop;
   }
 };
 
@@ -38,6 +53,9 @@ const syncScrollFromKeys = () => {
   if (!keysContainerRef.value || !gridContainerRef.value) return;
   if (gridContainerRef.value.scrollTop !== keysContainerRef.value.scrollTop) {
     gridContainerRef.value.scrollTop = keysContainerRef.value.scrollTop;
+  }
+  if (scrollTop.value !== keysContainerRef.value.scrollTop) {
+    scrollTop.value = keysContainerRef.value.scrollTop;
   }
 };
 
@@ -47,6 +65,8 @@ const props = defineProps<{
   colWidth: number;
   playbackPosition: number;
   isPlaying: boolean;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const timelineStore = useTimelineStore();
@@ -197,6 +217,8 @@ onBeforeUnmount(() => {
         :is="USE_CANVAS ? PianoKeysCanvas : PianoKeys"
         :active-notes="allActiveNotes"
         :grid-height="gridHeight"
+        :scroll-top="scrollTop"
+        :viewport-height="PIANO_ROLL_VIEWPORT_HEIGHT"
         @note-start="handleNoteStart"
         @note-stop="handleNoteStop"
         @all-notes-stop="handleAllNotesStop"
@@ -205,6 +227,7 @@ onBeforeUnmount(() => {
     <div
       ref="gridContainerRef"
       class="piano-grid-container"
+      :style="{ width: `${viewportWidth}px` }"
       @scroll="syncScrollFromGrid"
     >
       <PianoGridCanvas
@@ -214,6 +237,10 @@ onBeforeUnmount(() => {
         :color="track.color"
         :active-notes="allActiveNotes"
         :track-id="track.id"
+        :scroll-left="scrollLeft"
+        :scroll-top="scrollTop"
+        :viewport-width="viewportWidth"
+        :viewport-height="PIANO_ROLL_VIEWPORT_HEIGHT"
         @add-note="handleAddNote"
         @remove-note="handleRemoveNote"
         @update-notes="handleUpdateNotes"
@@ -250,8 +277,17 @@ onBeforeUnmount(() => {
 }
 
 .piano-grid-container {
-  flex: 1;
-  overflow: auto;
+  // Bornée à la largeur du viewport visible (pas cols*colWidth) et épinglée
+  // juste après la colonne des touches, comme TrackHeader.vue pour le header
+  // de piste : le scroll horizontal partagé de .timeline-scroll continue de
+  // s'appliquer normalement (rien entre ce conteneur et .timeline-scroll ne
+  // définit d'overflow), donc `sticky` se résout bien contre lui.
+  flex: 0 0 auto;
+  position: sticky;
+  left: 180px;
+  z-index: 5;
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-secondary) transparent;
 }

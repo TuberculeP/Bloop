@@ -15,6 +15,8 @@ export function usePianoGridSelection(
   colWidth: () => number,
   gridWidth: () => number,
   gridHeight: () => number,
+  scrollLeft: () => number = () => 0,
+  scrollTop: () => number = () => 0,
 ) {
   const selectedNotes = ref<Set<string>>(new Set());
   const selectionRect = ref<SelectionRect | null>(null);
@@ -37,10 +39,16 @@ export function usePianoGridSelection(
     };
   });
 
+  // Le canvas ne couvre plus que le viewport visible : les coordonnées
+  // canvas-local (via getBoundingClientRect) sont recalées en coordonnées
+  // monde en ajoutant le scroll courant, comme dans PianoGridCanvas.vue.
+  // Le rectangle de sélection est ainsi stocké en coordonnées monde, ce qui
+  // permet à pianoGridRenderer.ts de le dessiner correctement via la même
+  // translation globale (-scrollLeft, -scrollTop) que le reste de la grille.
   const handleSelectionStart = (event: MouseEvent) => {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = scrollLeft() + (event.clientX - rect.left);
+    const y = scrollTop() + (event.clientY - rect.top);
     selectionRect.value = { startX: x, startY: y, currentX: x, currentY: y };
     document.addEventListener("mousemove", handleSelectionMove);
     document.addEventListener("mouseup", handleSelectionEnd);
@@ -51,8 +59,10 @@ export function usePianoGridSelection(
     const grid = containerRef?.value ?? document.querySelector(".piano-grid");
     if (!grid) return;
     const rect = grid.getBoundingClientRect();
-    const x = Math.max(0, Math.min(event.clientX - rect.left, gridWidth()));
-    const y = Math.max(0, Math.min(event.clientY - rect.top, gridHeight()));
+    const worldX = scrollLeft() + (event.clientX - rect.left);
+    const worldY = scrollTop() + (event.clientY - rect.top);
+    const x = Math.max(0, Math.min(worldX, gridWidth()));
+    const y = Math.max(0, Math.min(worldY, gridHeight()));
     selectionRect.value.currentX = x;
     selectionRect.value.currentY = y;
   };

@@ -6,6 +6,8 @@ import { PianoKeysRenderer } from "../../../../lib/canvas/pianoKeysRenderer";
 const props = defineProps<{
   activeNotes: Set<NoteName>;
   gridHeight: number;
+  scrollTop: number;
+  viewportHeight: number;
 }>();
 
 const emit = defineEmits<{
@@ -28,7 +30,7 @@ const initCanvas = () => {
 
   dpr = window.devicePixelRatio || 1;
   const width = PIANO_WIDTH;
-  const height = props.gridHeight;
+  const height = props.viewportHeight;
 
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
@@ -47,7 +49,7 @@ const updateCanvasSize = () => {
   if (!canvas || !renderer.value) return;
 
   const width = PIANO_WIDTH;
-  const height = props.gridHeight;
+  const height = props.viewportHeight;
 
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
@@ -63,16 +65,19 @@ const updateCanvasSize = () => {
 
 const render = () => {
   if (!renderer.value) return;
-  renderer.value.render(props.activeNotes);
+  renderer.value.render(props.activeNotes, props.scrollTop);
 };
 
+// Le canvas ne couvre plus que le viewport visible : les coordonnées
+// canvas-local sont recalées en coordonnées monde en ajoutant scrollTop,
+// comme dans PianoGridCanvas.vue.
 const handleMouseMove = (event: MouseEvent) => {
   if (!renderer.value) return;
   const rect = canvasRef.value!.getBoundingClientRect();
   const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  const worldY = props.scrollTop + (event.clientY - rect.top);
 
-  const note = renderer.value.getKeyAtPosition(x, y);
+  const note = renderer.value.getKeyAtPosition(x, worldY);
   renderer.value.setHoveredKey(note);
   render();
 
@@ -91,9 +96,9 @@ const handleMouseDown = (event: MouseEvent) => {
 
   const rect = canvasRef.value!.getBoundingClientRect();
   const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  const worldY = props.scrollTop + (event.clientY - rect.top);
 
-  const note = renderer.value.getKeyAtPosition(x, y);
+  const note = renderer.value.getKeyAtPosition(x, worldY);
   if (note) {
     isMouseDown.value = true;
     currentNote.value = note;
@@ -124,8 +129,10 @@ const handleGlobalMouseUp = () => {
   }
 };
 
-watch(() => props.activeNotes, render, { deep: true });
-watch(() => props.gridHeight, updateCanvasSize);
+watch([() => props.activeNotes, () => props.scrollTop], render, {
+  deep: true,
+});
+watch(() => props.viewportHeight, updateCanvasSize);
 
 onMounted(() => {
   initCanvas();
@@ -138,7 +145,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="piano-keys-canvas">
+  <div class="piano-keys-canvas" :style="{ height: `${gridHeight}px` }">
     <canvas
       ref="canvasRef"
       @mousemove="handleMouseMove"
@@ -151,6 +158,11 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .piano-keys-canvas {
+  // La hauteur complète (spacer) donne à .piano-keys-container sa vraie
+  // plage de scroll vertical ; le canvas lui-même (voir plus bas) ne fait
+  // que la hauteur du viewport visible et reste épinglé en haut pendant le
+  // scroll.
+  position: relative;
   width: 180px;
   min-width: 180px;
   flex-shrink: 0;
@@ -161,6 +173,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
 
   canvas {
+    position: sticky;
+    top: 0;
     display: block;
   }
 }
