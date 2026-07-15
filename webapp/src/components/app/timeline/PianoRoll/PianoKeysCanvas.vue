@@ -71,11 +71,17 @@ const render = () => {
 // Le canvas ne couvre plus que le viewport visible : les coordonnées
 // canvas-local sont recalées en coordonnées monde en ajoutant scrollTop,
 // comme dans PianoGridCanvas.vue.
+const toWorldPos = (event: MouseEvent): { x: number; y: number } => {
+  const rect = canvasRef.value!.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: props.scrollTop + (event.clientY - rect.top),
+  };
+};
+
 const handleMouseMove = (event: MouseEvent) => {
   if (!renderer.value) return;
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const worldY = props.scrollTop + (event.clientY - rect.top);
+  const { x, y: worldY } = toWorldPos(event);
 
   const note = renderer.value.getKeyAtPosition(x, worldY);
   renderer.value.setHoveredKey(note);
@@ -94,9 +100,7 @@ const handleMouseDown = (event: MouseEvent) => {
   if (!renderer.value) return;
   event.preventDefault();
 
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const worldY = props.scrollTop + (event.clientY - rect.top);
+  const { x, y: worldY } = toWorldPos(event);
 
   const note = renderer.value.getKeyAtPosition(x, worldY);
   if (note) {
@@ -129,9 +133,11 @@ const handleGlobalMouseUp = () => {
   }
 };
 
-watch([() => props.activeNotes, () => props.scrollTop], render, {
-  deep: true,
-});
+// scrollTop est un nombre : un watch séparé (sans deep) évite qu'un scroll
+// ne déclenche une traversée profonde de `activeNotes` à chaque tick
+// simplement pour détecter le changement de ce scalaire.
+watch(() => props.activeNotes, render, { deep: true });
+watch(() => props.scrollTop, render);
 watch(() => props.viewportHeight, updateCanvasSize);
 
 onMounted(() => {

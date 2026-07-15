@@ -5,7 +5,12 @@ import {
   isOctaveStart,
   noteIndexToName,
 } from "../audio/pianoRollConstants";
-import { TICKS_PER_BEAT, ticksPerBar, snapTicks } from "../audio/timeGrid";
+import {
+  TICKS_PER_BEAT,
+  ticksPerBar,
+  snapTicks,
+  getVisibleTickRange,
+} from "../audio/timeGrid";
 import type { TimeSignature } from "../utils/types";
 
 export interface GridRenderConfig {
@@ -63,6 +68,10 @@ export class PianoGridRenderer {
   // seulement au resize, car le scroll change bien plus souvent.
   private scrollLeft = 0;
   private scrollTop = 0;
+  // Calculées une seule fois par render() (au lieu d'une fois par méthode de
+  // dessin) puisqu'elles ne changent pas pendant tout le pass de rendu.
+  private visibleTickRange: [number, number] = [0, 0];
+  private visibleRowRange: [number, number] = [0, 0];
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -85,16 +94,6 @@ export class PianoGridRenderer {
   // Marge d'une colonne/ligne de part et d'autre de la plage strictement
   // visible : évite qu'une note ou une poignée de resize pile à la frontière
   // du viewport disparaisse ou devienne non cliquable.
-  private getVisibleTickRange(): [number, number] {
-    const { colWidth } = this.config;
-    const start = Math.max(0, Math.floor(this.scrollLeft / colWidth) - 1);
-    const end = Math.min(
-      this.config.cols,
-      Math.ceil((this.scrollLeft + this.width) / colWidth) + 1,
-    );
-    return [start, end];
-  }
-
   private getVisibleRowRange(): [number, number] {
     const start = Math.max(0, Math.floor(this.scrollTop / NOTE_ROW_HEIGHT) - 1);
     const end = Math.min(
@@ -114,6 +113,13 @@ export class PianoGridRenderer {
     const { ctx } = this;
     this.scrollLeft = scrollLeft;
     this.scrollTop = scrollTop;
+    this.visibleTickRange = getVisibleTickRange(
+      scrollLeft,
+      this.width,
+      this.config.colWidth,
+      this.config.cols,
+    );
+    this.visibleRowRange = this.getVisibleRowRange();
 
     ctx.clearRect(0, 0, this.width, this.height);
 
@@ -136,7 +142,7 @@ export class PianoGridRenderer {
 
   private drawBlackKeyRows() {
     const { ctx } = this;
-    const [rowStart, rowEnd] = this.getVisibleRowRange();
+    const [rowStart, rowEnd] = this.visibleRowRange;
 
     ctx.fillStyle = COLORS.blackKeyRow;
 
@@ -153,7 +159,7 @@ export class PianoGridRenderer {
     if (activeRows.size === 0) return;
 
     const { ctx } = this;
-    const [rowStart, rowEnd] = this.getVisibleRowRange();
+    const [rowStart, rowEnd] = this.visibleRowRange;
     ctx.fillStyle = COLORS.activeRowHighlight;
 
     for (const row of activeRows) {
@@ -165,8 +171,8 @@ export class PianoGridRenderer {
 
   private drawGridLines() {
     const { ctx, config } = this;
-    const [rowStart, rowEnd] = this.getVisibleRowRange();
-    const [tickStart, tickEnd] = this.getVisibleTickRange();
+    const [rowStart, rowEnd] = this.visibleRowRange;
+    const [tickStart, tickEnd] = this.visibleTickRange;
 
     ctx.strokeStyle = COLORS.cellBorderHorizontal;
     ctx.lineWidth = 1;
@@ -193,7 +199,7 @@ export class PianoGridRenderer {
 
   private drawOctaveLines() {
     const { ctx } = this;
-    const [rowStart, rowEnd] = this.getVisibleRowRange();
+    const [rowStart, rowEnd] = this.visibleRowRange;
 
     ctx.strokeStyle = COLORS.octaveLine;
     ctx.lineWidth = 2;
@@ -216,7 +222,7 @@ export class PianoGridRenderer {
     const { ctx, config } = this;
 
     const barLength = ticksPerBar(config.timeSignature);
-    const [tickStart, tickEnd] = this.getVisibleTickRange();
+    const [tickStart, tickEnd] = this.visibleTickRange;
     const beatStart = Math.max(0, Math.floor(tickStart / TICKS_PER_BEAT));
     const beatEnd = Math.min(
       Math.ceil(config.cols / TICKS_PER_BEAT),
@@ -252,8 +258,8 @@ export class PianoGridRenderer {
   }
 
   private drawNotes(notes: NoteRenderData[]) {
-    const [tickStart, tickEnd] = this.getVisibleTickRange();
-    const [rowStart, rowEnd] = this.getVisibleRowRange();
+    const [tickStart, tickEnd] = this.visibleTickRange;
+    const [rowStart, rowEnd] = this.visibleRowRange;
 
     for (const note of notes) {
       const noteX = note.previewX ?? note.x;

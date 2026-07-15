@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
+import { useRafSchedule } from "../../../../composables/useRafSchedule";
 
 const props = defineProps<{
   waveformData: number[];
@@ -89,15 +90,7 @@ const drawWaveform = (): void => {
   }
 };
 
-let renderScheduled = false;
-const scheduleDraw = (): void => {
-  if (renderScheduled) return;
-  renderScheduled = true;
-  requestAnimationFrame(() => {
-    drawWaveform();
-    renderScheduled = false;
-  });
-};
+const scheduleDraw = useRafSchedule(drawWaveform);
 
 onMounted(() => {
   drawWaveform();

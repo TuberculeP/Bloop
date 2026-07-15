@@ -39,24 +39,23 @@ const scrollTop = ref(0);
 // la boucle infinie sans jamais pouvoir perdre un événement. Le même garde-fou
 // protège maintenant aussi la mise à jour de `scrollTop` (qui déclenche un
 // redraw canvas) pour ne pas réintroduire cette classe de bug.
+const syncScrollTop = (source: HTMLElement, target: HTMLElement) => {
+  if (target.scrollTop !== source.scrollTop) {
+    target.scrollTop = source.scrollTop;
+  }
+  if (scrollTop.value !== source.scrollTop) {
+    scrollTop.value = source.scrollTop;
+  }
+};
+
 const syncScrollFromGrid = () => {
   if (!keysContainerRef.value || !gridContainerRef.value) return;
-  if (keysContainerRef.value.scrollTop !== gridContainerRef.value.scrollTop) {
-    keysContainerRef.value.scrollTop = gridContainerRef.value.scrollTop;
-  }
-  if (scrollTop.value !== gridContainerRef.value.scrollTop) {
-    scrollTop.value = gridContainerRef.value.scrollTop;
-  }
+  syncScrollTop(gridContainerRef.value, keysContainerRef.value);
 };
 
 const syncScrollFromKeys = () => {
   if (!keysContainerRef.value || !gridContainerRef.value) return;
-  if (gridContainerRef.value.scrollTop !== keysContainerRef.value.scrollTop) {
-    gridContainerRef.value.scrollTop = keysContainerRef.value.scrollTop;
-  }
-  if (scrollTop.value !== keysContainerRef.value.scrollTop) {
-    scrollTop.value = keysContainerRef.value.scrollTop;
-  }
+  syncScrollTop(keysContainerRef.value, gridContainerRef.value);
 };
 
 const props = defineProps<{

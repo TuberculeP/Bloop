@@ -3,7 +3,12 @@ import { ref, watch, onMounted } from "vue";
 import type { MidiNote } from "../../../lib/utils/types";
 import { TOTAL_NOTES } from "../../../lib/audio/pianoRollConstants";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { TICKS_PER_BEAT, ticksPerBar } from "../../../lib/audio/timeGrid";
+import {
+  TICKS_PER_BEAT,
+  ticksPerBar,
+  getVisibleTickRange,
+} from "../../../lib/audio/timeGrid";
+import { useRafSchedule } from "../../../composables/useRafSchedule";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -82,14 +87,11 @@ const render = () => {
   ctx.save();
   ctx.translate(-scrollLeft, 0);
 
-  // Marge d'une colonne de part et d'autre de la plage strictement visible.
-  const visibleTickStart = Math.max(
-    0,
-    Math.floor(scrollLeft / props.colWidth) - 1,
-  );
-  const visibleTickEnd = Math.min(
+  const [visibleTickStart, visibleTickEnd] = getVisibleTickRange(
+    scrollLeft,
+    width,
+    props.colWidth,
     props.cols,
-    Math.ceil((scrollLeft + width) / props.colWidth) + 1,
   );
 
   // Une ligne à chaque temps, marquée en rose clair sur le premier temps
@@ -152,37 +154,24 @@ const render = () => {
   ctx.restore();
 };
 
-let renderScheduled = false;
-const scheduleRender = (): void => {
-  if (renderScheduled) return;
-  renderScheduled = true;
-  requestAnimationFrame(() => {
-    render();
-    renderScheduled = false;
-  });
-};
+const scheduleRender = useRafSchedule(render);
 
+// scrollLeft est un nombre : un watch séparé (sans deep) évite qu'un scroll
+// ne déclenche une traversée profonde de `notes` à chaque tick simplement
+// pour détecter le changement de ce scalaire.
 watch(
   [
     () => props.notes,
     () => props.color,
     isHovered,
     () => timelineStore.timeSignature,
-    () => props.scrollLeft,
   ],
   scheduleRender,
   { deep: true },
 );
+watch(() => props.scrollLeft, scheduleRender);
 
-let resizeScheduled = false;
-const scheduleResize = (): void => {
-  if (resizeScheduled) return;
-  resizeScheduled = true;
-  requestAnimationFrame(() => {
-    updateCanvasSize();
-    resizeScheduled = false;
-  });
-};
+const scheduleResize = useRafSchedule(updateCanvasSize);
 
 watch(
   [

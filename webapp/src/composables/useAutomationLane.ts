@@ -225,15 +225,20 @@ export function useAutomationLane(
     isDragging = false;
   };
 
+  // Commit unique de l'aperçu de drag de groupe (voir previewPoints) — appelé
+  // au mouseup normal ainsi qu'au mouseleave (voir handleMouseLeave).
+  const commitPreviewPoints = (): void => {
+    if (!pendingDrag?.groupInitial || !previewPoints.value) return;
+    for (const [pid, pos] of previewPoints.value) {
+      actions.updatePoint(lane.id, pid, { x: pos.x, y: pos.y });
+    }
+  };
+
   const handleMouseUp = (event: MouseEvent): void => {
     const renderer = rendererRef.value;
     const coords = getCanvasCoords(event, cachedRect ?? undefined);
 
-    if (pendingDrag?.groupInitial && previewPoints.value) {
-      for (const [pid, pos] of previewPoints.value) {
-        actions.updatePoint(lane.id, pid, { x: pos.x, y: pos.y });
-      }
-    }
+    commitPreviewPoints();
 
     if (pendingDrag && !isDragging && coords && renderer) {
       if (!pendingDrag.isMarquee && pendingDrag.pointId === null) {
@@ -293,11 +298,7 @@ export function useAutomationLane(
     // mousemove/mouseup ne sont attachés qu'au canvas : si la souris sort
     // pendant un drag de groupe, aucun mouseup ne suivra — on committe donc
     // l'aperçu en cours ici pour ne pas perdre le déplacement.
-    if (pendingDrag?.groupInitial && previewPoints.value) {
-      for (const [pid, pos] of previewPoints.value) {
-        actions.updatePoint(lane.id, pid, { x: pos.x, y: pos.y });
-      }
-    }
+    commitPreviewPoints();
     previewPoints.value = null;
     if (!isDragging) {
       marqueeRect.value = null;

@@ -170,15 +170,21 @@ const { initCanvas, getNoteAtPosition, isOnResizeHandle, containerSize } =
 // Event handlers adapted for Canvas
 //
 // Le canvas ne couvre plus que le viewport visible (voir usePianoGridCanvas.ts) :
-// les coordonnées canvas-local (x/y, via getBoundingClientRect) doivent être
+// les coordonnées canvas-local (via getBoundingClientRect) doivent être
 // recalées en coordonnées monde en ajoutant le scroll courant avant toute
 // conversion col/row ou hit-test — c'est la seule frontière où cette
 // correction est appliquée, tout le reste (renderer, hit-testing) continue
 // de travailler en coordonnées monde pures.
-const handleMouseMove = (event: MouseEvent) => {
+const toWorldPos = (event: MouseEvent): { x: number; y: number } => {
   const rect = canvasRef.value!.getBoundingClientRect();
-  const worldX = props.scrollLeft + (event.clientX - rect.left);
-  const worldY = props.scrollTop + (event.clientY - rect.top);
+  return {
+    x: props.scrollLeft + (event.clientX - rect.left),
+    y: props.scrollTop + (event.clientY - rect.top),
+  };
+};
+
+const handleMouseMove = (event: MouseEvent) => {
+  const { x: worldX, y: worldY } = toWorldPos(event);
   mouseGridPos.value = {
     col: Math.floor(worldX / props.colWidth),
     row: Math.floor(worldY / NOTE_ROW_HEIGHT),
@@ -186,9 +192,7 @@ const handleMouseMove = (event: MouseEvent) => {
 };
 
 const handleMouseDown = (event: MouseEvent) => {
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const worldX = props.scrollLeft + (event.clientX - rect.left);
-  const worldY = props.scrollTop + (event.clientY - rect.top);
+  const { x: worldX, y: worldY } = toWorldPos(event);
 
   const note = getNoteAtPosition(worldX, worldY);
 
@@ -213,9 +217,7 @@ const handleClick = (event: MouseEvent) => {
     return;
   }
 
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const worldX = props.scrollLeft + (event.clientX - rect.left);
-  const worldY = props.scrollTop + (event.clientY - rect.top);
+  const { x: worldX, y: worldY } = toWorldPos(event);
 
   const note = getNoteAtPosition(worldX, worldY);
 
@@ -237,9 +239,7 @@ const handleClick = (event: MouseEvent) => {
 const handleRightClick = (event: MouseEvent) => {
   event.preventDefault();
 
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const worldX = props.scrollLeft + (event.clientX - rect.left);
-  const worldY = props.scrollTop + (event.clientY - rect.top);
+  const { x: worldX, y: worldY } = toWorldPos(event);
 
   const note = getNoteAtPosition(worldX, worldY);
 

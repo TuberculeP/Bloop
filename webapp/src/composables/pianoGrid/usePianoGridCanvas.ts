@@ -10,6 +10,7 @@ import {
   type NoteRenderData,
   type SelectionRectData,
 } from "../../lib/canvas/pianoGridRenderer";
+import { useRafSchedule } from "../useRafSchedule";
 
 interface DragState {
   notesInitialPos: Map<string, { x: number; y: number }>;
@@ -63,13 +64,21 @@ export function usePianoGridCanvas(
     width: config.viewportWidth(),
     height: TOTAL_NOTES * NOTE_ROW_HEIGHT,
   });
-  let renderScheduled = false;
   let dpr = 1;
 
-  const initCanvas = () => {
-    const canvas = canvasRef.value;
-    if (!canvas) return;
+  const gridConfig = () => ({
+    cols: config.cols(),
+    colWidth: config.colWidth(),
+    trackColor: config.trackColor(),
+    timeSignature: config.timeSignature(),
+    subdivision: config.subdivision(),
+  });
 
+  // Redimensionne le canvas au viewport (backing store + style) et relit le
+  // dpr à chaque appel (pas seulement à l'init) : sur un setup multi-écrans
+  // avec des échelles différentes, déplacer la fenêtre entre deux écrans
+  // change devicePixelRatio sans démonter le composant.
+  const applyCanvasSize = (canvas: HTMLCanvasElement) => {
     dpr = window.devicePixelRatio || 1;
 
     const width = config.viewportWidth();
@@ -85,18 +94,15 @@ export function usePianoGridCanvas(
     const ctx = canvas.getContext("2d")!;
     ctx.scale(dpr, dpr);
 
-    renderer.value = new PianoGridRenderer(
-      ctx,
-      {
-        cols: config.cols(),
-        colWidth: config.colWidth(),
-        trackColor: config.trackColor(),
-        timeSignature: config.timeSignature(),
-        subdivision: config.subdivision(),
-      },
-      width,
-      height,
-    );
+    return { ctx, width, height };
+  };
+
+  const initCanvas = () => {
+    const canvas = canvasRef.value;
+    if (!canvas) return;
+
+    const { ctx, width, height } = applyCanvasSize(canvas);
+    renderer.value = new PianoGridRenderer(ctx, gridConfig(), width, height);
 
     render();
   };
@@ -105,46 +111,10 @@ export function usePianoGridCanvas(
     const canvas = canvasRef.value;
     if (!canvas || !renderer.value) return;
 
-    // Relu à chaque resize (pas seulement à l'init) : sur un setup
-    // multi-écrans avec des échelles différentes, déplacer la fenêtre entre
-    // deux écrans change devicePixelRatio sans démonter le composant.
-    dpr = window.devicePixelRatio || 1;
-
-    const width = config.viewportWidth();
-    const height = config.viewportHeight();
-    containerSize.value = { width, height: TOTAL_NOTES * NOTE_ROW_HEIGHT };
-
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-
-    const ctx = canvas.getContext("2d")!;
-    ctx.scale(dpr, dpr);
-
-    renderer.value.updateConfig(
-      {
-        cols: config.cols(),
-        colWidth: config.colWidth(),
-        trackColor: config.trackColor(),
-        timeSignature: config.timeSignature(),
-        subdivision: config.subdivision(),
-      },
-      width,
-      height,
-    );
+    const { width, height } = applyCanvasSize(canvas);
+    renderer.value.updateConfig(gridConfig(), width, height);
 
     render();
-  };
-
-  const scheduleRender = () => {
-    if (renderScheduled) return;
-    renderScheduled = true;
-    requestAnimationFrame(() => {
-      render();
-      renderScheduled = false;
-    });
   };
 
   const render = () => {
@@ -214,6 +184,11 @@ export function usePianoGridCanvas(
     );
   };
 
+  const scheduleRender = useRafSchedule(render);
+
+  // scrollLeft/scrollTop sont des nombres : un watch séparé (sans deep) évite
+  // qu'un scroll ne déclenche une traversée profonde de `notes`/`selectionRect`
+  // à chaque tick simplement pour détecter le changement des deux scalaires.
   watch(
     [
       () => config.notes(),
@@ -224,22 +199,13 @@ export function usePianoGridCanvas(
       config.resizingState,
       config.resizePreviewDelta,
       config.selectionRect,
-      () => config.scrollLeft(),
-      () => config.scrollTop(),
     ],
     scheduleRender,
     { deep: true },
   );
+  watch([() => config.scrollLeft(), () => config.scrollTop()], scheduleRender);
 
-  let resizeScheduled = false;
-  const scheduleResize = () => {
-    if (resizeScheduled) return;
-    resizeScheduled = true;
-    requestAnimationFrame(() => {
-      updateCanvasSize();
-      resizeScheduled = false;
-    });
-  };
+  const scheduleResize = useRafSchedule(updateCanvasSize);
 
   watch(
     [
@@ -247,11 +213,13 @@ export function usePianoGridCanvas(
       () => config.colWidth(),
       () => config.timeSignature(),
       () => config.subdivision(),
-      () => config.viewportWidth(),
-      () => config.viewportHeight(),
     ],
     scheduleResize,
     { deep: true },
+  );
+  watch(
+    [() => config.viewportWidth(), () => config.viewportHeight()],
+    scheduleResize,
   );
 
   const getNoteAtPosition = (x: number, y: number): MidiNote | null => {

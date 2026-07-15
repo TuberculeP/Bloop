@@ -19,6 +19,7 @@ import {
   EQ_GAIN_MAX,
   EQ_GAIN_MIN,
 } from "../../../lib/audio/config";
+import { useRafSchedule } from "../../../composables/useRafSchedule";
 
 const props = defineProps<{
   bands: EQBand[];
@@ -222,15 +223,7 @@ const draw = () => {
   });
 };
 
-let renderScheduled = false;
-const scheduleDraw = (): void => {
-  if (renderScheduled) return;
-  renderScheduled = true;
-  requestAnimationFrame(() => {
-    draw();
-    renderScheduled = false;
-  });
-};
+const scheduleDraw = useRafSchedule(draw);
 
 watch(() => props.bands, scheduleDraw, { deep: true });
 

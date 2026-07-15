@@ -8,6 +8,7 @@ import {
 } from "../../../composables/useAutomationLane";
 import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import { useTimelineStore } from "../../../stores/timelineStore";
+import { useRafSchedule } from "../../../composables/useRafSchedule";
 
 const props = defineProps<{
   trackId?: string; // absent = lane du bus master
@@ -73,16 +74,6 @@ const displayedPoints = () => {
   });
 };
 
-let renderScheduled = false;
-const scheduleRender = () => {
-  if (renderScheduled) return;
-  renderScheduled = true;
-  requestAnimationFrame(() => {
-    renderFrame();
-    renderScheduled = false;
-  });
-};
-
 const renderFrame = () => {
   if (!rendererRef.value) return;
   rendererRef.value.render(
@@ -92,6 +83,8 @@ const renderFrame = () => {
   );
   rendererRef.value.renderMarquee(interaction.marqueeRect.value);
 };
+
+const scheduleRender = useRafSchedule(renderFrame);
 
 onMounted(() => {
   const canvas = canvasRef.value;
@@ -161,15 +154,7 @@ const resizeCanvas = () => {
   renderFrame();
 };
 
-let resizeScheduled = false;
-const scheduleResize = (): void => {
-  if (resizeScheduled) return;
-  resizeScheduled = true;
-  requestAnimationFrame(() => {
-    resizeCanvas();
-    resizeScheduled = false;
-  });
-};
+const scheduleResize = useRafSchedule(resizeCanvas);
 
 watch(
   [
