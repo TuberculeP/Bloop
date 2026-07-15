@@ -10,7 +10,7 @@
               text="Compose, mixe, crée - sans rien installer"
               tag="span"
               class="title-line"
-              animation-type="rotate3d"
+              :animation-type="heroTitleAnimType"
               :delay="0.2"
             />
           </h1>
@@ -464,6 +464,36 @@ import MorphShape from "./effects/MorphShape.vue";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// --- Mobile stability fix -------------------------------------------------
+// ignoreMobileResize: avoid ScrollTrigger recalculating (and shifting) all
+// trigger positions every time the mobile browser's address bar shows/hides
+// (this was the main cause of "nothing animates until I scroll to the
+// bottom and back up").
+// NOTE: we intentionally do NOT use ScrollTrigger.normalizeScroll(true) here
+// — it takes over native scroll handling and can conflict with a custom
+// smooth-scroll setup (like the injected `scrollTo`), sometimes locking
+// scroll entirely on mobile/trackpad.
+ScrollTrigger.config({ ignoreMobileResize: true });
+
+const isMobile = ref(
+  typeof window !== "undefined"
+    ? window.matchMedia("(max-width: 768px)").matches
+    : false,
+);
+
+// rotate3d relies on CSS perspective/3D transforms which some mobile
+// browsers render with a horizontal offset while animating (this is what
+// was making the hero title look "pushed to the right"). Use a flat fade
+// on small screens instead.
+const heroTitleAnimType = computed(() =>
+  isMobile.value ? "fade" : "rotate3d",
+);
+
+let mobileMql: MediaQueryList | null = null;
+const updateIsMobile = () => {
+  isMobile.value = mobileMql ? mobileMql.matches : false;
+};
+
 const scrollTo =
   inject<(target: string | number | HTMLElement, options?: object) => void>(
     "scrollTo",
@@ -485,7 +515,6 @@ const pricingGridRef = ref<HTMLElement | null>(null);
 const pricingCardRefs = ref<HTMLElement[]>([]);
 const ctaRef = ref<HTMLElement | null>(null);
 const ctaContentRef = ref<HTMLElement | null>(null);
-const ctaParticlesRef = ref<HTMLElement | null>(null);
 
 const setFeatureCardRef = (
   el: Element | ComponentPublicInstance | null,
@@ -912,22 +941,22 @@ const initHeroAnimations = () => {
 
   // Badge animation
   if (heroBadgeRef.value) {
-    tl.to(heroBadgeRef.value, { opacity: 1, y: 0, duration: 0.6 }, 0.3);
+    tl.to(heroBadgeRef.value, { opacity: 1, y: 0, duration: 0.5 }, 0.15);
   }
 
   // Description
   if (heroDescRef.value) {
-    tl.to(heroDescRef.value, { opacity: 1, y: 0, duration: 0.6 }, 0.8);
+    tl.to(heroDescRef.value, { opacity: 1, y: 0, duration: 0.5 }, 0.35);
   }
 
   // Stats
   if (heroStatsRef.value) {
-    tl.to(heroStatsRef.value, { opacity: 1, y: 0, duration: 0.6 }, 1);
+    tl.to(heroStatsRef.value, { opacity: 1, y: 0, duration: 0.5 }, 0.5);
   }
 
   // Actions
   if (heroActionsRef.value) {
-    tl.to(heroActionsRef.value, { opacity: 1, y: 0, duration: 0.6 }, 1.2);
+    tl.to(heroActionsRef.value, { opacity: 1, y: 0, duration: 0.5 }, 0.65);
   }
 
   // Visual with 3D rotation
@@ -938,15 +967,16 @@ const initHeroAnimations = () => {
         opacity: 1,
         x: 0,
         rotateY: 0,
-        duration: 1.2,
+        duration: 0.8,
         ease: "power2.out",
       },
-      0.5,
+      0.25,
     );
   }
 
-  // Mockup 3D rotation on scroll
-  if (mockupRef.value && heroRef.value) {
+  // Mockup 3D rotation on scroll — decorative only, skip on mobile where
+  // scroll-linked transforms are the most prone to glitching.
+  if (mockupRef.value && heroRef.value && !isMobile.value) {
     gsap.to(mockupRef.value, {
       rotateY: 15,
       rotateX: -5,
@@ -955,7 +985,7 @@ const initHeroAnimations = () => {
         trigger: heroRef.value,
         start: "top top",
         end: "bottom top",
-        scrub: 1,
+        scrub: 0.5,
       },
     });
   }
@@ -968,21 +998,22 @@ const initFeaturesAnimations = () => {
     if (!card) return;
 
     gsap.from(card, {
-      y: 80,
+      y: isMobile.value ? 40 : 80,
       opacity: 0,
-      scale: 0.9,
-      borderRadius: "50%",
+      scale: 0.95,
+      duration: isMobile.value ? 0.45 : 0.7,
+      ease: "power2.out",
       scrollTrigger: {
         trigger: card,
-        start: "top 85%",
-        end: "top 50%",
-        scrub: 1,
+        start: "top 90%",
+        toggleActions: "play none none none",
+        once: true,
       },
     });
 
-    // Icon rotation on scroll
+    // Icon rotation on scroll — purely decorative, skip on mobile
     const icon = card.querySelector(".feature-icon");
-    if (icon) {
+    if (icon && !isMobile.value) {
       gsap.to(icon, {
         rotation: 360,
         scale: 1.1,
@@ -990,7 +1021,7 @@ const initFeaturesAnimations = () => {
           trigger: card,
           start: "top 80%",
           end: "top 30%",
-          scrub: 2,
+          scrub: 1,
         },
       });
     }
@@ -1000,7 +1031,7 @@ const initFeaturesAnimations = () => {
 const initStepsAnimations = () => {
   if (!stepsContainerRef.value || !lineProgressRef.value) return;
 
-  // Self-drawing line
+  // Self-drawing line (decorative, keep scrub but lighter)
   const lineLength = 300;
   gsap.set(lineProgressRef.value, {
     strokeDasharray: lineLength,
@@ -1013,7 +1044,7 @@ const initStepsAnimations = () => {
       trigger: stepsContainerRef.value,
       start: "top 70%",
       end: "bottom 50%",
-      scrub: 1,
+      scrub: 0.5,
     },
   });
 
@@ -1024,12 +1055,15 @@ const initStepsAnimations = () => {
 
     gsap.from(step, {
       opacity: 0,
-      x: idx % 2 === 0 ? -50 : 50,
+      x: isMobile.value ? 0 : idx % 2 === 0 ? -50 : 50,
+      y: isMobile.value ? 30 : 0,
+      duration: isMobile.value ? 0.45 : 0.7,
+      ease: "power2.out",
       scrollTrigger: {
         trigger: step,
-        start: "top 80%",
-        end: "top 50%",
-        scrub: 1,
+        start: "top 90%",
+        toggleActions: "play none none none",
+        once: true,
       },
     });
 
@@ -1039,11 +1073,11 @@ const initStepsAnimations = () => {
       color: "var(--color-black)",
       scale: 1.1,
       boxShadow: "0 0 20px rgba(255, 210, 105, 0.3)",
+      duration: 0.4,
       scrollTrigger: {
         trigger: step,
-        start: "top 60%",
-        end: "top 40%",
-        scrub: 1,
+        start: "top 75%",
+        toggleActions: "play none none reverse",
       },
     });
   });
@@ -1057,61 +1091,83 @@ const initPricingAnimations = () => {
 
     // Cards emerge from depth
     gsap.from(card, {
-      z: -300,
+      z: isMobile.value ? 0 : -300,
       opacity: 0,
-      rotateY: 30,
-      scale: 0.8,
+      rotateY: isMobile.value ? 0 : 30,
+      y: isMobile.value ? 30 : 0,
+      scale: 0.9,
+      duration: isMobile.value ? 0.45 : 0.7,
+      ease: "power2.out",
       scrollTrigger: {
         trigger: card,
-        start: "top 85%",
-        end: "top 50%",
-        scrub: 1,
+        start: "top 90%",
+        toggleActions: "play none none none",
+        once: true,
       },
     });
   });
 };
 
 const initCtaAnimations = () => {
-  if (!ctaContentRef.value || !ctaParticlesRef.value) return;
+  if (!ctaContentRef.value) return;
 
   // CTA content dramatic reveal
-  gsap.from(ctaContentRef.value.querySelector(".cta-title"), {
-    scale: 2,
-    opacity: 0,
-    filter: "blur(20px)",
-    scrollTrigger: {
-      trigger: ctaRef.value,
-      start: "top 70%",
-      end: "top 30%",
-      scrub: 1,
-    },
-  });
+  const title = ctaContentRef.value.querySelector(".cta-title");
+  if (title) {
+    gsap.from(title, {
+      scale: isMobile.value ? 1.15 : 2,
+      opacity: 0,
+      filter: isMobile.value ? "blur(6px)" : "blur(20px)",
+      duration: 0.6,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: ctaRef.value,
+        start: "top 85%",
+        toggleActions: "play none none none",
+        once: true,
+      },
+    });
+  }
 
-  gsap.from(ctaContentRef.value.querySelector(".cta-description"), {
-    y: 50,
-    opacity: 0,
-    scrollTrigger: {
-      trigger: ctaRef.value,
-      start: "top 60%",
-      end: "top 30%",
-      scrub: 1,
-    },
-  });
+  const desc = ctaContentRef.value.querySelector(".cta-description");
+  if (desc) {
+    gsap.from(desc, {
+      y: 30,
+      opacity: 0,
+      duration: 0.5,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: ctaRef.value,
+        start: "top 80%",
+        toggleActions: "play none none none",
+        once: true,
+      },
+    });
+  }
 
   // Trust avatars stagger
   const avatars = ctaContentRef.value.querySelectorAll(".trust-avatar");
-  gsap.from(avatars, {
-    x: -30,
-    opacity: 0,
-    stagger: 0.1,
-    scrollTrigger: {
-      trigger: ctaContentRef.value.querySelector(".cta-trust"),
-      start: "top 80%",
-    },
-  });
+  if (avatars.length) {
+    gsap.from(avatars, {
+      x: -20,
+      opacity: 0,
+      stagger: 0.08,
+      duration: 0.4,
+      scrollTrigger: {
+        trigger: ctaContentRef.value.querySelector(".cta-trust"),
+        start: "top 90%",
+        toggleActions: "play none none none",
+        once: true,
+      },
+    });
+  }
 };
 
 onMounted(() => {
+  mobileMql = window.matchMedia("(max-width: 768px)");
+  updateIsMobile();
+  mobileMql.addEventListener("change", updateIsMobile);
+
   // Delay to ensure DOM is ready
   setTimeout(() => {
     initHeroAnimations();
@@ -1119,11 +1175,23 @@ onMounted(() => {
     initStepsAnimations();
     initPricingAnimations();
     initCtaAnimations();
+
+    requestAnimationFrame(() => ScrollTrigger.refresh());
   }, 100);
+
+  window.addEventListener("load", refreshScrollTrigger);
+  window.addEventListener("orientationchange", refreshScrollTrigger);
 });
+
+const refreshScrollTrigger = () => {
+  ScrollTrigger.refresh();
+};
 
 onUnmounted(() => {
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+  window.removeEventListener("load", refreshScrollTrigger);
+  window.removeEventListener("orientationchange", refreshScrollTrigger);
+  mobileMql?.removeEventListener("change", updateIsMobile);
 });
 </script>
 
@@ -1145,6 +1213,8 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .landing-main .hero {
@@ -1162,13 +1232,16 @@ onUnmounted(() => {
 .hero-container {
   position: relative;
   z-index: 1;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
   align-items: center;
+  justify-content: center;
 }
 
 /* Hero Content */
@@ -1190,7 +1263,6 @@ onUnmounted(() => {
 
 .hero-title {
   font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 700;
   line-height: 1.1;
   margin-bottom: 1.5rem;
   color: var(--color-white);
@@ -1557,7 +1629,6 @@ onUnmounted(() => {
 
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
   color: var(--color-white);
   margin-bottom: 1rem;
 }
@@ -1632,7 +1703,6 @@ onUnmounted(() => {
 
 .feature-title {
   font-size: 1.25rem;
-  font-weight: 600;
   color: var(--color-white);
   margin-bottom: 0.75rem;
 }
@@ -1701,7 +1771,6 @@ onUnmounted(() => {
 
 .step-title {
   font-size: 1.5rem;
-  font-weight: 600;
   color: var(--color-white);
 }
 
@@ -1795,7 +1864,6 @@ onUnmounted(() => {
 
 .plan-name {
   font-size: 1.25rem;
-  font-weight: 600;
   color: var(--color-white);
 }
 
@@ -1906,7 +1974,6 @@ onUnmounted(() => {
 
 .cta-title {
   font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
   color: var(--color-white);
   will-change: transform, opacity, filter;
 }
@@ -2010,7 +2077,6 @@ onUnmounted(() => {
 
 .mcp-step-title {
   font-size: 1rem;
-  font-weight: 700;
   color: var(--color-white);
   margin: 0 0 0.35rem 0;
   padding-top: 0.7rem;
@@ -2144,23 +2210,38 @@ onUnmounted(() => {
 
   .hero-content {
     order: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .hero-visual {
     order: 2;
+    width: 100%;
     max-width: 500px;
     margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .hero-title {
+    width: 100%;
   }
 
   .hero-description {
+    width: 100%;
     max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .hero-stats {
+    width: 100%;
     justify-content: center;
   }
 
   .hero-actions {
+    width: 100%;
     justify-content: center;
   }
 
