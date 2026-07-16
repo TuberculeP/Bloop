@@ -236,11 +236,16 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-sm);
   cursor: grab;
   overflow: hidden;
-  border: 2px solid transparent;
-  transition: border-color 0.1s;
+  // box-shadow inset plutôt que border : un border (même transparent) est
+  // inclus dans la largeur (box-sizing: border-box) et décale le contenu —
+  // waveform, nom — de 2px par rapport aux bords réels du clip, ce qui gêne
+  // l'alignement de précision. Le box-shadow ne consomme aucun espace de
+  // layout : le contenu colle exactement aux bords tick-à-pixel du clip.
+  box-shadow: inset 0 0 0 2px transparent;
+  transition: box-shadow 0.1s;
 
   &.selected {
-    border-color: var(--color-audio-clip-selected);
+    box-shadow: inset 0 0 0 2px var(--color-audio-clip-selected);
   }
 
   &.dragging {
