@@ -10,13 +10,8 @@ import {
   useAudioClipKeyboard,
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
-import {
-  ticksPerBar,
-  ticksPerSecond,
-  getVisibleTickRange,
-  getVisibleMeasureRange,
-  getVisibleSubdivisionTicks,
-} from "../../../../lib/audio/timeGrid";
+import { useVisibleGrid } from "../../../../composables/useVisibleGrid";
+import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
@@ -46,39 +41,24 @@ onMounted(() => {
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const clips = computed(() => props.track.clips ?? []);
-const barLength = computed(() => ticksPerBar(timelineStore.timeSignature));
 
-const visibleTickRange = computed(() =>
-  getVisibleTickRange(
-    props.scrollLeft,
-    props.viewportWidth,
-    props.colWidth,
-    props.cols,
-  ),
+const {
+  barLength,
+  visibleTickRange,
+  visibleMeasureRange,
+  visibleSubdivisionTicks,
+} = useVisibleGrid(
+  () => props.scrollLeft,
+  () => props.viewportWidth,
+  () => props.colWidth,
+  () => props.cols,
 );
 
 const visibleMeasureIndices = computed(() => {
-  const [tickStart, tickEnd] = visibleTickRange.value;
-  const [firstBar, lastBar] = getVisibleMeasureRange(
-    tickStart,
-    tickEnd,
-    barLength.value,
-    props.cols,
-  );
-
+  const [firstBar, lastBar] = visibleMeasureRange.value;
   const result: number[] = [];
   for (let i = firstBar; i <= lastBar; i++) result.push(i);
   return result;
-});
-
-const visibleSubdivisionTicks = computed(() => {
-  const [tickStart, tickEnd] = visibleTickRange.value;
-  return getVisibleSubdivisionTicks(
-    tickStart,
-    tickEnd,
-    timelineStore.subdivision,
-    barLength.value,
-  );
 });
 
 const visibleClips = computed(() => {

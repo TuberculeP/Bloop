@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from "vue";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import {
-  ticksPerBar,
-  snapToGrid,
-  getVisibleTickRange,
-  getVisibleMeasureRange,
-  getVisibleSubdivisionTicks,
-} from "../../../lib/audio/timeGrid";
+import { useVisibleGrid } from "../../../composables/useVisibleGrid";
+import { snapToGrid } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   cols: number;
@@ -25,26 +20,22 @@ const rulerRef = ref<HTMLElement | null>(null);
 const isSeeking = ref(false);
 const lastSeekPosition = ref<number | null>(null);
 
-const barLength = computed(() => ticksPerBar(timelineStore.timeSignature));
-
-const visibleTickRange = computed(() =>
-  getVisibleTickRange(
-    props.scrollLeft,
-    props.viewportWidth,
-    props.colWidth,
-    props.cols,
-  ),
+// Même composable que pour les pistes de clips audio (AudioClipRow.vue) —
+// garantit que le ruler et le contenu des pistes restent toujours alignés
+// sur les mêmes traits.
+const {
+  barLength,
+  visibleMeasureRange,
+  visibleSubdivisionTicks: subdivisionTicks,
+} = useVisibleGrid(
+  () => props.scrollLeft,
+  () => props.viewportWidth,
+  () => props.colWidth,
+  () => props.cols,
 );
 
 const measures = computed(() => {
-  const [tickStart, tickEnd] = visibleTickRange.value;
-  const [firstBar, lastBar] = getVisibleMeasureRange(
-    tickStart,
-    tickEnd,
-    barLength.value,
-    props.cols,
-  );
-
+  const [firstBar, lastBar] = visibleMeasureRange.value;
   const result = [];
   for (let i = firstBar; i <= lastBar; i++) {
     result.push({
@@ -53,19 +44,6 @@ const measures = computed(() => {
     });
   }
   return result;
-});
-
-// Sous-grille (résolution de snap), même fonction partagée que pour les
-// pistes de clips audio (AudioClipRow.vue) — garantit que le ruler et le
-// contenu des pistes restent toujours alignés sur les mêmes traits.
-const subdivisionTicks = computed(() => {
-  const [tickStart, tickEnd] = visibleTickRange.value;
-  return getVisibleSubdivisionTicks(
-    tickStart,
-    tickEnd,
-    timelineStore.subdivision,
-    barLength.value,
-  );
 });
 
 const positionFromEvent = (event: MouseEvent): number => {
