@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import type { AudioClip } from "../../../../lib/utils/types";
 import { useAudioLibraryStore } from "../../../../stores/audioLibraryStore";
 import { useTimelineStore } from "../../../../stores/timelineStore";
-import { snapTicks, ticksPerSecond } from "../../../../lib/audio/timeGrid";
+import { snapToGrid, ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import WaveformCanvas from "./WaveformCanvas.vue";
 
 const props = defineProps<{
@@ -30,8 +30,6 @@ const emit = defineEmits<{
 
 const audioLibraryStore = useAudioLibraryStore();
 const timelineStore = useTimelineStore();
-
-const snapStep = computed(() => snapTicks(timelineStore.subdivision));
 
 const isDragging = ref(false);
 const isResizing = ref(false);
@@ -109,11 +107,15 @@ const startResize = (side: "left" | "right", event: MouseEvent): void => {
 
 const handleMouseMove = (event: MouseEvent): void => {
   const deltaX = event.clientX - dragStartX.value;
-  const step = snapStep.value;
-  const deltaCols = Math.round(deltaX / props.colWidth / step) * step;
+  const deltaTicks = deltaX / props.colWidth;
+  const subdivision = timelineStore.subdivision;
 
   if (isDragging.value) {
-    const newX = Math.max(0, initialClipState.value.x + deltaCols);
+    // Snap la position ABSOLUE (pas le delta) : un clip déposé hors-grille
+    // (drop non snappé) se réaligne dès qu'on le déplace, au lieu de
+    // conserver son décalage d'origine.
+    const rawX = initialClipState.value.x + deltaTicks;
+    const newX = Math.max(0, snapToGrid(rawX, subdivision));
     previewClip.value = {
       x: newX,
       w: initialClipState.value.w,
@@ -121,18 +123,25 @@ const handleMouseMove = (event: MouseEvent): void => {
     };
   } else if (isResizing.value) {
     if (resizeSide.value === "right") {
-      const newW = Math.max(1, initialClipState.value.w + deltaCols);
+      const rawRightEdge =
+        initialClipState.value.x + initialClipState.value.w + deltaTicks;
+      const snappedRightEdge = snapToGrid(rawRightEdge, subdivision);
+      const newW = Math.max(1, snappedRightEdge - initialClipState.value.x);
       previewClip.value = {
         x: initialClipState.value.x,
         w: newW,
         startOffset: initialClipState.value.startOffset,
       };
     } else {
-      const effectiveDelta = Math.min(deltaCols, initialClipState.value.w - 1);
-      const newX = initialClipState.value.x + effectiveDelta;
-      const newW = initialClipState.value.w - effectiveDelta;
+      const rightEdge = initialClipState.value.x + initialClipState.value.w;
+      const rawX = initialClipState.value.x + deltaTicks;
+      const newX = Math.max(
+        0,
+        Math.min(snapToGrid(rawX, subdivision), rightEdge - 1),
+      );
+      const newW = rightEdge - newX;
       const newStartOffset =
-        initialClipState.value.startOffset + effectiveDelta;
+        initialClipState.value.startOffset + (newX - initialClipState.value.x);
 
       if (newX >= 0 && newW >= 1 && newStartOffset >= 0) {
         previewClip.value = { x: newX, w: newW, startOffset: newStartOffset };

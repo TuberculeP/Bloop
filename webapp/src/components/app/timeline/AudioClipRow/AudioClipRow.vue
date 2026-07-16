@@ -14,6 +14,7 @@ import {
   ticksPerBar,
   ticksPerSecond,
   getVisibleTickRange,
+  snapTicks,
 } from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
@@ -65,6 +66,21 @@ const visibleMeasureIndices = computed(() => {
 
   const result: number[] = [];
   for (let i = firstBar; i <= lastBar; i++) result.push(i);
+  return result;
+});
+
+// Sous-grille (résolution de snap), même pattern que
+// pianoGridRenderer.ts::drawGridLines côté piano roll — exclut les ticks qui
+// coïncident avec une mesure pour ne pas dupliquer les measure-line.
+const visibleSubdivisionTicks = computed(() => {
+  const step = snapTicks(timelineStore.subdivision);
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  const firstTick = Math.max(step, Math.floor(tickStart / step) * step);
+
+  const result: number[] = [];
+  for (let tick = firstTick; tick <= tickEnd; tick += step) {
+    if (tick % barLength.value !== 0) result.push(tick);
+  }
   return result;
 });
 
@@ -308,6 +324,12 @@ onBeforeUnmount(() => {
     >
       <div class="grid-lines">
         <div
+          v-for="tick in visibleSubdivisionTicks"
+          :key="`sub-${tick}`"
+          class="subdivision-line"
+          :style="{ left: `${tick * colWidth}px` }"
+        />
+        <div
           v-for="i in visibleMeasureIndices"
           :key="i"
           class="measure-line"
@@ -372,6 +394,14 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.subdivision-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--color-accent3-rgb), 0.12);
 }
 
 .measure-line {
