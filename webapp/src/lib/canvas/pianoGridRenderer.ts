@@ -8,8 +8,9 @@ import {
 import {
   TICKS_PER_BEAT,
   ticksPerBar,
-  snapTicks,
   getVisibleTickRange,
+  getVisibleSubdivisionTicks,
+  tickToGridLineX,
 } from "../audio/timeGrid";
 import type { TimeSignature } from "../utils/types";
 
@@ -187,10 +188,15 @@ export class PianoGridRenderer {
 
     ctx.strokeStyle = COLORS.cellBorderVertical;
     ctx.beginPath();
-    const step = snapTicks(config.subdivision);
-    const firstTick = Math.max(step, Math.floor(tickStart / step) * step);
-    for (let tick = firstTick; tick <= tickEnd; tick += step) {
-      const x = tick * config.colWidth - 0.5;
+    const barLength = ticksPerBar(config.timeSignature);
+    const subdivisionTicks = getVisibleSubdivisionTicks(
+      tickStart,
+      tickEnd,
+      config.subdivision,
+      barLength,
+    );
+    for (const tick of subdivisionTicks) {
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, this.scrollTop);
       ctx.lineTo(x, this.scrollTop + this.height);
     }
@@ -239,12 +245,7 @@ export class PianoGridRenderer {
     for (let beat = beatStart; beat <= beatEnd; beat++) {
       const tick = beat * TICKS_PER_BEAT;
       if (tick % barLength === 0) continue;
-      // Math.max(0.5, ...) : le -0.5 habituel (alignement crisp sur la grille
-      // de pixels) pousserait la toute première ligne (tick 0) hors du canvas
-      // (x=-0.5), la rendant invisible — contrairement aux lignes de mesure
-      // des pistes de clips audio (AudioClipRow.vue, en DOM, sans cet
-      // artefact). On la ramène à 0.5 pour qu'elle reste visible au début.
-      const x = Math.max(0.5, tick * config.colWidth - 0.5);
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, this.scrollTop);
       ctx.lineTo(x, this.scrollTop + this.height);
     }
@@ -255,7 +256,7 @@ export class PianoGridRenderer {
     for (let beat = beatStart; beat <= beatEnd; beat++) {
       const tick = beat * TICKS_PER_BEAT;
       if (tick % barLength !== 0) continue;
-      const x = Math.max(0.5, tick * config.colWidth - 0.5);
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, this.scrollTop);
       ctx.lineTo(x, this.scrollTop + this.height);
     }

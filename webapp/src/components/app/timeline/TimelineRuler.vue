@@ -5,6 +5,8 @@ import {
   ticksPerBar,
   snapToGrid,
   getVisibleTickRange,
+  getVisibleMeasureRange,
+  getVisibleSubdivisionTicks,
 } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
@@ -23,25 +25,47 @@ const rulerRef = ref<HTMLElement | null>(null);
 const isSeeking = ref(false);
 const lastSeekPosition = ref<number | null>(null);
 
-const measures = computed(() => {
-  const barLength = ticksPerBar(timelineStore.timeSignature);
-  const [tickStart, tickEnd] = getVisibleTickRange(
+const barLength = computed(() => ticksPerBar(timelineStore.timeSignature));
+
+const visibleTickRange = computed(() =>
+  getVisibleTickRange(
     props.scrollLeft,
     props.viewportWidth,
     props.colWidth,
     props.cols,
-  );
-  const firstBar = Math.floor(tickStart / barLength);
-  const lastBar = Math.min(
-    Math.ceil(props.cols / barLength) - 1,
-    Math.ceil(tickEnd / barLength),
+  ),
+);
+
+const measures = computed(() => {
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  const [firstBar, lastBar] = getVisibleMeasureRange(
+    tickStart,
+    tickEnd,
+    barLength.value,
+    props.cols,
   );
 
   const result = [];
   for (let i = firstBar; i <= lastBar; i++) {
-    result.push({ number: i + 1, position: i * barLength * props.colWidth });
+    result.push({
+      number: i + 1,
+      position: i * barLength.value * props.colWidth,
+    });
   }
   return result;
+});
+
+// Sous-grille (résolution de snap), même fonction partagée que pour les
+// pistes de clips audio (AudioClipRow.vue) — garantit que le ruler et le
+// contenu des pistes restent toujours alignés sur les mêmes traits.
+const subdivisionTicks = computed(() => {
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  return getVisibleSubdivisionTicks(
+    tickStart,
+    tickEnd,
+    timelineStore.subdivision,
+    barLength.value,
+  );
 });
 
 const positionFromEvent = (event: MouseEvent): number => {
@@ -101,6 +125,12 @@ onBeforeUnmount(() => {
     >
       <div class="ruler-content" :style="{ width: `${cols * colWidth}px` }">
         <div
+          v-for="tick in subdivisionTicks"
+          :key="`sub-${tick}`"
+          class="subdivision-line"
+          :style="{ left: `${tick * colWidth}px` }"
+        />
+        <div
           v-for="measure in measures"
           :key="measure.number"
           class="measure-marker"
@@ -146,10 +176,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: var(--color-bg-secondary-dark);
 
-  &:hover {
-    background: var(--color-bg-daw-active);
-  }
-
   &.seeking {
     cursor: grabbing;
   }
@@ -158,6 +184,14 @@ onBeforeUnmount(() => {
 .ruler-content {
   position: relative;
   height: 100%;
+}
+
+.subdivision-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--color-accent3-rgb), 0.12);
 }
 
 .measure-marker {

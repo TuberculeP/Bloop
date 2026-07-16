@@ -1,6 +1,12 @@
 import type { AutomationPoint, TimeSignature } from "../utils/types";
 import { getAutomationValueAt } from "../audio/automation";
-import { ticksPerBar, snapTicks, getVisibleTickRange } from "../audio/timeGrid";
+import {
+  ticksPerBar,
+  getVisibleTickRange,
+  getVisibleMeasureRange,
+  getVisibleSubdivisionTicks,
+  tickToGridLineX,
+} from "../audio/timeGrid";
 
 export interface AutomationRenderConfig {
   cols: number;
@@ -136,13 +142,19 @@ export class AutomationLaneRenderer {
     ctx.lineTo(this.scrollLeft + this.width, this.height / 2);
     ctx.stroke();
 
+    const barLength = ticksPerBar(config.timeSignature);
+
     // Step lines (résolution de snap)
     ctx.strokeStyle = COLORS.gridVertical;
     ctx.beginPath();
-    const step = snapTicks(config.subdivision);
-    const firstStepTick = Math.max(step, Math.floor(tickStart / step) * step);
-    for (let tick = firstStepTick; tick <= tickEnd; tick += step) {
-      const x = tick * config.colWidth - 0.5;
+    const subdivisionTicks = getVisibleSubdivisionTicks(
+      tickStart,
+      tickEnd,
+      config.subdivision,
+      barLength,
+    );
+    for (const tick of subdivisionTicks) {
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
@@ -151,13 +163,14 @@ export class AutomationLaneRenderer {
     // Measure lines (une par mesure, selon la signature rythmique)
     ctx.strokeStyle = COLORS.measureLine;
     ctx.beginPath();
-    const barLength = ticksPerBar(config.timeSignature);
-    const firstMeasure = Math.floor(tickStart / barLength);
-    const lastMeasure = Math.ceil(tickEnd / barLength);
+    const [firstMeasure, lastMeasure] = getVisibleMeasureRange(
+      tickStart,
+      tickEnd,
+      barLength,
+      config.cols,
+    );
     for (let measure = firstMeasure; measure <= lastMeasure; measure++) {
-      // Math.max(0.5, ...) : évite que la ligne de la toute première mesure
-      // (tick 0) se retrouve hors canvas et invisible, voir pianoGridRenderer.ts.
-      const x = Math.max(0.5, measure * barLength * config.colWidth - 0.5);
+      const x = tickToGridLineX(measure * barLength, config.colWidth);
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }

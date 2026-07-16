@@ -7,6 +7,7 @@ import {
   TICKS_PER_BEAT,
   ticksPerBar,
   getVisibleTickRange,
+  tickToGridLineX,
 } from "../../../lib/audio/timeGrid";
 import { useRafSchedule } from "../../../composables/useRafSchedule";
 
@@ -106,11 +107,7 @@ const render = () => {
   );
   for (let beat = beatStart; beat <= beatEnd; beat++) {
     const tick = beat * TICKS_PER_BEAT;
-    // Math.max(0.5, ...) : évite que la toute première ligne (tick 0) se
-    // retrouve hors canvas (x=-0.5) et donc invisible, comme dans
-    // pianoGridRenderer.ts — cohérent avec le trait bien visible au début de
-    // la piste sur les clips audio (AudioClipRow.vue).
-    const x = Math.max(0.5, tick * props.colWidth - 0.5);
+    const x = tickToGridLineX(tick, props.colWidth);
     const isBarStart = tick % barLength === 0;
 
     ctx.beginPath();

@@ -14,7 +14,8 @@ import {
   ticksPerBar,
   ticksPerSecond,
   getVisibleTickRange,
-  snapTicks,
+  getVisibleMeasureRange,
+  getVisibleSubdivisionTicks,
 } from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
@@ -58,10 +59,11 @@ const visibleTickRange = computed(() =>
 
 const visibleMeasureIndices = computed(() => {
   const [tickStart, tickEnd] = visibleTickRange.value;
-  const firstBar = Math.floor(tickStart / barLength.value);
-  const lastBar = Math.min(
-    Math.ceil(props.cols / barLength.value) - 1,
-    Math.ceil(tickEnd / barLength.value),
+  const [firstBar, lastBar] = getVisibleMeasureRange(
+    tickStart,
+    tickEnd,
+    barLength.value,
+    props.cols,
   );
 
   const result: number[] = [];
@@ -69,19 +71,14 @@ const visibleMeasureIndices = computed(() => {
   return result;
 });
 
-// Sous-grille (résolution de snap), même pattern que
-// pianoGridRenderer.ts::drawGridLines côté piano roll — exclut les ticks qui
-// coïncident avec une mesure pour ne pas dupliquer les measure-line.
 const visibleSubdivisionTicks = computed(() => {
-  const step = snapTicks(timelineStore.subdivision);
   const [tickStart, tickEnd] = visibleTickRange.value;
-  const firstTick = Math.max(step, Math.floor(tickStart / step) * step);
-
-  const result: number[] = [];
-  for (let tick = firstTick; tick <= tickEnd; tick += step) {
-    if (tick % barLength.value !== 0) result.push(tick);
-  }
-  return result;
+  return getVisibleSubdivisionTicks(
+    tickStart,
+    tickEnd,
+    timelineStore.subdivision,
+    barLength.value,
+  );
 });
 
 const visibleClips = computed(() => {
