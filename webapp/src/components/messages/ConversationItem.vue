@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Conversation } from "../../services/messages";
 import { formatRelativeDate } from "../../lib/utils/dateFormatter";
+import ProfileAvatar from "../shared/ProfileAvatar.vue";
 
 defineProps<{
   conversation: Conversation;
@@ -18,9 +19,7 @@ defineEmits<{
     :class="{ active: isActive }"
     @click="$emit('select')"
   >
-    <div class="conversation-avatar">
-      {{ conversation.user.firstName[0] }}{{ conversation.user.lastName[0] }}
-    </div>
+    <ProfileAvatar :user="conversation.user" size="small" />
     <div class="conversation-info">
       <div class="conversation-header">
         <span class="conversation-name">

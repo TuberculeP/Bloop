@@ -4,6 +4,7 @@ import type { DirectMessage, MessageUser } from "../../services/messages";
 import MessageItem from "./MessageItem.vue";
 import MessageInput from "./MessageInput.vue";
 import BaseSpinner from "../ui/BaseSpinner.vue";
+import ProfileAvatar from "../shared/ProfileAvatar.vue";
 
 const props = defineProps<{
   user: MessageUser;
@@ -52,14 +53,10 @@ defineExpose({ scrollToBottom });
   <div class="message-thread">
     <div class="messages-header">
       <div class="header-user">
-        <div class="header-avatar">
-          {{ user.firstName[0] }}{{ user.lastName[0] }}
-        </div>
-        <div class="header-info">
-          <span class="header-name"
-            >{{ user.firstName }} {{ user.lastName }}</span
-          >
-        </div>
+        <ProfileAvatar :user="user" size="small" />
+        <span class="header-name">
+          {{ user.firstName }} {{ user.lastName }}
+        </span>
       </div>
     </div>
 
@@ -121,36 +118,10 @@ defineExpose({ scrollToBottom });
   gap: 0.75rem;
 }
 
-.header-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--color-accent3);
-  color: var(--color-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(var(--color-accent3-rgb), 0.4);
-}
-
-.header-info {
-  display: flex;
-  flex-direction: column;
-}
-
 .header-name {
   font-weight: 700;
   color: var(--color-white);
   font-size: 1rem;
-}
-
-.header-email {
-  font-size: 0.75rem;
-  color: var(--color-white-light);
-  opacity: 0.6;
 }
 
 /* ── Messages ── */

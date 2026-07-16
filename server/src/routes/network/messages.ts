@@ -45,6 +45,7 @@ messagesRouter.get("/conversations", async (req, res) => {
             firstName: otherUser.firstName,
             lastName: otherUser.lastName,
             email: otherUser.email,
+            profilePicture: otherUser.profilePicture,
           },
           lastMessage: message,
           unreadCount:
@@ -241,7 +242,7 @@ messagesRouter.get("/users", async (req, res) => {
     const userRepository = pg.getRepository(User);
     const users = await userRepository.find({
       where: { isActive: true },
-      select: ["id", "firstName", "lastName", "email"],
+      select: ["id", "firstName", "lastName", "email", "profilePicture"],
     });
 
     // Exclure l'utilisateur actuel
