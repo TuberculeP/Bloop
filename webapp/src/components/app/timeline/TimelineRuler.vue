@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from "vue";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { ticksPerBar, snapToGrid } from "../../../lib/audio/timeGrid";
+import {
+  ticksPerBar,
+  snapToGrid,
+  getVisibleTickRange,
+} from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   cols: number;
   colWidth: number;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -19,11 +25,23 @@ const lastSeekPosition = ref<number | null>(null);
 
 const measures = computed(() => {
   const barLength = ticksPerBar(timelineStore.timeSignature);
-  const measureCount = Math.ceil(props.cols / barLength);
-  return Array.from({ length: measureCount }, (_, i) => ({
-    number: i + 1,
-    position: i * barLength * props.colWidth,
-  }));
+  const [tickStart, tickEnd] = getVisibleTickRange(
+    props.scrollLeft,
+    props.viewportWidth,
+    props.colWidth,
+    props.cols,
+  );
+  const firstBar = Math.floor(tickStart / barLength);
+  const lastBar = Math.min(
+    Math.ceil(props.cols / barLength) - 1,
+    Math.ceil(tickEnd / barLength),
+  );
+
+  const result = [];
+  for (let i = firstBar; i <= lastBar; i++) {
+    result.push({ number: i + 1, position: i * barLength * props.colWidth });
+  }
+  return result;
 });
 
 const positionFromEvent = (event: MouseEvent): number => {

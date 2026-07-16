@@ -10,6 +10,7 @@ const props = defineProps<{
   cols: number;
   colWidth: number;
   scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -61,6 +62,7 @@ const handleToggleAutomation = () => {
         :col-width="props.colWidth"
         :track-color="MASTER_COLOR"
         :scroll-left="props.scrollLeft"
+        :viewport-width="props.viewportWidth"
         @remove="handleRemoveLane(lane.id)"
       />
     </div>

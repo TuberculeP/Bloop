@@ -106,7 +106,18 @@ const showAudioLibrary = inject<Ref<boolean>>("showAudioLibrary", ref(false));
 
 const sortedTracks = computed(() => timelineStore.sortedTracks);
 
+const ceilToBar = (ticks: number, barLength: number): number =>
+  Math.ceil(Math.max(0, ticks) / barLength) * barLength;
+
+// Marge d'avance au-delà du bord de scroll visible : permet un scroll
+// horizontal quasi-infini sans jamais matérialiser une timeline gigantesque
+// en dur (la grille suit le scroll par paliers d'une mesure).
+const SCROLL_AHEAD_MARGIN_BARS = 16;
+
 const displayCols = computed(() => {
+  const barLength = ticksPerBar(timelineStore.timeSignature);
+
+  // Contenu existant : dernière note/clip + 1 mesure de marge.
   let lastEnd = 0;
   for (const track of timelineStore.tracks) {
     for (const note of track.notes) {
@@ -116,8 +127,22 @@ const displayCols = computed(() => {
       lastEnd = Math.max(lastEnd, clip.x + clip.w);
     }
   }
-  const barLength = ticksPerBar(timelineStore.timeSignature);
-  const minCols = Math.ceil(lastEnd / barLength) * barLength + barLength;
+  const contentCols = ceilToBar(lastEnd, barLength) + barLength;
+
+  // Remplit le viewport visible au zoom courant même sans contenu, pour
+  // éviter que la grille s'arrête avant le bord de l'écran en dézoomant.
+  const viewportTicks = viewportWidth.value / colWidth.value;
+  const viewportFillCols = ceilToBar(viewportTicks, barLength) + barLength;
+
+  // Scroll quasi-infini : garde toujours quelques mesures d'avance au-delà
+  // du bord de scroll actuellement visible.
+  const scrollAheadTicks =
+    (scrollLeft.value + viewportWidth.value) / colWidth.value;
+  const scrollAheadCols =
+    ceilToBar(scrollAheadTicks, barLength) +
+    SCROLL_AHEAD_MARGIN_BARS * barLength;
+
+  const minCols = Math.max(contentCols, viewportFillCols, scrollAheadCols);
   return Math.max(timelineStore.project.cols, minCols);
 });
 
@@ -325,6 +350,13 @@ const handleScroll = (event: Event) => {
   scrollLeft.value = target.scrollLeft;
 };
 
+const handleGoToStart = () => {
+  setCheckpoint(0);
+  if (scrollContainerRef.value) {
+    scrollContainerRef.value.scrollLeft = 0;
+  }
+};
+
 const zoomPercent = computed(() => Math.round(timelineStore.zoomLevel * 100));
 
 const setZoom = (value: number) => {
@@ -514,7 +546,7 @@ defineExpose({
         <div class="transport-controls">
           <button
             class="transport-btn"
-            @click="setCheckpoint(0)"
+            @click="handleGoToStart"
             title="Retour au début"
           >
             <i class="fas fa-fast-backward"></i>
@@ -750,6 +782,8 @@ defineExpose({
         <TimelineRuler
           :cols="displayCols"
           :col-width="colWidth"
+          :scroll-left="scrollLeft"
+          :viewport-width="viewportWidth"
           @seek="setCheckpoint"
         />
 
@@ -765,6 +799,7 @@ defineExpose({
             :cols="displayCols"
             :col-width="colWidth"
             :scroll-left="scrollLeft"
+            :viewport-width="viewportWidth"
             @open-settings="showMasterSettings = true"
           />
 

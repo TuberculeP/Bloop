@@ -117,6 +117,8 @@ const handleToggleAutomation = () => {
       :col-width="colWidth"
       :playback-position="playbackPosition"
       :is-playing="isPlaying"
+      :scroll-left="scrollLeft"
+      :viewport-width="viewportWidth"
     />
 
     <!-- Automation drawer -->
@@ -130,6 +132,7 @@ const handleToggleAutomation = () => {
         :col-width="colWidth"
         :track-color="track.color"
         :scroll-left="scrollLeft"
+        :viewport-width="viewportWidth"
         @remove="handleRemoveLane(lane.id)"
       />
     </div>

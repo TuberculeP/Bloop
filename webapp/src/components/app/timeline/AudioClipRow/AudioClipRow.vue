@@ -10,7 +10,11 @@ import {
   useAudioClipKeyboard,
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
-import { ticksPerBar, ticksPerSecond } from "../../../../lib/audio/timeGrid";
+import {
+  ticksPerBar,
+  ticksPerSecond,
+  getVisibleTickRange,
+} from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
@@ -19,6 +23,8 @@ const props = defineProps<{
   colWidth: number;
   playbackPosition: number;
   isPlaying: boolean;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const timelineStore = useTimelineStore();
@@ -39,7 +45,35 @@ onMounted(() => {
 const gridWidth = computed(() => props.cols * props.colWidth);
 const clips = computed(() => props.track.clips ?? []);
 const barLength = computed(() => ticksPerBar(timelineStore.timeSignature));
-const measureCount = computed(() => Math.ceil(props.cols / barLength.value));
+
+const visibleTickRange = computed(() =>
+  getVisibleTickRange(
+    props.scrollLeft,
+    props.viewportWidth,
+    props.colWidth,
+    props.cols,
+  ),
+);
+
+const visibleMeasureIndices = computed(() => {
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  const firstBar = Math.floor(tickStart / barLength.value);
+  const lastBar = Math.min(
+    Math.ceil(props.cols / barLength.value) - 1,
+    Math.ceil(tickEnd / barLength.value),
+  );
+
+  const result: number[] = [];
+  for (let i = firstBar; i <= lastBar; i++) result.push(i);
+  return result;
+});
+
+const visibleClips = computed(() => {
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  return clips.value.filter(
+    (clip) => clip.x < tickEnd && clip.x + clip.w > tickStart,
+  );
+});
 
 const {
   selectedClipIds,
@@ -274,10 +308,10 @@ onBeforeUnmount(() => {
     >
       <div class="grid-lines">
         <div
-          v-for="i in measureCount"
+          v-for="i in visibleMeasureIndices"
           :key="i"
           class="measure-line"
-          :style="{ left: `${(i - 1) * barLength * colWidth}px` }"
+          :style="{ left: `${i * barLength * colWidth}px` }"
         />
       </div>
 
@@ -288,7 +322,7 @@ onBeforeUnmount(() => {
       />
 
       <AudioClipItem
-        v-for="clip in clips"
+        v-for="clip in visibleClips"
         :key="clip.id"
         :clip="clip"
         :col-width="colWidth"
