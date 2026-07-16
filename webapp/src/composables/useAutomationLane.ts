@@ -307,6 +307,15 @@ export function useAutomationLane(
     cachedRect = null;
   };
 
+  // Tout clic/drag en dehors de cette lane doit vider sa sélection : sinon
+  // un point resterait sélectionné indéfiniment (jusqu'à Escape ou un
+  // marquee vide) et un Del pressé ailleurs dans l'UI le supprimerait sans
+  // rapport avec ce qu'on regarde. Voir AutomationLane.vue (v-on-click-outside).
+  const clearSelection = (): void => {
+    selectedPointIds.value = new Set();
+    hoveredPointId.value = null;
+  };
+
   const deleteSelected = () => {
     if (selectedPointIds.value.size === 0) return;
     pushSnapshot();
@@ -395,5 +404,6 @@ export function useAutomationLane(
     handleMouseUp,
     handleDblClick,
     handleMouseLeave,
+    clearSelection,
   };
 }

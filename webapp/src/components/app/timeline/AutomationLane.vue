@@ -7,6 +7,7 @@ import {
   onMounted,
   onBeforeUnmount,
 } from "vue";
+import { vOnClickOutside } from "@vueuse/components";
 import type { AutomationLane } from "../../../lib/utils/types";
 import { AutomationLaneRenderer } from "../../../lib/canvas/automationLaneRenderer";
 import {
@@ -198,7 +199,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="automation-lane-wrapper">
+  <div
+    class="automation-lane-wrapper"
+    v-on-click-outside="interaction.clearSelection"
+  >
     <div class="lane-header">
       <span class="lane-param-label">{{ paramLabel }}</span>
       <button
