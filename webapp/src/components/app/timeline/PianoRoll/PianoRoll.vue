@@ -136,6 +136,12 @@ const handleAddNote = (x: number, y: number, useGridSize: boolean): void => {
   const width = useGridSize
     ? gridSize
     : (timelineStore.lastResizedNoteWidth ?? gridSize);
+  // Ajouter une note à taille minimale (useGridSize) réinitialise aussi la
+  // largeur mémorisée : les clics simples suivants repartent sur la taille
+  // de maille, jusqu'au prochain resize individuel.
+  if (useGridSize) {
+    timelineStore.setLastResizedNoteWidth(gridSize);
+  }
   const noteId = trackHistoryStore.recordAddNote(props.track.id, {
     x,
     y,
