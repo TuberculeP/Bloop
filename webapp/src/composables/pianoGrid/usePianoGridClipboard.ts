@@ -94,7 +94,6 @@ export function usePianoGridClipboard(
     const notesToPaste: Array<{ x: number; y: number; w: number }> = [];
     for (const note of selected) {
       const x = note.x + offsetX;
-      if (x + note.w > cols()) continue;
       notesToPaste.push({ x, y: note.y, w: note.w });
     }
 
