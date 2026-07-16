@@ -25,6 +25,7 @@ const emit = defineEmits<{
   (e: "open-settings"): void;
   (e: "toggle-expand"): void;
   (e: "delete-track"): void;
+  (e: "import-midi"): void;
 }>();
 
 const headerStyle = { borderLeftColor: props.track.color };
@@ -32,14 +33,24 @@ const headerStyle = { borderLeftColor: props.track.color };
 const menuOpen = ref(false);
 const menuPosition = ref({ x: 0, y: 0 });
 
-const menuItems = [
-  {
+const menuItems = computed(() => {
+  const items = [];
+  if (!props.isAudioTrack) {
+    items.push({
+      label: "Importer MIDI",
+      icon: "fas fa-file-import",
+      action: () => emit("import-midi"),
+      danger: false,
+    });
+  }
+  items.push({
     label: "Supprimer",
     icon: "fas fa-trash",
     action: () => emit("delete-track"),
     danger: true,
-  },
-];
+  });
+  return items;
+});
 
 function openMenu(e: MouseEvent) {
   e.preventDefault();
