@@ -99,7 +99,7 @@ EQBand {
 // du master — voir "Système d'effets" plus bas.
 EffectInstanceConfig {
   id: string                       // uuid stable, sert d'ancre pour l'automation
-  type: string                     // clé du registre : "eq5" | "reverb" | "compressor" | "limiter"
+  type: string                     // clé du registre : "eq5" | "reverb" | "compressor" | "limiter" | "overdrive"
   enabled: boolean                 // bypass
   params: Record<string, number>   // paramId -> valeur réelle (dB, %, etc.)
 }
@@ -267,7 +267,7 @@ lib/audio/effects/
                   # EffectParamDescriptor (vivant, lié à l'audio) / EffectParamMeta (statique, pour l'UI)
   registry.ts     # registerEffect/getEffectDefinition/listEffectDefinitions/createEffectInstance
   effectChain.ts  # class EffectChain — reconstruction dynamique du graphe (rebuild/setEnabled/getParamDescriptor)
-  eq5.ts, reverb.ts, compressor.ts, limiter.ts  # effets intégrés
+  eq5.ts, reverb.ts, compressor.ts, limiter.ts, overdrive.ts  # effets intégrés
   index.ts        # enregistre les 4 effets au chargement du module
 ```
 
@@ -407,7 +407,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 - [x] Undo/redo par piste (Ctrl+Z/Shift+Z, persiste si piano roll fermé)
 - [x] Sélection multiple (Ctrl+clic + marquee selection)
 - [ ] Export audio (WAV/MP3)
-- [x] Pile d'effets réordonnable (EQ/Reverb/Compressor/Limiter) par piste et master
+- [x] Pile d'effets réordonnable (EQ/Reverb/Compressor/Limiter/Overdrive) par piste et master
 - [ ] Zoom timeline
 - [ ] ADSR pour ElementarySynth
 - [x] Undertale soundfont engine avec ADSR

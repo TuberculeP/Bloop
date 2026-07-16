@@ -23,8 +23,10 @@ import { eq5Definition } from "./eq5";
 import { reverbDefinition } from "./reverb";
 import { compressorDefinition } from "./compressor";
 import { limiterDefinition } from "./limiter";
+import { overdriveDefinition } from "./overdrive";
 
 registerEffect(eq5Definition);
 registerEffect(reverbDefinition);
 registerEffect(compressorDefinition);
 registerEffect(limiterDefinition);
+registerEffect(overdriveDefinition);

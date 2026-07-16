@@ -206,7 +206,7 @@ export interface SamplePack {
 // dynamique min/max côté audio.
 export interface EffectInstanceConfig {
   id: string; // uuid stable, sert d'ancre pour l'automation (AutomationTarget.effectId)
-  type: string; // clé du registre, ex: "eq5" | "reverb" | "compressor" | "limiter"
+  type: string; // clé du registre, ex: "eq5" | "reverb" | "compressor" | "limiter" | "overdrive"
   enabled: boolean; // bypass
   params: Record<string, number>;
 }

@@ -3,7 +3,7 @@ import type { EffectInstance, EffectParamMeta } from "./types";
 export interface EffectDefinition {
   type: string;
   label: string;
-  category: "eq" | "dynamics" | "spatial";
+  category: "eq" | "dynamics" | "spatial" | "distortion";
   /** Métadonnées statiques (label/bornes/unité) — pour l'UI, sans AudioContext. */
   params: EffectParamMeta[];
   createDefaultParams(): Record<string, number>;
