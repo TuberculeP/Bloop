@@ -8,11 +8,13 @@
         <!-- Brand section -->
         <div class="footer-brand">
           <div class="brand-logo">
-            <img
-              src="../../assets/logo/logo_background_yellow.svg"
-              alt="BLOOP"
-              class="logo"
-            />
+            <a href="/">
+              <img
+                src="../../assets/logo/logo_background_yellow.svg"
+                alt="BLOOP"
+                class="logo"
+              />
+            </a>
           </div>
           <p class="brand-description">
             Créez, mixez et produisez vos beats en ligne avec notre studio
@@ -24,7 +26,11 @@
               :key="social.name"
               :text="social.name"
             >
-              <a href="#" class="social-link" :aria-label="social.name">
+              <a
+                :href="social.link"
+                class="social-link"
+                :aria-label="social.name"
+              >
                 <component :is="social.icon" />
               </a>
             </BaseTooltip>
@@ -231,10 +237,14 @@ const YoutubeIcon = () =>
   );
 
 const socials = [
-  { name: "Twitter", icon: TwitterIcon },
-  { name: "Discord", icon: DiscordIcon },
-  { name: "Instagram", icon: InstagramIcon },
-  { name: "YouTube", icon: YoutubeIcon },
+  { name: "Twitter", icon: TwitterIcon, link: "/" },
+  { name: "Discord", icon: DiscordIcon, link: "/" },
+  {
+    name: "Instagram",
+    icon: InstagramIcon,
+    link: "https://www.instagram.com/bloop_music/",
+  },
+  { name: "YouTube", icon: YoutubeIcon, link: "/" },
 ];
 
 const footerLinks = [
@@ -270,11 +280,16 @@ const footerLinks = [
 const legalLinks = [
   {
     id: 1,
+    title: "Confidentialité",
+    link: "#",
+  },
+  {
+    id: 2,
     title: "CGU",
     link: "/cgu",
   },
   {
-    id: 2,
+    id: 3,
     title: "CGV",
     link: "/cgv",
   },
@@ -293,9 +308,11 @@ const scrollToTop = () => {
     );
 
   if (scrollTo) {
-    scrollTo("#hero", { duration: 1.2 });
+    scrollTo("#main-header", { duration: 1.2 });
   } else {
-    document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .getElementById("main-header")
+      ?.scrollIntoView({ behavior: "smooth" });
   }
 };
 
