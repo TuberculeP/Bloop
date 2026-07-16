@@ -204,7 +204,7 @@ const handleMouseDown = (event: MouseEvent) => {
     } else {
       handleDragStart(event, note);
     }
-  } else if (event.shiftKey) {
+  } else if (event.ctrlKey || event.metaKey) {
     event.preventDefault();
     handleSelectionStart(event);
   }
@@ -231,7 +231,7 @@ const handleClick = (event: MouseEvent) => {
 
     if (col >= 0 && col < props.cols && row >= 0 && row < TOTAL_NOTES) {
       clearSelection();
-      emit("add-note", col, row, event.ctrlKey || event.metaKey);
+      emit("add-note", col, row, event.shiftKey);
     }
   }
 };

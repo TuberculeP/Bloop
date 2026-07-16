@@ -10,7 +10,8 @@ import {
   useAudioClipKeyboard,
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
-import { ticksPerBar, ticksPerSecond } from "../../../../lib/audio/timeGrid";
+import { useVisibleGrid } from "../../../../composables/useVisibleGrid";
+import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
@@ -19,6 +20,8 @@ const props = defineProps<{
   colWidth: number;
   playbackPosition: number;
   isPlaying: boolean;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const timelineStore = useTimelineStore();
@@ -38,8 +41,32 @@ onMounted(() => {
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const clips = computed(() => props.track.clips ?? []);
-const barLength = computed(() => ticksPerBar(timelineStore.timeSignature));
-const measureCount = computed(() => Math.ceil(props.cols / barLength.value));
+
+const {
+  barLength,
+  visibleTickRange,
+  visibleMeasureRange,
+  visibleSubdivisionTicks,
+} = useVisibleGrid(
+  () => props.scrollLeft,
+  () => props.viewportWidth,
+  () => props.colWidth,
+  () => props.cols,
+);
+
+const visibleMeasureIndices = computed(() => {
+  const [firstBar, lastBar] = visibleMeasureRange.value;
+  const result: number[] = [];
+  for (let i = firstBar; i <= lastBar; i++) result.push(i);
+  return result;
+});
+
+const visibleClips = computed(() => {
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  return clips.value.filter(
+    (clip) => clip.x < tickEnd && clip.x + clip.w > tickStart,
+  );
+});
 
 const {
   selectedClipIds,
@@ -274,10 +301,16 @@ onBeforeUnmount(() => {
     >
       <div class="grid-lines">
         <div
-          v-for="i in measureCount"
+          v-for="tick in visibleSubdivisionTicks"
+          :key="`sub-${tick}`"
+          class="subdivision-line"
+          :style="{ left: `${tick * colWidth}px` }"
+        />
+        <div
+          v-for="i in visibleMeasureIndices"
           :key="i"
           class="measure-line"
-          :style="{ left: `${(i - 1) * barLength * colWidth}px` }"
+          :style="{ left: `${i * barLength * colWidth}px` }"
         />
       </div>
 
@@ -288,7 +321,7 @@ onBeforeUnmount(() => {
       />
 
       <AudioClipItem
-        v-for="clip in clips"
+        v-for="clip in visibleClips"
         :key="clip.id"
         :clip="clip"
         :col-width="colWidth"
@@ -338,6 +371,14 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.subdivision-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--color-accent3-rgb), 0.12);
 }
 
 .measure-line {

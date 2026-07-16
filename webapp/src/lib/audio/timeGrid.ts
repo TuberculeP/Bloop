@@ -67,6 +67,56 @@ export const getVisibleTickRange = (
   return [start, end];
 };
 
+// Position pixel d'un trait de grille vertical net (1px) tracé en canvas
+// (piano roll, preview de piste, automation lane), pour un tick donné.
+// Un ctx.stroke() de lineWidth=1 centré sur cette valeur occupe l'espace
+// [tick*colWidth, tick*colWidth + 1) — identique à une div DOM positionnée
+// en `left: tick*colWidth; width: 1px` (pistes de clips audio,
+// AudioClipRow.vue). Toujours passer par cette fonction plutôt que par un
+// calcul `tick * colWidth ± 0.5` à la main : le signe compte (+0.5, pas
+// -0.5) pour que canvas et DOM restent alignés au pixel près, et un futur
+// renderer canvas qui recalculerait ça lui-même risquerait de réintroduire
+// un décalage d'1px entre les deux (voir l'historique de ce fichier).
+export const tickToGridLineX = (tick: number, colWidth: number): number =>
+  tick * colWidth + 0.5;
+
+// Indices de mesure visibles dans une plage de ticks donnée (ruler, pistes de
+// clips audio) : centralise le même calcul de bornes pour que le ruler et le
+// contenu des pistes restent toujours alignés sur les mêmes mesures.
+export const getVisibleMeasureRange = (
+  tickStart: number,
+  tickEnd: number,
+  barLength: number,
+  cols: number,
+): [number, number] => {
+  const firstBar = Math.floor(tickStart / barLength);
+  const lastBar = Math.min(
+    Math.ceil(cols / barLength) - 1,
+    Math.ceil(tickEnd / barLength),
+  );
+  return [firstBar, lastBar];
+};
+
+// Ticks de subdivision (résolution de snap) visibles dans une plage de ticks
+// donnée, en excluant ceux qui coïncident avec une mesure (déjà couverts par
+// les lignes de mesure, plus marquées) — même logique pour le piano roll,
+// l'automation lane, les pistes de clips audio et le ruler.
+export const getVisibleSubdivisionTicks = (
+  tickStart: number,
+  tickEnd: number,
+  subdivision: number,
+  barLength: number,
+): number[] => {
+  const step = snapTicks(subdivision);
+  const firstTick = Math.max(step, Math.floor(tickStart / step) * step);
+
+  const result: number[] = [];
+  for (let tick = firstTick; tick <= tickEnd; tick += step) {
+    if (tick % barLength !== 0) result.push(tick);
+  }
+  return result;
+};
+
 // Un projet est "ancien format" (positions en colonnes de double-croche) s'il
 // n'a pas encore de timeSignature/subdivision — indépendamment du champ version.
 export const isLegacyProject = (data: Partial<TimelineProject>): boolean =>

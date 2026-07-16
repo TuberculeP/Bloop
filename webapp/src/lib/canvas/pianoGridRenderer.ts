@@ -8,8 +8,9 @@ import {
 import {
   TICKS_PER_BEAT,
   ticksPerBar,
-  snapTicks,
   getVisibleTickRange,
+  getVisibleSubdivisionTicks,
+  tickToGridLineX,
 } from "../audio/timeGrid";
 import type { TimeSignature } from "../utils/types";
 
@@ -187,10 +188,15 @@ export class PianoGridRenderer {
 
     ctx.strokeStyle = COLORS.cellBorderVertical;
     ctx.beginPath();
-    const step = snapTicks(config.subdivision);
-    const firstTick = Math.max(step, Math.floor(tickStart / step) * step);
-    for (let tick = firstTick; tick <= tickEnd; tick += step) {
-      const x = tick * config.colWidth - 0.5;
+    const barLength = ticksPerBar(config.timeSignature);
+    const subdivisionTicks = getVisibleSubdivisionTicks(
+      tickStart,
+      tickEnd,
+      config.subdivision,
+      barLength,
+    );
+    for (const tick of subdivisionTicks) {
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, this.scrollTop);
       ctx.lineTo(x, this.scrollTop + this.height);
     }
@@ -239,7 +245,7 @@ export class PianoGridRenderer {
     for (let beat = beatStart; beat <= beatEnd; beat++) {
       const tick = beat * TICKS_PER_BEAT;
       if (tick % barLength === 0) continue;
-      const x = tick * config.colWidth - 0.5;
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, this.scrollTop);
       ctx.lineTo(x, this.scrollTop + this.height);
     }
@@ -250,7 +256,7 @@ export class PianoGridRenderer {
     for (let beat = beatStart; beat <= beatEnd; beat++) {
       const tick = beat * TICKS_PER_BEAT;
       if (tick % barLength !== 0) continue;
-      const x = tick * config.colWidth - 0.5;
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, this.scrollTop);
       ctx.lineTo(x, this.scrollTop + this.height);
     }

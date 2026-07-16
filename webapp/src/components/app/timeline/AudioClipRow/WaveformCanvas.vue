@@ -68,7 +68,20 @@ const drawWaveform = (): void => {
 
   const midY = height / 2;
   const barStep = BAR_WIDTH + BAR_GAP;
-  const barCount = Math.max(1, Math.floor(width / barStep));
+
+  // Si le clip a été étiré (resize) au-delà de la durée réelle du sample,
+  // on ne dessine des barres que jusqu'à la fin réelle de l'audio — le
+  // reste du clip reste vide plutôt que d'étirer artificiellement la
+  // waveform pour remplir toute la largeur.
+  const audioPixelWidth =
+    props.sampleDurationCols > 0
+      ? Math.min(
+          width,
+          (props.sampleDurationCols - props.startOffset) * props.colWidth,
+        )
+      : width;
+  const barCount = Math.max(0, Math.floor(audioPixelWidth / barStep));
+  if (barCount === 0) return;
 
   ctx.fillStyle = lightenHex(props.color, 0.65);
 

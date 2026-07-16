@@ -7,6 +7,7 @@ import {
   onMounted,
   onBeforeUnmount,
 } from "vue";
+import { vOnClickOutside } from "@vueuse/components";
 import type { AutomationLane } from "../../../lib/utils/types";
 import { AutomationLaneRenderer } from "../../../lib/canvas/automationLaneRenderer";
 import {
@@ -24,6 +25,7 @@ const props = defineProps<{
   colWidth: number;
   trackColor: string;
   scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -98,8 +100,9 @@ const renderFrame = () => {
     displayedPoints(),
     interaction.hoveredPointId.value,
     interaction.selectedPointIds.value,
+    interaction.marqueeRect.value,
+    props.scrollLeft,
   );
-  rendererRef.value.renderMarquee(interaction.marqueeRect.value);
 };
 
 const scheduleRender = useRafSchedule(renderFrame);
@@ -111,7 +114,7 @@ onMounted(() => {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const width = props.cols * props.colWidth;
+  const width = props.viewportWidth;
   canvas.style.width = `${width}px`;
   canvas.style.height = `${LANE_HEIGHT}px`;
   canvas.width = width * dpr;
@@ -152,7 +155,7 @@ const resizeCanvas = () => {
   if (!canvas || !rendererRef.value) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const width = props.cols * props.colWidth;
+  const width = props.viewportWidth;
   canvas.style.width = `${width}px`;
   canvas.style.height = `${LANE_HEIGHT}px`;
   canvas.width = width * dpr;
@@ -178,6 +181,7 @@ watch(
   [
     () => props.cols,
     () => props.colWidth,
+    () => props.viewportWidth,
     () => props.trackColor,
     () => timelineStore.timeSignature,
     () => timelineStore.subdivision,
@@ -185,13 +189,20 @@ watch(
   scheduleResize,
 );
 
+// scrollLeft est un nombre : watch séparé (sans deep) pour ne redessiner que
+// le contenu (translate + bornage) sans redimensionner le canvas.
+watch(() => props.scrollLeft, scheduleRender);
+
 onBeforeUnmount(() => {
   rendererRef.value = null;
 });
 </script>
 
 <template>
-  <div class="automation-lane-wrapper">
+  <div
+    class="automation-lane-wrapper"
+    v-on-click-outside="interaction.clearSelection"
+  >
     <div class="lane-header">
       <span class="lane-param-label">{{ paramLabel }}</span>
       <button
@@ -202,7 +213,7 @@ onBeforeUnmount(() => {
         ×
       </button>
     </div>
-    <div class="lane-canvas-area">
+    <div class="lane-canvas-area" :style="{ width: `${viewportWidth}px` }">
       <canvas
         ref="canvasRef"
         class="lane-canvas"
@@ -267,6 +278,12 @@ onBeforeUnmount(() => {
 }
 
 .lane-canvas-area {
+  // Bornée à la largeur du viewport visible (pas cols*colWidth) et épinglée
+  // juste après la colonne de header, comme .track-timeline
+  // (TrackTimelinePreviewCanvas.vue) et .piano-grid-container (PianoRoll.vue).
+  position: sticky;
+  left: 180px;
+  z-index: 5;
   overflow: hidden;
   height: 160px;
 }

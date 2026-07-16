@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from "vue";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { ticksPerBar, snapToGrid } from "../../../lib/audio/timeGrid";
+import { useVisibleGrid } from "../../../composables/useVisibleGrid";
+import { snapToGrid } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   cols: number;
   colWidth: number;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -17,13 +20,30 @@ const rulerRef = ref<HTMLElement | null>(null);
 const isSeeking = ref(false);
 const lastSeekPosition = ref<number | null>(null);
 
+// Même composable que pour les pistes de clips audio (AudioClipRow.vue) —
+// garantit que le ruler et le contenu des pistes restent toujours alignés
+// sur les mêmes traits.
+const {
+  barLength,
+  visibleMeasureRange,
+  visibleSubdivisionTicks: subdivisionTicks,
+} = useVisibleGrid(
+  () => props.scrollLeft,
+  () => props.viewportWidth,
+  () => props.colWidth,
+  () => props.cols,
+);
+
 const measures = computed(() => {
-  const barLength = ticksPerBar(timelineStore.timeSignature);
-  const measureCount = Math.ceil(props.cols / barLength);
-  return Array.from({ length: measureCount }, (_, i) => ({
-    number: i + 1,
-    position: i * barLength * props.colWidth,
-  }));
+  const [firstBar, lastBar] = visibleMeasureRange.value;
+  const result = [];
+  for (let i = firstBar; i <= lastBar; i++) {
+    result.push({
+      number: i + 1,
+      position: i * barLength.value * props.colWidth,
+    });
+  }
+  return result;
 });
 
 const positionFromEvent = (event: MouseEvent): number => {
@@ -83,6 +103,12 @@ onBeforeUnmount(() => {
     >
       <div class="ruler-content" :style="{ width: `${cols * colWidth}px` }">
         <div
+          v-for="tick in subdivisionTicks"
+          :key="`sub-${tick}`"
+          class="subdivision-line"
+          :style="{ left: `${tick * colWidth}px` }"
+        />
+        <div
           v-for="measure in measures"
           :key="measure.number"
           class="measure-marker"
@@ -128,10 +154,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: var(--color-bg-secondary-dark);
 
-  &:hover {
-    background: var(--color-bg-daw-active);
-  }
-
   &.seeking {
     cursor: grabbing;
   }
@@ -140,6 +162,14 @@ onBeforeUnmount(() => {
 .ruler-content {
   position: relative;
   height: 100%;
+}
+
+.subdivision-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--color-accent3-rgb), 0.12);
 }
 
 .measure-marker {

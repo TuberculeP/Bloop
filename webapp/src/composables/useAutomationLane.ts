@@ -92,13 +92,20 @@ export function useAutomationLane(
     canvas = el;
   };
 
+  // Le canvas ne fait que la taille du viewport visible (voir AutomationLane.vue) :
+  // on ajoute scrollLeft() ici, une seule fois, pour que toutes les coordonnées
+  // en aval (hit-test, drag, canvasToPoint) soient en coordonnées "monde",
+  // comme toWorldPos() dans PianoGridCanvas.vue.
   const getCanvasCoords = (
     event: MouseEvent,
     rect?: DOMRect,
   ): { x: number; y: number } | null => {
     if (!canvas) return null;
     const r = rect ?? canvas.getBoundingClientRect();
-    return { x: event.clientX - r.left, y: event.clientY - r.top };
+    return {
+      x: scrollLeft() + (event.clientX - r.left),
+      y: event.clientY - r.top,
+    };
   };
 
   const handleMouseMove = (event: MouseEvent): void => {
@@ -129,7 +136,7 @@ export function useAutomationLane(
           pendingDrag.snapshotPushed = true;
         }
 
-        const cur = renderer.canvasToPoint(coords.x, coords.y, scrollLeft());
+        const cur = renderer.canvasToPoint(coords.x, coords.y);
         const deltaX = cur.x - pendingDrag.startGridX;
         const deltaY = cur.y - pendingDrag.startGridY;
 
@@ -172,11 +179,7 @@ export function useAutomationLane(
         selectedPointIds.value = new Set([hit.id]);
       }
 
-      const startGrid = renderer.canvasToPoint(
-        coords.x,
-        coords.y,
-        scrollLeft(),
-      );
+      const startGrid = renderer.canvasToPoint(coords.x, coords.y);
       const groupInitial = new Map<string, { x: number; y: number }>();
       for (const pid of selectedPointIds.value) {
         const p = lane.points.find((pt) => pt.id === pid);
@@ -243,11 +246,7 @@ export function useAutomationLane(
     if (pendingDrag && !isDragging && coords && renderer) {
       if (!pendingDrag.isMarquee && pendingDrag.pointId === null) {
         pushSnapshot();
-        const { x, y } = renderer.canvasToPoint(
-          coords.x,
-          coords.y,
-          scrollLeft(),
-        );
+        const { x, y } = renderer.canvasToPoint(coords.x, coords.y);
         const pointId = actions.addPoint(lane.id, {
           x: Math.max(0, snapToGrid(x, subdivision())),
           y,
@@ -306,6 +305,15 @@ export function useAutomationLane(
     pendingDrag = null;
     isDragging = false;
     cachedRect = null;
+  };
+
+  // Tout clic/drag en dehors de cette lane doit vider sa sélection : sinon
+  // un point resterait sélectionné indéfiniment (jusqu'à Escape ou un
+  // marquee vide) et un Del pressé ailleurs dans l'UI le supprimerait sans
+  // rapport avec ce qu'on regarde. Voir AutomationLane.vue (v-on-click-outside).
+  const clearSelection = (): void => {
+    selectedPointIds.value = new Set();
+    hoveredPointId.value = null;
   };
 
   const deleteSelected = () => {
@@ -396,5 +404,6 @@ export function useAutomationLane(
     handleMouseUp,
     handleDblClick,
     handleMouseLeave,
+    clearSelection,
   };
 }

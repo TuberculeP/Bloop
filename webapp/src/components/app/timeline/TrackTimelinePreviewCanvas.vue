@@ -7,6 +7,7 @@ import {
   TICKS_PER_BEAT,
   ticksPerBar,
   getVisibleTickRange,
+  tickToGridLineX,
 } from "../../../lib/audio/timeGrid";
 import { useRafSchedule } from "../../../composables/useRafSchedule";
 
@@ -94,8 +95,10 @@ const render = () => {
     props.cols,
   );
 
-  // Une ligne à chaque temps, marquée en rose clair sur le premier temps
-  // de chaque mesure (selon la signature rythmique du projet).
+  // Une ligne à chaque temps, peu voyante (même teinte/opacité que les lignes
+  // de mesure/subdivision des pistes de clips audio, voir AudioClipRow.vue) :
+  // cette preview n'est qu'un aperçu miniature, pas une surface d'édition —
+  // contrairement au piano roll qui garde un contraste plus fort exprès.
   const barLength = ticksPerBar(timelineStore.timeSignature);
   const beatStart = Math.max(0, Math.floor(visibleTickStart / TICKS_PER_BEAT));
   const beatEnd = Math.min(
@@ -104,13 +107,13 @@ const render = () => {
   );
   for (let beat = beatStart; beat <= beatEnd; beat++) {
     const tick = beat * TICKS_PER_BEAT;
-    const x = tick * props.colWidth - 0.5;
+    const x = tickToGridLineX(tick, props.colWidth);
     const isBarStart = tick % barLength === 0;
 
     ctx.beginPath();
     ctx.strokeStyle = isBarStart
-      ? "rgba(170, 27, 86, 0.7)"
-      : "rgba(122, 15, 62, 0.5)";
+      ? "rgba(122, 15, 62, 0.3)"
+      : "rgba(122, 15, 62, 0.12)";
     ctx.lineWidth = 1;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, height);

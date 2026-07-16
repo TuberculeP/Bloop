@@ -37,9 +37,14 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
   const { audioContext, inputBus, ensureAudioContextResumed } = audioBusStore;
 
   const createTrackChannel = (track: Track): TrackChannel => {
-    // Volume principal
+    // Volume principal — 0.001 si la piste est mute ou rendue silencieuse
+    // par le solo d'une autre, pour ne jamais démarrer audible (voir
+    // updateTrackVolume ci-dessous pour le même calcul en cours de lecture).
+    const isPlayable = timelineStore
+      .getPlayableTracks()
+      .some((t) => t.id === track.id);
     const gainNode = markRaw(audioContext.createGain());
-    gainNode.gain.value = track.volume / 100;
+    gainNode.gain.value = isPlayable ? track.volume / 100 : 0.001;
 
     // Pile d'effets réordonnable (EQ, reverb, etc.) : gainNode -> effets -> inputBus
     const effectsChain = markRaw(
@@ -209,10 +214,21 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
   };
 
-  const updateTrackVolume = (trackId: string, volume: number): void => {
+  const updateTrackVolume = (
+    trackId: string,
+    volume: number,
+    isPlayable: boolean,
+  ): void => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
-      const normalizedVolume = Math.max(0.001, volume / 100);
+      // 0.001 : même plancher que celui déjà utilisé pour volume=0. Couper
+      // le gain ici coupe immédiatement tout son en cours — notes ET clips
+      // audio sont tous deux routés à travers ce même gainNode (Engine ->
+      // gainNode -> effets -> inputBus) — sans avoir à traquer/arrêter
+      // individuellement chaque source active à chaque mute/solo.
+      const normalizedVolume = isPlayable
+        ? Math.max(0.001, volume / 100)
+        : 0.001;
       channel.gainNode.gain.exponentialRampToValueAtTime(
         normalizedVolume,
         audioContext.currentTime + 0.05,
@@ -323,13 +339,29 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       ),
     );
 
-    // Watcher pour les volumes individuels
+    // Watcher unifié volume + mute/solo : le gain effectif d'une piste
+    // dépend des trois à la fois (un mute ou un solo d'une autre piste doit
+    // couper le son immédiatement, y compris les notes/clips déjà en train
+    // de jouer, sans attendre leur fin naturelle). Un seul watcher/writer
+    // évite qu'un watcher de volume et un watcher de mute/solo séparés ne
+    // s'écrasent l'un l'autre. Recalcule TOUTES les pistes à chaque
+    // changement : un solo togglé sur une piste change l'état "playable" de
+    // toutes les autres, pas seulement de celle-ci.
     watcherStopHandles.push(
       watch(
-        () => timelineStore.tracks.map((t) => ({ id: t.id, volume: t.volume })),
-        (tracksVolumes) => {
-          for (const { id, volume } of tracksVolumes) {
-            updateTrackVolume(id, volume);
+        () =>
+          timelineStore.tracks.map((t) => ({
+            id: t.id,
+            volume: t.volume,
+            muted: t.muted,
+            solo: t.solo,
+          })),
+        () => {
+          const playableIds = new Set(
+            timelineStore.getPlayableTracks().map((t) => t.id),
+          );
+          for (const t of timelineStore.tracks) {
+            updateTrackVolume(t.id, t.volume, playableIds.has(t.id));
           }
         },
         { deep: true },
