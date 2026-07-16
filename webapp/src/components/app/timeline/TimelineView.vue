@@ -404,15 +404,40 @@ watch(voiceRecorderError, (message) => {
   if (message) toast.error(message);
 });
 
-const isTypingTarget = (target: EventTarget | null) => {
+// Types d'<input> où Espace insère un caractère réel (édition de texte
+// libre) : ce sont les seuls à devoir bloquer le raccourci global. Les autres
+// types (number, range, radio, checkbox, color, date...) ignorent Espace
+// nativement (aucun caractère inséré) — le garder comme "typing target" ne
+// ferait que rendre Espace silencieusement inopérant sur ces champs.
+const TEXT_INPUT_TYPES = new Set([
+  "text",
+  "search",
+  "tel",
+  "email",
+  "url",
+  "password",
+]);
+
+const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  return (
-    tag === "INPUT" ||
-    tag === "TEXTAREA" ||
-    tag === "SELECT" ||
-    target.isContentEditable
-  );
+  if (target instanceof HTMLInputElement) {
+    return TEXT_INPUT_TYPES.has(target.type);
+  }
+  return target.tagName === "TEXTAREA" || target.isContentEditable;
+};
+
+// Contrôles dont l'activation native par Espace (clic de bouton, cochage de
+// case, ouverture de <select>, incrément de slider/number) ne doit jamais
+// l'emporter sur le Play/Stop global — Espace doit toujours atteindre
+// togglePlayback(), jamais réactiver l'un de ces éléments.
+const isSpaceActivatableControl = (target: Element | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target instanceof HTMLButtonElement) return true;
+  if (target instanceof HTMLSelectElement) return true;
+  if (target instanceof HTMLInputElement) {
+    return !TEXT_INPUT_TYPES.has(target.type);
+  }
+  return false;
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
@@ -420,14 +445,40 @@ const handleKeydown = (event: KeyboardEvent) => {
 
   if (event.code === "Space") {
     event.preventDefault();
+    // Si un bouton/select/input non-texte a le focus (navigation Tab, ou
+    // clic pour les inputs/selects — le fix mousedown ci-dessous ne
+    // s'applique qu'aux <button>), on le blur pour garantir que Espace ne
+    // l'active jamais. Entrée reste intacte pour l'activer normalement.
+    if (isSpaceActivatableControl(document.activeElement)) {
+      (document.activeElement as HTMLElement).blur();
+    }
     togglePlayback();
   } else if (event.code === "Escape") {
     timelineStore.collapseTrack();
   }
 };
 
+// Empêche un <button> de conserver le focus navigateur après un clic souris
+// (sans empêcher le click lui-même, qui se déclenche toujours au mouseup) :
+// technique standard (Radix UI/MUI) via preventDefault() sur mousedown, la
+// phase où le navigateur assigne normalement le focus. Nécessaire pour que
+// Espace, juste après un clic sur mute/solo/play/zoom/etc., ne fasse QUE
+// togglePlayback() et ne réactive jamais accidentellement le bouton cliqué.
+// window (comme le listener keydown) plutôt qu'un élément racine du
+// template : TrackHeader.vue téléporte son menu contextuel dans <body> via
+// <Teleport to="body">, hors du sous-arbre DOM de TimelineView.
+const preventButtonFocusOnMouseDown = (event: MouseEvent) => {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("button")) {
+    event.preventDefault();
+  }
+};
+
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("mousedown", preventButtonFocusOnMouseDown, {
+    capture: true,
+  });
 
   if (scrollContainerRef.value) {
     viewportWidth.value =
@@ -444,6 +495,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlayback();
   window.removeEventListener("keydown", handleKeydown);
+  window.removeEventListener("mousedown", preventButtonFocusOnMouseDown, {
+    capture: true,
+  });
   scrollContainerResizeObserver?.disconnect();
 });
 
