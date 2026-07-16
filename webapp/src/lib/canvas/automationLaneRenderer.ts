@@ -155,7 +155,9 @@ export class AutomationLaneRenderer {
     const firstMeasure = Math.floor(tickStart / barLength);
     const lastMeasure = Math.ceil(tickEnd / barLength);
     for (let measure = firstMeasure; measure <= lastMeasure; measure++) {
-      const x = measure * barLength * config.colWidth - 0.5;
+      // Math.max(0.5, ...) : évite que la ligne de la toute première mesure
+      // (tick 0) se retrouve hors canvas et invisible, voir pianoGridRenderer.ts.
+      const x = Math.max(0.5, measure * barLength * config.colWidth - 0.5);
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
