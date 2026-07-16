@@ -29,6 +29,7 @@ const emit = defineEmits<{
   (e: "delete-track", track: Track): void;
   (e: "open-settings", track: Track): void;
   (e: "toggle-expand", track: Track): void;
+  (e: "import-midi", track: Track): void;
 }>();
 
 const timelineStore = useTimelineStore();
@@ -83,6 +84,7 @@ const handleToggleAutomation = () => {
       @open-settings="emit('open-settings', track)"
       @toggle-expand="emit('toggle-expand', track)"
       @delete-track="emit('delete-track', track)"
+      @import-midi="emit('import-midi', track)"
     />
 
     <TrackTimelinePreviewCanvas

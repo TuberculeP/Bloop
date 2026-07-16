@@ -24,6 +24,7 @@ import { useTimelinePlaybackEngine } from "../../../composables/timelineView/use
 import { useTimelineExport } from "../../../composables/timelineView/useTimelineExport";
 import { useTimelineVoiceRecording } from "../../../composables/timelineView/useTimelineVoiceRecording";
 import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
+import { useMidiImport } from "../../../composables/timelineView/useMidiImport";
 import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
 import {
   pxPerTick,
@@ -219,6 +220,21 @@ const {
   handleTracksContainerDragLeave,
   handleTracksContainerDrop,
 } = useTimelineFileDrop(() => colWidth.value, TRACK_HEADER_WIDTH);
+
+const {
+  midiFileInputRef,
+  showMidiTrackPickerModal,
+  midiTrackCandidates,
+  selectedMidiCandidateIndex,
+  openMidiImportPicker,
+  handleMidiFileSelected,
+  confirmMidiTrackSelection,
+  cancelMidiTrackSelection,
+} = useMidiImport();
+
+const handleImportMidiClick = (track: Track) => {
+  openMidiImportPicker(track.id);
+};
 
 const {
   isCloning,
@@ -772,6 +788,7 @@ defineExpose({
             @delete-track="handleDeleteTrack"
             @open-settings="handleOpenSettings"
             @toggle-expand="handleToggleExpand"
+            @import-midi="handleImportMidiClick"
           />
 
           <EmptyState
@@ -838,6 +855,56 @@ defineExpose({
         </BaseButton>
         <BaseButton variant="accent2" @click="confirmRenameTrack">
           Renommer
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <input
+      ref="midiFileInputRef"
+      type="file"
+      accept=".mid,.midi,audio/midi"
+      class="hidden-input"
+      @change="handleMidiFileSelected"
+    />
+
+    <BaseModal
+      :model-value="showMidiTrackPickerModal"
+      @update:model-value="cancelMidiTrackSelection"
+    >
+      <template #header>
+        <h3>Choisir la piste à importer</h3>
+      </template>
+      <p class="export-modal-description">
+        Ce fichier MIDI contient plusieurs pistes. Choisissez celle à importer
+        (elle remplacera les notes existantes de la piste sélectionnée).
+      </p>
+      <div class="midi-track-options">
+        <label
+          v-for="candidate in midiTrackCandidates"
+          :key="candidate.index"
+          class="export-format-option"
+          :class="{ active: selectedMidiCandidateIndex === candidate.index }"
+        >
+          <input
+            v-model="selectedMidiCandidateIndex"
+            type="radio"
+            :value="candidate.index"
+          />
+          {{ candidate.label
+          }}{{
+            candidate.instrumentName !== candidate.label
+              ? ` — ${candidate.instrumentName}`
+              : ""
+          }}
+          ({{ candidate.noteCount }} notes)
+        </label>
+      </div>
+      <template #footer>
+        <BaseButton variant="secondary" @click="cancelMidiTrackSelection">
+          Annuler
+        </BaseButton>
+        <BaseButton variant="accent" @click="confirmMidiTrackSelection">
+          Importer
         </BaseButton>
       </template>
     </BaseModal>
@@ -1364,6 +1431,21 @@ defineExpose({
   input {
     accent-color: var(--color-accent2);
   }
+}
+
+.midi-track-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+
+  .export-format-option {
+    justify-content: flex-start;
+  }
+}
+
+.hidden-input {
+  display: none;
 }
 
 .position-display {
