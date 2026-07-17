@@ -157,8 +157,9 @@ export function useVoiceRecorder() {
       pendingStopResolve = null;
     };
 
-    audioContext = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
+    audioContext = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
     const source = audioContext.createMediaStreamSource(stream);
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 512;

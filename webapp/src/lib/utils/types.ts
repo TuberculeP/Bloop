@@ -107,11 +107,7 @@ export interface LegacySequenceData {
 // ============================================
 
 export type InstrumentType =
-  | "basicSynth"
-  | "elementarySynth"
-  | "smplr"
-  | "undertale"
-  | "audioTrack";
+  "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 

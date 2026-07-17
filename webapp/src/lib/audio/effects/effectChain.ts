@@ -93,8 +93,8 @@ export class EffectChain {
     // .disconnect() sont quasi gratuits en Web Audio et ce rebuild est rare
     // (pas à chaque frame) — un brute-force est plus simple et moins sujet aux
     // bugs qu'un diff fin des connexions.
-    this.slots = configs.map(
-      (config) => this.slots.find((slot) => slot.config.id === config.id)!,
+    this.slots = configs.map((config) =>
+      this.slots.find((slot) => slot.config.id === config.id)!,
     );
 
     // Réapplique enabled/bypass à CHAQUE rebuild, pas seulement à la création
