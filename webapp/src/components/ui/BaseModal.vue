@@ -5,6 +5,7 @@ export interface ModalProps {
   modelValue: boolean;
   size?: "small" | "normal" | "large";
   closeOnOverlayClick?: boolean;
+  modalClass?: string;
 }
 
 const props = withDefaults(defineProps<ModalProps>(), {
@@ -34,7 +35,11 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
         class="base-modal-overlay"
         @click="closeOnOverlayClick && close()"
       >
-        <div class="base-modal" :class="`base-modal--${size}`" @click.stop>
+        <div
+          class="base-modal"
+          :class="[`base-modal--${size}`, modalClass]"
+          @click.stop
+        >
           <div v-if="$slots.header" class="base-modal__header">
             <slot name="header" />
           </div>
