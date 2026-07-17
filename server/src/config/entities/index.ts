@@ -12,6 +12,8 @@ import { OAuthToken } from "./OAuthToken";
 import { ProjectFavorite } from "./ProjectFavorite";
 import { UserSample } from "./UserSample";
 import { UserSampleProjectLink } from "./UserSampleProjectLink";
+import { LearningArticle } from "./LearningArticle";
+import { LearningArticleVote } from "./LearningArticleVote";
 
 const entities = [
   User,
@@ -28,6 +30,8 @@ const entities = [
   ProjectFavorite,
   UserSample,
   UserSampleProjectLink,
+  LearningArticle,
+  LearningArticleVote,
 ];
 
 export default entities;

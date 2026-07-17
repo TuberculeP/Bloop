@@ -1,0 +1,188 @@
+/* Styles centralisés pour Learning — non scopés car injectés via v-html par MdPreview.
+   md-editor-v3 embarque son propre CSS statique (lib/preview.css, lib/style.css,
+   importés dans les vues Learning) avec un thème "default" clair (fond blanc,
+   word-break: break-all) : on neutralise ces règles et on réimpose notre charte.
+   Seule exception : le thème de coloration syntaxique des blocs de code (.hljs/pre)
+   est chargé dynamiquement depuis un CDN (unpkg) au runtime, voir plus bas. */
+
+.yt-embed {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* ratio 16:9 */
+  margin: 24px 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.yt-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* stylelint-disable declaration-no-important -- md-editor-v3 pose ses propres couleurs
+   (fond blanc/noir via --md-bk-color, texte via --md-color) dans son CSS statique
+   (lib/preview.css, lib/style.css). Ce CSS et le nôtre sont deux feuilles bundlées
+   par Vite dont l'ordre final n'est pas garanti par la seule spécificité des sélecteurs. */
+.md-editor,
+.md-editor-dark,
+.md-editor-previewOnly,
+.md-editor-preview-wrapper,
+.md-editor-preview,
+.default-theme {
+  background-color: transparent !important;
+  color: var(--color-white) !important;
+}
+/* stylelint-enable declaration-no-important */
+
+/* Typographie du contenu markdown, alignée sur la charte de la landing (base.css) */
+.md-editor-preview {
+  font-family: var(--font-body);
+}
+
+/* stylelint-disable declaration-no-important -- md-editor-v3 pose lui-même
+   word-break: break-all sur .md-editor-preview dans son CSS statique (même
+   sélecteur, même spécificité : l'ordre entre son CSS et le nôtre dans le
+   bundle Vite n'est pas garanti). */
+.md-editor-preview {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+/* stylelint-enable declaration-no-important */
+
+.md-editor-preview ul {
+  list-style: disc;
+  padding-inline-start: 1.5em;
+}
+
+.md-editor-preview ol {
+  list-style: decimal;
+  padding-inline-start: 1.5em;
+}
+
+/* reset.css applique list-style: none directement sur *, y compris <li> : une
+   déclaration directe sur l'élément prime toujours sur l'héritage depuis ul/ol,
+   il faut donc explicitement redonner le marqueur au <li> lui-même. */
+.md-editor-preview li {
+  list-style: inherit;
+}
+
+.md-editor-preview ul ul {
+  list-style: circle;
+}
+
+.md-editor-preview :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading), Georgia, serif;
+  font-weight: 500;
+  color: var(--color-white);
+  margin: 1.75em 0 0.75em;
+}
+
+.md-editor-preview h1 {
+  font-size: 2.25rem;
+  line-height: 1.2;
+}
+
+.md-editor-preview h2 {
+  font-size: 1.5rem;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.md-editor-preview h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+.md-editor-preview h3 {
+  font-size: 1.25rem;
+}
+
+.md-editor-preview h4 {
+  font-size: 1.1rem;
+}
+
+.md-editor-preview :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.md-editor-preview p,
+.md-editor-preview li {
+  font-family: var(--font-body);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.md-editor-preview strong {
+  color: var(--color-white);
+  font-weight: 600;
+}
+
+.md-editor-preview a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.md-editor-preview a:hover {
+  color: var(--color-accent-hover);
+}
+
+.md-editor-preview blockquote {
+  margin: 1.25em 0;
+  padding: 0.5em 1.25em;
+  border-left: 2px solid var(--color-accent);
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+.md-editor-preview :not(pre) > code {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-accent2);
+  border-radius: var(--radius-sm);
+  padding: 0.15em 0.4em;
+  font-size: 0.9em;
+}
+
+/* stylelint-disable declaration-no-important -- ici le thème de coloration syntaxique
+   (highlight.js) est injecté par md-editor-v3 dynamiquement depuis un CDN (unpkg) au
+   montage du composant, donc après notre propre CSS : son ordre dans le <head> n'est
+   pas déterministe, la spécificité seule ne suffit pas à le battre de façon fiable. */
+.md-editor-preview pre {
+  background: var(--color-bg-secondary-dark) !important;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.md-editor-preview table {
+  border-color: var(--color-border-secondary);
+}
+
+.md-editor-preview :is(th, td) {
+  border-color: var(--color-border-secondary) !important;
+  color: rgba(255, 255, 255, 0.7);
+}
+/* stylelint-enable declaration-no-important */
+
+.md-editor-preview th {
+  color: var(--color-white);
+}
+
+.md-editor-preview hr {
+  border-color: var(--color-border-secondary);
+}
+
+.md-editor-preview img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+}

@@ -48,6 +48,8 @@ async function adminGuard(to: any, from: any, next: any) {
 import BlogApp from "./views/blog/BlogApp.vue";
 import BlogSearchResults from "./views/blog/BlogSearchResults.vue";
 import BlogPostDetail from "./views/blog/BlogPostDetail.vue";
+import LearningApp from "./views/learning/LearningApp.vue";
+import LearningArticleDetail from "./views/learning/LearningArticleDetail.vue";
 import ProfileView from "./views/profile/ProfileView.vue";
 import MessagesView from "./views/messages/MessagesView.vue";
 import LandingCgu from "./views/landing/LandingCgu.vue";
@@ -86,6 +88,24 @@ const routes = [
     component: BlogPostDetail,
     name: "blog-post-detail",
   },
+  { path: "/learning", component: LearningApp, name: "learning-list" },
+  {
+    path: "/learning/editor/new",
+    component: () => import("./views/learning/LearningArticleEditor.vue"),
+    name: "learning-new",
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: "/learning/editor/:id",
+    component: () => import("./views/learning/LearningArticleEditor.vue"),
+    name: "learning-edit",
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: "/learning/:slug",
+    component: LearningArticleDetail,
+    name: "learning-detail",
+  },
   { path: "/profile", component: ProfileView, name: "profile" },
   { path: "/messages", component: MessagesView, name: "messages" },
   // Admin routes
@@ -122,7 +142,14 @@ const routes = [
 ];
 
 const getGuardedRoutes = () => {
-  const guardedMatches = ["app", "blog", "settings", "profile", "messages"];
+  const guardedMatches = [
+    "app",
+    "blog",
+    "settings",
+    "profile",
+    "messages",
+    "learning",
+  ];
   return routes.map((route: any) => {
     if (route.meta?.requiresAdmin) {
       return {

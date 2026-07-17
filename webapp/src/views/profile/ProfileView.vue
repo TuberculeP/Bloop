@@ -9,21 +9,34 @@ import type { TabItem } from "../../components/shared/TabBar.vue";
 import ProfileSettingsForm from "../../components/profile/ProfileSettingsForm.vue";
 import ProfilePosts from "../../components/profile/ProfilePosts.vue";
 import UserSamplesPanel from "../../components/profile/UserSamplesPanel.vue";
+import ProfileLearningArticles from "../../components/profile/ProfileLearningArticles.vue";
 
-type Tab = "post" | "settings" | "samples";
+type Tab = "post" | "settings" | "samples" | "learning";
 
 const activeTab = ref<Tab>("settings");
-
-const profileTabs: TabItem[] = [
-  { id: "settings", label: "Profil", icon: "fas fa-user" },
-  { id: "post", label: "Mes Posts", icon: "fas fa-newspaper" },
-  { id: "samples", label: "Mes Samples", icon: "fas fa-music" },
-];
 
 const router = useRouter();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
+
+const profileTabs = computed<TabItem[]>(() => {
+  const tabs: TabItem[] = [
+    { id: "settings", label: "Profil", icon: "fas fa-user" },
+    { id: "post", label: "Mes Posts", icon: "fas fa-newspaper" },
+    { id: "samples", label: "Mes Samples", icon: "fas fa-music" },
+  ];
+
+  if (user.value?.role === "ROLE_ADMIN") {
+    tabs.push({
+      id: "learning",
+      label: "Mes Articles",
+      icon: "fas fa-graduation-cap",
+    });
+  }
+
+  return tabs;
+});
 
 /* ───────────────────── Statistiques (alimentées par ProfilePosts) ───────────────────── */
 
@@ -117,6 +130,8 @@ onMounted(() => {
         <ProfileSettingsForm v-show="activeTab === 'settings'" />
 
         <UserSamplesPanel v-show="activeTab === 'samples'" />
+
+        <ProfileLearningArticles v-show="activeTab === 'learning'" />
       </main>
     </div>
   </AppLayout>
