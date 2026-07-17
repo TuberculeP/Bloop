@@ -1,5 +1,6 @@
 <template>
   <header
+    id="main-header"
     class="main-header"
     :class="{ scrolled: isScrolled, 'menu-open': isMobileMenuOpen }"
   >
@@ -156,8 +157,8 @@ const authStore = useAuthStore();
 const navLinks = [
   { name: "Application", href: "/app" },
   { name: "Blog", href: "/blog" },
-  { name: "À propos", href: "#about" },
-  { name: "Support", href: "#support" },
+  { name: "À propos", href: "/about" },
+  { name: "Support", href: "/support" },
 ];
 
 // State
