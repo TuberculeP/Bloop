@@ -30,6 +30,19 @@ export const snapToGrid = (ticks: number, subdivision: number): number => {
   return Math.round(ticks / step) * step;
 };
 
+// Snap le début ET la fin d'une note (ex: après un enregistrement live), avec
+// une largeur minimale d'un pas de grille pour éviter une note nulle si début
+// et fin arrondissent au même tick.
+export const snapNoteToGrid = (
+  note: { x: number; w: number },
+  subdivision: number,
+): { x: number; w: number } => {
+  const step = snapTicks(subdivision);
+  const x = snapToGrid(note.x, subdivision);
+  const end = Math.max(x + step, snapToGrid(note.x + note.w, subdivision));
+  return { x, w: end - x };
+};
+
 // Ticks écoulés par seconde à un tempo donné. Ne dépend pas de la subdivision
 // (qui n'est qu'un réglage de snap visuel) ni du dénominateur de la mesure :
 // le tempo exprime toujours des temps (au sens de la signature) par minute.

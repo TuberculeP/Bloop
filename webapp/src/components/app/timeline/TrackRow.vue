@@ -42,6 +42,16 @@ const isAutomationExpanded = computed(
   () => timelineStore.automationExpandedTrackId === props.track.id,
 );
 
+const isArmed = computed(() => timelineStore.armedTrackId === props.track.id);
+
+const handleToggleArm = () => {
+  if (isArmed.value) {
+    timelineStore.unarmTrack();
+  } else {
+    timelineStore.armTrack(props.track.id);
+  }
+};
+
 // Le bouton "Auto" n'a plus d'utilité sans lane à afficher/masquer (la
 // création se fait désormais depuis le menu de chaque effet) — sauf si le
 // drawer est déjà ouvert (ex: dernière lane retirée), pour garder un moyen
@@ -77,12 +87,14 @@ const handleToggleAutomation = () => {
       :is-active="isActive"
       :is-expanded="isExpanded"
       :is-audio-track="isAudioTrack"
+      :is-armed="isArmed"
       @toggle-mute="emit('toggle-mute', track)"
       @toggle-solo="emit('toggle-solo', track)"
       @select="emit('select-track', track)"
       @rename="emit('rename-track', track)"
       @open-settings="emit('open-settings', track)"
       @toggle-expand="emit('toggle-expand', track)"
+      @toggle-arm="handleToggleArm"
       @delete-track="emit('delete-track', track)"
       @import-midi="emit('import-midi', track)"
     />

@@ -109,7 +109,7 @@ export function useTimelinePlaybackEngine(
     if (!isDue(noteStart, noteEnd)) return;
 
     const noteName = noteIndexToName(note.y);
-    trackAudioStore.playNoteOnTrack(track.id, noteName, note.i);
+    trackAudioStore.playNoteOnTrack(track.id, noteName, note.i, note.v ?? 100);
     activeNotes.value.set(noteKey, { trackId: track.id, noteId: note.i });
     emit("note-start", note, noteName, intPosition, track.id);
   };
@@ -191,6 +191,52 @@ export function useTimelinePlaybackEngine(
     osc.connect(gain).connect(ctx.destination);
     osc.start(now);
     osc.stop(now + 0.06);
+  };
+
+  // Décompte d'une mesure avant un enregistrement (laisse le temps de se
+  // préparer / de commencer à jouer au clavier MIDI) — actif seulement si le
+  // métronome est activé, sinon `onReady` est appelé immédiatement comme avant.
+  const isCountingIn = ref(false);
+  const countInBeatsRemaining = ref(0);
+  let countInTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const cancelCountIn = (): void => {
+    if (countInTimeoutId) {
+      clearTimeout(countInTimeoutId);
+      countInTimeoutId = null;
+    }
+    isCountingIn.value = false;
+    countInBeatsRemaining.value = 0;
+  };
+
+  const startWithCountIn = (onReady: () => void): void => {
+    if (!timelineStore.metronomeEnabled) {
+      onReady();
+      return;
+    }
+
+    audioBusStore.ensureAudioContextResumed();
+    const beatsPerBar = timelineStore.timeSignature.numerator;
+    const beatMs = (60 / timelineStore.tempo) * 1000;
+    isCountingIn.value = true;
+
+    // Chaque temps clique puis affiche son propre décompte pendant toute sa
+    // durée (beatMs) avant de passer au suivant : le dernier temps ("1") doit
+    // rester affiché jusqu'à la fin de la mesure, pas disparaître au clic.
+    const tick = (beat: number) => {
+      playMetronomeClick(beat === 0);
+      countInBeatsRemaining.value = beatsPerBar - beat;
+      countInTimeoutId = setTimeout(() => {
+        if (beat + 1 >= beatsPerBar) {
+          countInTimeoutId = null;
+          isCountingIn.value = false;
+          onReady();
+        } else {
+          tick(beat + 1);
+        }
+      }, beatMs);
+    };
+    tick(0);
   };
 
   // Même logique de plage que playNotesAtPosition : on cherche le dernier
@@ -314,6 +360,7 @@ export function useTimelinePlaybackEngine(
   };
 
   const stopPlayback = () => {
+    cancelCountIn();
     haltAnimation();
     stopAllActiveNotes();
     currentPosition.value = checkpointPosition.value;
@@ -349,7 +396,11 @@ export function useTimelinePlaybackEngine(
     cursorStyle,
     checkpointStyle,
     loopEndPosition,
+    isCountingIn,
+    countInBeatsRemaining,
     startPlayback,
+    startWithCountIn,
+    cancelCountIn,
     stopPlayback,
     togglePlayback,
     setCheckpoint,

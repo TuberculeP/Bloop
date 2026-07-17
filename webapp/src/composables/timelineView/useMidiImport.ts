@@ -5,10 +5,8 @@ import { useTrackHistoryStore } from "../../stores/trackHistoryStore";
 import { useToast } from "../useToast";
 import type { MidiNote } from "../../lib/utils/types";
 import { TICKS_PER_BEAT } from "../../lib/audio/timeGrid";
-import { TOTAL_NOTES } from "../../lib/audio/pianoRollConstants";
+import { TOTAL_NOTES, midiPitchToY } from "../../lib/audio/pianoRollConstants";
 
-// y=0 -> B7 (MIDI 107), y=86 -> A0 (MIDI 21), voir pianoRollConstants.ts
-const MIDI_NOTE_MAX = 107;
 const PIANO_ROLL_MIN_Y = 0;
 const PIANO_ROLL_MAX_Y = TOTAL_NOTES - 1;
 
@@ -56,7 +54,7 @@ export function useMidiImport() {
     let skippedInvalid = 0;
 
     for (const note of rawNotes) {
-      const y = MIDI_NOTE_MAX - note.midi;
+      const y = midiPitchToY(note.midi);
       const x = Math.round(note.ticks * scale);
       const w = Math.max(1, Math.round(note.durationTicks * scale));
       if (y < PIANO_ROLL_MIN_Y || y > PIANO_ROLL_MAX_Y) {

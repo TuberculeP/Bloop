@@ -50,6 +50,13 @@ export const getOctaveNumber = (noteName: string): number => {
 export const noteIndexToName = (index: number): NoteName =>
   ALL_NOTES[index] || ("C4" as NoteName);
 
+// y=0 -> B7 (MIDI 107), y=86 -> A0 (MIDI 21) : plage supportée par le piano roll.
+export const MIDI_NOTE_MAX = 107;
+
+export const midiPitchToY = (pitch: number): number => MIDI_NOTE_MAX - pitch;
+
+export const yToMidiPitch = (y: number): number => MIDI_NOTE_MAX - y;
+
 export const getWhiteKeys = (): NoteName[] =>
   ALL_NOTES.filter((n) => !isBlackKey(n));
 

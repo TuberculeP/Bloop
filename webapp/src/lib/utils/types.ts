@@ -16,6 +16,7 @@ export interface MidiNote {
   x: number; // Position horizontale (en ticks, TICKS_PER_BEAT par temps)
   y: number; // Position verticale (hauteur de note/pitch)
   w: number; // Largeur (durée de la note, en ticks)
+  v?: number; // Vélocité (0-127), optionnelle — absente = 100 à la lecture
 }
 
 export type NoteName = string; // Type pour les noms de notes comme "C4", "A#5", etc.
