@@ -62,7 +62,6 @@ router.get("/projects", (_req, res) => {
               `${noteCount} notes, ${Math.ceil(maxPosition / 4)} mesures`;
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.warn(`Could not parse metadata for ${file}:`, error);
         }
 
@@ -81,7 +80,6 @@ router.get("/projects", (_req, res) => {
       total: projects.length,
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error("Error listing demo projects:", error);
     return res.status(500).json({
       error: "Failed to list demo projects",

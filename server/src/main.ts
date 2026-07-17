@@ -30,7 +30,7 @@ const main = async () => {
     .use(express.json({ limit: "1mb" }))
     .use(express.urlencoded({ extended: false, limit: "1mb" }))
     .use(cookieParser())
-    .use(customSession())
+    .use(await customSession())
     .use(passport.initialize())
     .use(passport.session());
 

@@ -31,7 +31,7 @@ mcpProjectsRouter.get("/:id", bearerAuth, async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: user.id } },
+      where: { id: req.params.id as string, user: { id: user.id } },
     });
 
     if (!project) {
@@ -104,7 +104,7 @@ mcpProjectsRouter.put("/:id", bearerAuth, async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: user.id } },
+      where: { id: req.params.id as string, user: { id: user.id } },
     });
 
     if (!project) {

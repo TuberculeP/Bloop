@@ -19,8 +19,9 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     return sequencerStore;
   });
 
-  const audioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)();
+  const audioContext = new (
+    window.AudioContext || (window as any).webkitAudioContext
+  )();
   const inputBus = audioContext.createGain();
   const masterGain = audioContext.createGain();
   const effectsOutput = audioContext.createGain();
