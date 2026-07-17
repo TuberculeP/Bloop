@@ -1,8 +1,5 @@
-import type {
-  InstrumentConfig,
-  InstrumentConfigUpdate,
-  NoteName,
-} from "../../utils/types";
+import type { InstrumentConfig, NoteName } from "../../utils/types";
+import type { EnumInstrumentParamOption } from "../instruments/types";
 
 export type EngineState = "idle" | "loading" | "ready" | "error";
 
@@ -34,7 +31,12 @@ export interface InstrumentEngine {
   stopNote(noteId: string): void;
   stopAllNotes(): void;
 
-  updateConfig(config: InstrumentConfigUpdate): void;
+  updateConfig(config: Partial<InstrumentConfig>): void;
+
+  /** Résout les options d'un param enum "dynamic" contre l'état vivant de
+   *  cette instance (ex: presets du soundfont chargé). Absent = pas de
+   *  param dynamique pour cet engine. */
+  getParamOptions?(paramId: string): EnumInstrumentParamOption[];
 
   dispose(): void;
 }

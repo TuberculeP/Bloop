@@ -1,6 +1,6 @@
 import type {
   AudioTrackConfig,
-  InstrumentConfigUpdate,
+  InstrumentConfig,
   NoteName,
 } from "../../../utils/types";
 import { BaseEngine } from "../BaseEngine";
@@ -117,7 +117,7 @@ export class AudioClipEngine extends BaseEngine {
     }
   }
 
-  updateConfig(config: InstrumentConfigUpdate): void {
+  updateConfig(config: Partial<InstrumentConfig>): void {
     if (config.gain !== undefined) {
       this.gain = config.gain;
     }

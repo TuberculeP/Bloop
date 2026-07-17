@@ -1,8 +1,9 @@
 import type {
   UndertaleConfig,
-  InstrumentConfigUpdate,
+  InstrumentConfig,
   NoteName,
 } from "../../../utils/types";
+import type { EnumInstrumentParamOption } from "../../instruments/types";
 import { Soundfont2Sampler } from "smplr";
 import { SoundFont2 } from "soundfont2";
 import { BaseEngine } from "../BaseEngine";
@@ -50,6 +51,11 @@ export class UndertaleEngine extends BaseEngine {
 
   get instrumentNames(): string[] {
     return this._instrumentNames;
+  }
+
+  getParamOptions(paramId: string): EnumInstrumentParamOption[] {
+    if (paramId !== "instrument") return [];
+    return this._instrumentNames.map((name) => ({ value: name, label: name }));
   }
 
   async preload(): Promise<void> {
@@ -191,14 +197,17 @@ export class UndertaleEngine extends BaseEngine {
     }
   }
 
-  updateConfig(config: InstrumentConfigUpdate): void {
-    if (config.instrument && config.instrument !== this.currentInstrument) {
+  updateConfig(config: Partial<InstrumentConfig>): void {
+    if (
+      typeof config.instrument === "string" &&
+      config.instrument !== this.currentInstrument
+    ) {
       this.loadInstrument(config.instrument);
     }
-    if (config.attack !== undefined) this.attack = config.attack;
-    if (config.decay !== undefined) this.decay = config.decay;
-    if (config.sustain !== undefined) this.sustain = config.sustain;
-    if (config.release !== undefined) this.release = config.release;
+    if (typeof config.attack === "number") this.attack = config.attack;
+    if (typeof config.decay === "number") this.decay = config.decay;
+    if (typeof config.sustain === "number") this.sustain = config.sustain;
+    if (typeof config.release === "number") this.release = config.release;
 
     this.config = { ...this.config, ...config } as UndertaleConfig;
   }

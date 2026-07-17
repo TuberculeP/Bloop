@@ -1,6 +1,6 @@
 import type {
   BasicSynthConfig,
-  InstrumentConfigUpdate,
+  InstrumentConfig,
   NoteName,
   OscillatorType,
 } from "../../../utils/types";
@@ -95,9 +95,9 @@ export class BasicSynthEngine extends BaseEngine {
     }
   }
 
-  updateConfig(config: InstrumentConfigUpdate): void {
-    if (config.oscillatorType) {
-      this.oscillatorType = config.oscillatorType;
+  updateConfig(config: Partial<InstrumentConfig>): void {
+    if (typeof config.oscillatorType === "string") {
+      this.oscillatorType = config.oscillatorType as OscillatorType;
     }
     if (config.gain !== undefined) {
       this.gain = config.gain;

@@ -313,14 +313,14 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   };
 
   const generateTrackName = (instrumentType: InstrumentType): string => {
-    const baseNames: Record<InstrumentType, string> = {
+    const baseNames: Record<string, string> = {
       basicSynth: "Synth",
       elementarySynth: "Elementary",
       smplr: "Sampler",
       undertale: "Undertale",
       audioTrack: "Audio",
     };
-    const baseName = baseNames[instrumentType];
+    const baseName = baseNames[instrumentType] ?? "Instrument";
     let counter = 1;
     let name = `${baseName} ${counter}`;
 

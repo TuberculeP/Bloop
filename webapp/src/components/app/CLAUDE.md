@@ -74,18 +74,28 @@ setAutomationPoints(trackId, laneId, points): boolean
 ### Types clés (`lib/utils/types.ts`)
 
 ```typescript
-InstrumentType = "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack"
+// InstrumentType = clé du registre d'instruments (lib/audio/instruments/registry.ts),
+// forme ouverte (string) — plus une union fermée. Un nouvel instrument
+// s'ajoute en s'enregistrant, sans modifier ce fichier.
+InstrumentType = string
 
-// Discriminated unions pour type safety
+// InstrumentConfig = forme ouverte, à l'image d'EffectInstanceConfig : le
+// `type` est une clé du registre, les champs spécifiques (oscillatorType,
+// soundfont, attack...) vivent à plat pour rester compatibles avec les
+// projets déjà sauvegardés.
+InstrumentConfig { type: string, gain?: number, [key: string]: unknown }
+
+// Types internes documentaires par engine (utilisés par chaque `definition.ts`
+// et le constructeur de l'engine concerné, ne composent plus l'union
+// InstrumentConfig) :
 BasicSynthConfig { type: "basicSynth", oscillatorType: OscillatorType, gain? }
 SmplrConfig { type: "smplr", soundfont: string, gain? }
-ElementarySynthConfig { type: "elementarySynth", preset?, gain? }
+ElementarySynthConfig { type: "elementarySynth", preset?, gain? } // legacy, voir plus bas
 UndertaleConfig { type: "undertale", instrument: string, gain?, attack?, decay?, sustain?, release? }
 AudioTrackConfig { type: "audioTrack", gain? }
-InstrumentConfig = BasicSynthConfig | SmplrConfig | ElementarySynthConfig | UndertaleConfig | AudioTrackConfig
 
-// Pour les updates partiels (sans discriminant)
-InstrumentConfigUpdate { oscillatorType?, soundfont?, preset?, gain? }
+// Pour les updates partiels : Partial<InstrumentConfig> (plus d'interface
+// InstrumentConfigUpdate séparée à faire grossir à chaque nouveau type)
 
 EQBand {
   id: string          // "sub", "bass", "mid", "presence", "brilliance"
@@ -169,29 +179,53 @@ existantes. Les anciens projets (positions en "colonnes", 1 colonne = 1
 double-croche) sont migrés automatiquement au chargement (`timelineStore.ts`,
 `migrateLegacyProject`).
 
+### Registre d'instruments (`lib/audio/instruments/`)
+
+Registre extensible façon plugin, sur le modèle du [système d'effets](#système-deffets-libaudioeffects) (même esprit "proche de WAM dans la forme") — remplace l'ancien switch fermé. Contrairement aux effets (paramètres strictement numériques), les instruments ont aussi des réglages à choix fermé (waveform, soundfont, preset), d'où un discriminant `kind` sur les métadonnées :
+
+```
+lib/audio/instruments/
+  types.ts     # InstrumentParamMeta = NumericInstrumentParamMeta ("number") | EnumInstrumentParamMeta ("enum")
+               # EnumInstrumentParamMeta.options: Option[] | "dynamic" (liste connue seulement après
+               # chargement d'une ressource par l'engine, ex: presets Undertale — résolue via
+               # InstrumentEngine.getParamOptions(paramId))
+  registry.ts  # InstrumentDefinition { type, label, icon?, params, createDefaultConfig(), engine }
+               # registerInstrument/getInstrumentDefinition/listInstrumentDefinitions/createInstrumentEngine
+  index.ts     # Enregistre les 4 instruments intégrés au chargement du module
+```
+
+Chaque `InstrumentDefinition` concrète est colocalisée avec son engine (`engines/basic-synth/definition.ts`, etc.) plutôt que regroupée ici — le registre reste générique, les détails (bornes ADSR, liste de soundfonts) sont propres à chaque engine.
+
+`lib/audio/instrumentFactory.ts` reste le point d'entrée utilisé par les stores (signature stable) : adaptateur fin qui délègue au registre pour tout type connu, et garde en dur le seul cas legacy `elementarySynth → BasicSynthEngine` (jamais eu de vrai moteur, plus proposé à la création — voir plus bas).
+
 ### Engines Audio (`lib/audio/engines/`)
 
 Architecture modulaire avec classe de base abstraite :
 
 ```
 engines/
-  types.ts              # InstrumentEngine, EngineState, EngineStateCallback
+  types.ts              # InstrumentEngine, EngineState, EngineStateCallback, getParamOptions?()
   BaseEngine.ts         # Classe abstraite avec state management
   noteUtils.ts          # noteNameToFrequency() partagé
   index.ts              # Re-exports publics
 
   basic-synth/
     BasicSynthEngine.ts # Oscillateurs Web Audio (toujours ready)
+    definition.ts        # InstrumentDefinition (enum oscillatorType)
 
   smplr/
     SmplrEngine.ts      # Soundfonts via `smplr` (128+ instruments)
     soundfonts.ts       # SOUNDFONT_LIST + SoundfontName
+    definition.ts        # InstrumentDefinition (enum soundfont, options dérivées de SOUNDFONT_LIST)
 
   undertale/
-    UndertaleEngine.ts  # Soundfont custom Undertale avec ADSR
-```
+    UndertaleEngine.ts  # Soundfont custom Undertale avec ADSR, getParamOptions("instrument")
+    definition.ts        # InstrumentDefinition (enum instrument "dynamic" + 4 params ADSR numériques)
 
-Factory : `lib/audio/instrumentFactory.ts` - Crée les instances d'engines selon le type.
+  audio-clip/
+    AudioClipEngine.ts  # Lecture de clips audio (pas de synthèse)
+    definition.ts        # InstrumentDefinition (params: [])
+```
 
 ### Bibliothèque de samples (Audiothèque)
 
@@ -318,10 +352,12 @@ Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre
 
 #### Instruments (`components/app/instruments/`)
 
-| Composant                | Rôle                                                    |
-| ------------------------ | ------------------------------------------------------- |
-| `InstrumentSettings.vue` | Panneau latéral : volume, pile d'effets (`EffectRack`), options instrument |
-| `TrackEqualizer.vue`     | Canvas EQ 5 bandes interactif (drag points), réutilisé par `EffectSlot.vue` |
+| Composant                    | Rôle                                                    |
+| ----------------------------- | ------------------------------------------------------- |
+| `InstrumentSettings.vue`      | Panneau latéral : volume, pile d'effets (`EffectRack`), bouton d'ouverture des réglages instrument |
+| `InstrumentParamsModal.vue`   | Modale (`BaseModal`) : rendu générique des `params` de l'`InstrumentDefinition` (via `InstrumentParamField`) |
+| `InstrumentParamField.vue`    | Un champ de réglage instrument, `RangeSlider` (number) ou `<select>` (enum, options statiques ou dynamiques) |
+| `TrackEqualizer.vue`         | Canvas EQ 5 bandes interactif (drag points), réutilisé par `EffectSlot.vue` |
 
 #### Effets (`components/app/effects/`)
 
@@ -389,7 +425,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 - [ ] Synchronisation audio multi-pistes (timing précis)
 - [x] Gestion mémoire des engines (dispose correct)
 - [ ] Persistance localStorage avec le nouveau format v5.0 (grille en ticks)
-- [ ] ElementarySynth non implémenté (fallback sur BasicSynth)
+- [x] ElementarySynth non implémenté — retiré du catalogue "Ajouter une piste" (non enregistré dans le registre), fallback legacy sur BasicSynth conservé dans `instrumentFactory.ts` pour les pistes déjà sauvegardées avec ce type
 
 ### Bugs résolus
 
@@ -409,7 +445,6 @@ cloneEQBands()                // Clone profond des bandes EQ
 - [ ] Export audio (WAV/MP3)
 - [x] Pile d'effets réordonnable (EQ/Reverb/Compressor/Limiter/Overdrive) par piste et master
 - [ ] Zoom timeline
-- [ ] ADSR pour ElementarySynth
 - [x] Undertale soundfont engine avec ADSR
 - [ ] Audio tracks (pistes samples) - en cours
 - [x] Bibliothèque de samples connectée à R2/CDN
@@ -422,14 +457,15 @@ cloneEQBands()                // Clone profond des bandes EQ
 - **Audio** : Classes TypeScript pures (pas de dépendance Vue)
 - **Styling** : SCSS scoped avec variables CSS (`--color-*`)
 
-### Pour ajouter un nouvel Engine
+### Pour ajouter un nouvel Engine (instrument)
 
 1. Créer un dossier `engines/mon-engine/`
-2. Créer `MonEngine.ts` qui `extends BaseEngine`
-3. Implémenter les méthodes abstraites : `preload()`, `playNote()`, `stopNote()`, `stopAllNotes()`, `updateConfig()`, `dispose()`
-4. Créer `index.ts` pour re-exporter
-5. Ajouter les re-exports dans `engines/index.ts`
-6. Ajouter le case dans `instrumentFactory.ts`
+2. Créer `MonEngine.ts` qui `extends BaseEngine` — constructeur typé `config: InstrumentConfig` (narrower en interne via cast, ex. `config as MonConfig`), implémenter les méthodes abstraites : `preload()`, `playNote()`, `stopNote()`, `stopAllNotes()`, `updateConfig()`, `dispose()` (+ `getParamOptions()` si un param a des options dynamiques)
+3. Créer `definition.ts` exportant un `InstrumentDefinition` (type, label, icon?, params: `InstrumentParamMeta[]`, createDefaultConfig(), engine — caster `engine: MonEngine as unknown as InstrumentEngineConstructor`, nécessaire car le constructeur concret prend un type plus étroit que `InstrumentConfig`)
+4. Créer `index.ts` pour re-exporter la classe + la définition
+5. Enregistrer la définition dans `lib/audio/instruments/index.ts` via `registerInstrument(...)`
+
+Aucune modification requise dans `instrumentFactory.ts`, `AddTrackButton.vue` ni `InstrumentSettings.vue` — tous dérivent génériquement du registre (`listInstrumentDefinitions()` / `getInstrumentDefinition()`).
 
 ## Commandes utiles
 
