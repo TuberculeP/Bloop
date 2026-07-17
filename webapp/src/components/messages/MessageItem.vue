@@ -50,31 +50,34 @@ const handleDelete = () => {
       >
         <i class="fas fa-trash"></i>
       </button>
-      <div class="message-content">
-        <p class="message-text">{{ message.body }}</p>
+
+      <div class="message-content-wrapper">
+        <div class="message-content">
+          <p class="message-text">{{ message.body }}</p>
+        </div>
+
+        <div class="message-actions">
+          <i
+            v-if="isOwn && isMessageLiked"
+            class="fas fa-heart liked-indicator"
+          />
+
+          <button
+            v-else-if="!isOwn"
+            class="like-button"
+            :class="{ liked: currentUserLike }"
+            @click="toggleLike"
+            :title="currentUserLike ? 'Unlike' : 'Like'"
+          >
+            <i :class="currentUserLike ? 'fas fa-heart' : 'far fa-heart'"></i>
+          </button>
+        </div>
       </div>
     </div>
 
-    <span class="message-time">{{
-      formatRelativeDate(message.createdAt)
-    }}</span>
-
-    <div class="message-actions">
-      <i
-        v-if="isOwn && isMessageLiked"
-        class="fas fa-heart liked-indicator"
-      ></i>
-
-      <button
-        v-else-if="!isOwn"
-        class="like-button"
-        :class="{ liked: currentUserLike }"
-        @click="toggleLike"
-        :title="currentUserLike ? 'Unlike' : 'Like'"
-      >
-        <i :class="currentUserLike ? 'fas fa-heart' : 'far fa-heart'"></i>
-      </button>
-    </div>
+    <span class="message-time">
+      {{ formatRelativeDate(message.createdAt) }}
+    </span>
   </div>
 </template>
 
@@ -102,7 +105,12 @@ const handleDelete = () => {
   flex-direction: row-reverse;
 }
 
+.message-content-wrapper {
+  position: relative;
+}
+
 .message-content {
+  min-width: 100px;
   padding: 0.75rem 1rem;
   border-radius: 18px;
   color: var(--color-white);
@@ -114,7 +122,7 @@ const handleDelete = () => {
   position: absolute;
   bottom: 0;
   right: 0;
-  transform: translateY(-50%);
+  transform: translate(0, 50%);
   display: flex;
   align-items: center;
   gap: 0.25rem;

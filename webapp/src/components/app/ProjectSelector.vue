@@ -363,7 +363,7 @@ onMounted(() => loadProjects());
           class="state-container empty"
         >
           <div class="music-note">
-            <i class="far fa-heart"></i>
+            <i class="far fa-heart" />
           </div>
           <h3>Aucun favori</h3>
           <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
@@ -612,7 +612,6 @@ onMounted(() => loadProjects());
 
 .main-title {
   font-size: 2.5rem;
-  font-weight: 800;
   color: var(--color-white);
   margin: 0;
   letter-spacing: -1px;

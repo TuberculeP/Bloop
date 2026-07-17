@@ -7,6 +7,7 @@ export interface MessageUser {
   firstName: string;
   lastName: string;
   email: string;
+  profilePicture?: string;
 }
 
 export interface MessageLike {

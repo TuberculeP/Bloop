@@ -109,7 +109,6 @@ const handleStartNewConversation = (user: MessageUser) => {
 
 .main-title {
   font-size: 1.5rem;
-  font-weight: 800;
   color: var(--color-white);
   margin: 0;
   letter-spacing: -1px;

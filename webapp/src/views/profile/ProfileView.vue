@@ -134,7 +134,6 @@ onMounted(() => {
 
 .main-title {
   font-size: 2.5rem;
-  font-weight: 800;
   color: var(--color-white);
   margin: 0;
   letter-spacing: -1px;
