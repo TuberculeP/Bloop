@@ -368,3 +368,27 @@ export type FavoriteProjectListItem = PublicProjectListItem & {
   favoriteId: string;
   favoritedAt: string;
 };
+
+export interface LearningArticle {
+  id?: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  body: string;
+  coverImage?: string;
+  author: User;
+  status: "draft" | "published";
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string | null;
+  score?: number;
+  myVote?: number;
+}
+
+export interface CreateLearningArticleData {
+  title: string;
+  body: string;
+  excerpt?: string;
+  coverImage?: string;
+  status: "draft" | "published";
+}
