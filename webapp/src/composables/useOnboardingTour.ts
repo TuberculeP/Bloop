@@ -96,9 +96,19 @@ export function useOnboardingTour() {
       stageRadius: 8,
       allowClose: false,
       allowKeyboardControl: false,
-      showButtons: [],
     });
-    driverObj.highlight({ element: selector, popover });
+    // Driver.highlight() (API impérative, hors steps+drive()) écrase
+    // showButtons à [] par défaut si le popover ne le précise pas lui-même
+    // (voir highlight() dans driver.js.mjs) : la config globale showButtons
+    // n'est donc pas prise en compte ici, il faut le poser sur le popover.
+    driverObj.highlight({
+      element: selector,
+      popover: {
+        ...popover,
+        showButtons: ["close"],
+        onCloseClick: () => onboardingStore.skip(),
+      },
+    });
     // driver.js recentre la cible via scrollIntoView si elle n'est pas
     // entièrement visible ; sur un viewport étroit, ça décale le body
     // horizontalement (overflow-x:hidden l'empêche d'être re-scrollé par

@@ -73,7 +73,7 @@ Toujours vérifier ici avant de recoder un bouton/modal/badge/etc. en local.
 | Composant | Props clés | Usage |
 |---|---|---|
 | `BaseButton` | `variant` (primary/secondary/accent/accent2/error/link/ghost/lightghost/lightlink/outline/danger/success), `size` (small/normal/large), `disabled`, `loading` | Tous les boutons |
-| `BaseModal` | `modelValue`, `size` (small/normal/large), `closeOnOverlayClick` — slots `header`/défaut/`footer` | Toutes les modales/confirmations (remplace `confirm()`) |
+| `BaseModal` | `modelValue`, `size` (small/normal/large), `closeOnOverlayClick`, `modalClass` (classe custom sur `.base-modal`, ex. pour cibler une modale précise en dehors du composant — ne pas compter sur le fallthrough d'attrs, la racine est un `<Teleport>`) — slots `header`/défaut/`footer` | Toutes les modales/confirmations (remplace `confirm()`) |
 | `BaseBadge` | `variant` (admin/active/featured/inactive/owner/neutral), `size` (small/normal) | Badges de statut |
 | `BaseSpinner` | `size` (small/normal/large), `color` (primary/white/accent2/accent3) | Indicateurs de chargement |
 | `EmptyState` | `icon`, `title`, `message` — slot par défaut + slot `action` | États vides (listes/résultats sans contenu) |

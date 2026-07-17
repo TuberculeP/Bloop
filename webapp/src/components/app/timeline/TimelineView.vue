@@ -612,6 +612,7 @@ defineExpose({
 
     <BaseModal
       :model-value="showExportModal"
+      modal-class="export-format-modal"
       @update:model-value="cancelExportModal"
     >
       <template #header>
