@@ -200,6 +200,8 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // État de l'édition
   // ============================================
   const activeTrackId = ref<string | null>(null);
+  // Piste armée pour recevoir l'input live (clavier MIDI) : une seule à la fois.
+  const armedTrackId = ref<string | null>(null);
   const expandedTrackId = ref<string | null>(null);
   const automationExpandedTrackId = ref<string | null>(null);
   const automationExpandedMaster = ref(false);
@@ -373,6 +375,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         project.value.tracks.length > 0 ? project.value.tracks[0].id : null;
     }
 
+    if (armedTrackId.value === trackId) {
+      armedTrackId.value = null;
+    }
+
     // Fermer le piano roll si c'était cette piste
     if (expandedTrackId.value === trackId) {
       expandedTrackId.value = null;
@@ -384,6 +390,14 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     });
 
     return true;
+  };
+
+  const armTrack = (trackId: string): void => {
+    armedTrackId.value = trackId;
+  };
+
+  const unarmTrack = (): void => {
+    armedTrackId.value = null;
   };
 
   const updateTrack = (trackId: string, updates: Partial<Track>): boolean => {
@@ -1172,6 +1186,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     // État édition
     activeTrackId,
     activeTrack,
+    armedTrackId,
     expandedTrackId,
     expandedTrack,
     automationExpandedMaster,
@@ -1183,6 +1198,8 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     // Actions - Tracks
     createTrack,
     deleteTrack,
+    armTrack,
+    unarmTrack,
     updateTrack,
     renameTrack,
     setTrackMuted,

@@ -23,6 +23,7 @@ import { getDefaultConfigForType } from "../../../lib/audio/instrumentFactory";
 import { useTimelinePlaybackEngine } from "../../../composables/timelineView/useTimelinePlaybackEngine";
 import { useTimelineExport } from "../../../composables/timelineView/useTimelineExport";
 import { useTimelineVoiceRecording } from "../../../composables/timelineView/useTimelineVoiceRecording";
+import { useTimelineMidiRecording } from "../../../composables/timelineView/useTimelineMidiRecording";
 import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
 import { useMidiImport } from "../../../composables/timelineView/useMidiImport";
 import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
@@ -174,6 +175,7 @@ const exportModeProp = computed(() => props.exportMode);
 // callbacks, câblés dès que les 3 composables existent.
 let exportFeature!: ReturnType<typeof useTimelineExport>;
 let voiceRecording!: ReturnType<typeof useTimelineVoiceRecording>;
+let midiRecording!: ReturnType<typeof useTimelineMidiRecording>;
 
 const onLoopEnd = () => {
   if (props.exportMode || exportFeature.isManualExport.value) {
@@ -187,6 +189,7 @@ const onStop = () => {
   if (voiceRecording.isRecordingVoice.value) {
     voiceRecording.finishVoiceRecording();
   }
+  midiRecording.finishMidiRecording();
 };
 
 const playback = useTimelinePlaybackEngine(
@@ -201,9 +204,12 @@ const {
   currentPosition,
   cursorStyle,
   checkpointStyle,
+  isCountingIn,
+  countInBeatsRemaining,
   startPlayback,
+  startWithCountIn,
+  cancelCountIn,
   stopPlayback,
-  togglePlayback,
   setCheckpoint,
 } = playback;
 
@@ -237,6 +243,80 @@ const {
   selectMic,
   closeMicPicker,
 } = voiceRecording;
+
+midiRecording = useTimelineMidiRecording(playback);
+const {
+  midiSupported,
+  midiInputs,
+  selectedMidiInputId,
+  isRecordingMidi,
+  midiError,
+  toggleMidiRecording,
+  showMidiPicker,
+  toggleMidiPicker,
+  selectMidiInput,
+  closeMidiPicker,
+} = midiRecording;
+
+// Mode du bouton record généralisé : quoi capturer au clic droit. État de
+// session (comme selectedMicId), pas persisté au projet.
+const recordMode = ref<"audio" | "midi" | "both">("audio");
+const isRecording = computed(
+  () => isRecordingVoice.value || isRecordingMidi.value,
+);
+
+// Armement de l'enregistrement : un simple toggle, indépendant du transport.
+// Le bouton record n'enclenche jamais lui-même le play/l'enregistrement —
+// c'est togglePlayback (Play ou Espace) qui, une fois armé, lance le décompte
+// puis l'enregistrement. Ça permet d'enchaîner plusieurs prises juste avec
+// Espace (armé une fois, start/stop répétés), et d'annuler le décompte avec
+// Espace/Play sans avoir à re-cliquer sur le bouton record.
+const recordArmed = ref(false);
+const toggleRecordArmed = () => {
+  recordArmed.value = !recordArmed.value;
+};
+
+const togglePlayback = () => {
+  if (isPlaying.value) {
+    stopPlayback();
+    return;
+  }
+  if (isCountingIn.value) {
+    cancelCountIn();
+    return;
+  }
+  if (!recordArmed.value) {
+    startPlayback();
+    return;
+  }
+  startWithCountIn(async () => {
+    if (recordMode.value !== "midi") await toggleVoiceRecording();
+    if (recordMode.value !== "audio") toggleMidiRecording();
+  });
+};
+
+const recordModeMenuOpen = ref(false);
+const recordModeMenuPosition = ref({ x: 0, y: 0 });
+const RECORD_MODE_ITEMS: { value: typeof recordMode.value; label: string }[] = [
+  { value: "audio", label: "Audio" },
+  { value: "midi", label: "MIDI" },
+  { value: "both", label: "Audio + MIDI" },
+];
+
+const openRecordModeMenu = (event: MouseEvent) => {
+  event.preventDefault();
+  recordModeMenuPosition.value = { x: event.clientX, y: event.clientY };
+  recordModeMenuOpen.value = true;
+};
+
+const closeRecordModeMenu = () => {
+  recordModeMenuOpen.value = false;
+};
+
+const selectRecordMode = (mode: typeof recordMode.value) => {
+  recordMode.value = mode;
+  closeRecordModeMenu();
+};
 
 const {
   isDragOverTimeline,
@@ -401,6 +481,10 @@ const handleWheel = (event: WheelEvent) => {
 };
 
 watch(voiceRecorderError, (message) => {
+  if (message) toast.error(message);
+});
+
+watch(midiError, (message) => {
   if (message) toast.error(message);
 });
 
@@ -617,18 +701,23 @@ defineExpose({
           <div class="record-control" v-on-click-outside="closeMicPicker">
             <button
               class="transport-btn record-btn-transport"
-              :class="{ recording: isRecordingVoice }"
-              :disabled="!voiceRecorderSupported"
-              @click="toggleVoiceRecording"
+              :class="{
+                armed: recordArmed,
+                recording: isRecording,
+                'counting-in': isCountingIn,
+              }"
+              @click="toggleRecordArmed"
+              @contextmenu.prevent="openRecordModeMenu"
               :title="
-                isRecordingVoice
-                  ? 'Arrêter l\'enregistrement'
-                  : 'Enregistrer ma voix'
+                recordArmed
+                  ? 'Désarmer l\'enregistrement'
+                  : 'Armer l\'enregistrement (Espace ou Play pour lancer, clic droit : choisir audio/MIDI)'
               "
             >
               <i class="fas fa-circle"></i>
             </button>
             <button
+              v-if="recordMode !== 'midi'"
               class="mic-picker-toggle"
               :disabled="!voiceRecorderSupported"
               @click.stop="toggleMicPicker"
@@ -656,11 +745,53 @@ defineExpose({
             </Transition>
           </div>
 
-          <div v-if="isRecordingVoice" class="record-indicator">
+          <div class="midi-control" v-on-click-outside="closeMidiPicker">
+            <button
+              class="midi-status-toggle"
+              :class="{ connected: midiInputs.length > 0 }"
+              :disabled="!midiSupported"
+              @click.stop="toggleMidiPicker"
+              :title="
+                !midiSupported
+                  ? 'Clavier MIDI non supporté par ce navigateur'
+                  : midiInputs.length === 0
+                    ? 'Aucun clavier MIDI détecté'
+                    : 'Clavier MIDI connecté'
+              "
+            >
+              <i class="fas fa-keyboard"></i>
+            </button>
+
+            <Transition name="fade">
+              <div v-if="showMidiPicker" class="midi-picker-dropdown">
+                <div class="midi-picker-header">Clavier MIDI</div>
+                <button
+                  v-for="input in midiInputs"
+                  :key="input.id"
+                  class="midi-picker-option"
+                  :class="{ active: input.id === selectedMidiInputId }"
+                  @click="selectMidiInput(input.id)"
+                >
+                  {{ input.name || "Clavier MIDI" }}
+                </button>
+                <div v-if="midiInputs.length === 0" class="midi-picker-empty">
+                  Aucun clavier MIDI détecté
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <div v-if="isCountingIn" class="record-indicator counting-in">
+            <span class="record-indicator-dot"></span>
+            {{ countInBeatsRemaining }}
+          </div>
+          <div v-else-if="isRecording" class="record-indicator">
             <span
+              v-if="isRecordingVoice"
               class="record-indicator-dot"
               :style="{ transform: `scale(${1 + voiceLevel * 0.6})` }"
             ></span>
+            <span v-else class="record-indicator-dot"></span>
             REC {{ voiceRecordedTime }}
           </div>
         </div>
@@ -998,6 +1129,38 @@ defineExpose({
       </template>
     </BaseModal>
   </div>
+
+  <!-- Menu de mode d'enregistrement (audio/MIDI/les deux), via Teleport -->
+  <Teleport to="body">
+    <div
+      v-if="recordModeMenuOpen"
+      class="menu-overlay"
+      @click="closeRecordModeMenu"
+      @contextmenu.prevent="closeRecordModeMenu"
+    >
+      <ul
+        class="dropdown"
+        :style="{
+          top: recordModeMenuPosition.y + 'px',
+          left: recordModeMenuPosition.x + 'px',
+        }"
+        @click.stop
+      >
+        <li
+          v-for="item in RECORD_MODE_ITEMS"
+          :key="item.value"
+          class="dropdown-item"
+          :class="{ active: recordMode === item.value }"
+          @click="selectRecordMode(item.value)"
+        >
+          <i
+            :class="recordMode === item.value ? 'fas fa-check' : 'fas fa-fw'"
+          ></i>
+          {{ item.label }}
+        </li>
+      </ul>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped lang="scss">
@@ -1229,6 +1392,15 @@ defineExpose({
     cursor: not-allowed;
   }
 
+  &.armed {
+    background: var(--color-status-error);
+
+    i {
+      /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
+      color: #fff;
+    }
+  }
+
   &.recording {
     background: var(--color-status-error);
     animation: record-pulse 1.4s ease-in-out infinite;
@@ -1236,6 +1408,15 @@ defineExpose({
     i {
       /* stylelint-disable-next-line color-no-hex -- blanc pur pour contraste maximal sur fond saturé */
       color: #fff;
+    }
+  }
+
+  &.counting-in {
+    background: var(--color-warning);
+    animation: count-in-pulse 1s ease-in-out infinite;
+
+    i {
+      color: var(--color-black);
     }
   }
 }
@@ -1247,6 +1428,16 @@ defineExpose({
   }
   50% {
     box-shadow: 0 0 0 8px rgba(var(--color-status-error-rgb), 0);
+  }
+}
+
+@keyframes count-in-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -1337,6 +1528,15 @@ defineExpose({
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+
+  &.counting-in {
+    background: var(--color-warning);
+    color: var(--color-black);
+
+    .record-indicator-dot {
+      background: var(--color-black);
+    }
+  }
 }
 
 .record-indicator-dot {
@@ -1345,6 +1545,127 @@ defineExpose({
   border-radius: 50%;
   background: var(--color-status-error);
   transition: transform 0.05s linear;
+}
+
+.midi-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.midi-status-toggle {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--color-white);
+  }
+
+  &.connected {
+    color: var(--color-status-success);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.midi-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.midi-picker-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.midi-picker-option {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--color-white);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--color-bg-daw-active);
+  }
+
+  &.active {
+    color: var(--color-accent2);
+    font-weight: 600;
+  }
+}
+
+.midi-picker-empty {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.dropdown {
+  position: fixed;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-accent2);
+  border-radius: var(--radius-sm);
+  min-width: 150px;
+  z-index: 1000;
+  overflow: hidden;
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+}
+
+.dropdown-item {
+  padding: 8px 14px;
+  color: var(--color-white);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &:hover {
+    background: var(--color-bg-daw-active);
+  }
+
+  &.active {
+    color: var(--color-accent2);
+    font-weight: 600;
+  }
 }
 
 .fade-enter-active,

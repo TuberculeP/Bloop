@@ -9,6 +9,7 @@ const props = defineProps<{
   isActive?: boolean;
   isExpanded: boolean;
   isAudioTrack?: boolean;
+  isArmed?: boolean;
 }>();
 
 const trackAudioStore = useTrackAudioStore();
@@ -24,6 +25,7 @@ const emit = defineEmits<{
   (e: "rename"): void;
   (e: "open-settings"): void;
   (e: "toggle-expand"): void;
+  (e: "toggle-arm"): void;
   (e: "delete-track"): void;
   (e: "import-midi"): void;
 }>();
@@ -104,6 +106,19 @@ function handleAction(action: () => void) {
           title="Solo"
         >
           S
+        </button>
+        <button
+          v-if="!isAudioTrack"
+          class="control-btn arm-btn"
+          :class="{ active: isArmed }"
+          @click.stop="emit('toggle-arm')"
+          :title="
+            isArmed
+              ? 'Désarmer (arrêter de recevoir le clavier MIDI)'
+              : 'Armer pour le jeu en live au clavier MIDI'
+          "
+        >
+          <i class="fas fa-keyboard"></i>
         </button>
         <button
           class="control-btn settings-btn track-settings-btn"
@@ -241,6 +256,11 @@ function handleAction(action: () => void) {
 
   &.expand-btn.active {
     background: var(--color-accent2);
+  }
+
+  &.arm-btn.active {
+    background: var(--color-error-active);
+    color: var(--color-white);
   }
 }
 
