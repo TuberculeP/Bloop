@@ -17,6 +17,10 @@
           <span class="nav-icon">🎵</span>
           Sample Library
         </router-link>
+        <router-link :to="{ name: 'admin-projects' }" class="nav-item">
+          <span class="nav-icon"><i class="fas fa-file-export"></i></span>
+          Projects
+        </router-link>
         <div class="nav-spacer"></div>
         <router-link :to="{ name: 'landing-main' }" class="nav-item nav-back">
           <span class="nav-icon">←</span>

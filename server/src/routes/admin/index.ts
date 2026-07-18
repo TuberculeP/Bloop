@@ -4,6 +4,7 @@ import adminUsersRouter from "./users";
 import adminSamplesRouter from "./samples";
 import adminUploadRouter from "./upload";
 import importPackRouter from "./import-pack";
+import adminProjectsRouter from "./projects";
 import pg from "../../config/db.config";
 import { User } from "../../config/entities/User";
 import { SamplePack } from "../../config/entities/SamplePack";
@@ -18,6 +19,7 @@ adminRouter.use("/users", adminUsersRouter);
 adminRouter.use("/samples", adminSamplesRouter);
 adminRouter.use("/upload", adminUploadRouter);
 adminRouter.use("/import-pack", importPackRouter);
+adminRouter.use("/projects", adminProjectsRouter);
 
 // GET /api/admin/stats - Dashboard stats
 adminRouter.get("/stats", async (_, res) => {
