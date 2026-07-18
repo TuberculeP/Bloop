@@ -41,6 +41,21 @@ interface AdminSample {
   fullUrl: string | null;
 }
 
+interface AdminProject {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isPublic: boolean;
+  owner: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -80,6 +95,16 @@ export const useAdminStore = defineStore("admin", () => {
   // Current folder detail
   const currentFolder = ref<AdminFolder | null>(null);
   const currentSamples = ref<AdminSample[]>([]);
+
+  // Projects state
+  const projects = ref<AdminProject[]>([]);
+  const projectsPagination = ref<Pagination>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  });
+  const projectsLoading = ref(false);
 
   // Stats
   const stats = ref({
@@ -439,6 +464,52 @@ export const useAdminStore = defineStore("admin", () => {
     });
   }
 
+  // ===== PROJECT ACTIONS =====
+
+  async function fetchProjects(page = 1, search?: string) {
+    projectsLoading.value = true;
+    const params = new URLSearchParams({ page: String(page), limit: "20" });
+    if (search) params.append("search", search);
+
+    const result = await apiClient.get<
+      ApiResponse<{ projects: AdminProject[]; pagination: Pagination }>
+    >(`/admin/projects?${params}`);
+
+    if (result.data?.body) {
+      projects.value = result.data.body.projects;
+      projectsPagination.value = result.data.body.pagination;
+    }
+    projectsLoading.value = false;
+  }
+
+  function exportProject(id: string) {
+    const link = document.createElement("a");
+    link.href = `/api/admin/projects/${id}/export`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  async function importProject(
+    file: File,
+    ownerId: string,
+  ): Promise<{ error: string | null }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("ownerId", ownerId);
+
+    const result = await apiClient.post<ApiResponse<{ id: string }>>(
+      "/admin/projects/import",
+      formData,
+    );
+
+    if (!result.error) {
+      await fetchProjects(projectsPagination.value.page);
+    }
+
+    return { error: result.error };
+  }
+
   // ===== STATS =====
 
   async function fetchStats() {
@@ -479,6 +550,9 @@ export const useAdminStore = defineStore("admin", () => {
     currentFolders,
     currentFolder,
     currentSamples,
+    projects,
+    projectsPagination,
+    projectsLoading,
     stats,
 
     // User actions
@@ -508,6 +582,11 @@ export const useAdminStore = defineStore("admin", () => {
     // Upload
     uploadFile,
     importPackFromZip,
+
+    // Project actions
+    fetchProjects,
+    exportProject,
+    importProject,
 
     // Stats
     fetchStats,

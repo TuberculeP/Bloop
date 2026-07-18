@@ -68,25 +68,11 @@
         </table>
       </div>
 
-      <div class="pagination" v-if="usersPagination.pages > 1">
-        <button
-          @click="goToPage(usersPagination.page - 1)"
-          :disabled="usersPagination.page <= 1"
-          class="pagination-btn"
-        >
-          Previous
-        </button>
-        <span class="pagination-info">
-          Page {{ usersPagination.page }} of {{ usersPagination.pages }}
-        </span>
-        <button
-          @click="goToPage(usersPagination.page + 1)"
-          :disabled="usersPagination.page >= usersPagination.pages"
-          class="pagination-btn"
-        >
-          Next
-        </button>
-      </div>
+      <BasePagination
+        :page="usersPagination.page"
+        :pages="usersPagination.pages"
+        @update:page="goToPage"
+      />
     </div>
 
     <BaseModal
@@ -114,12 +100,14 @@ import { ref, computed, onMounted } from "vue";
 import AdminLayout from "../../layouts/AdminLayout.vue";
 import { useAdminStore } from "../../stores/adminStore";
 import { useToast } from "../../composables/useToast";
+import { useDebouncedCallback } from "../../composables/useDebouncedCallback";
 import BaseInput from "../../components/ui/BaseInput.vue";
 import BaseSelect from "../../components/ui/BaseSelect.vue";
 import BaseBadge from "../../components/ui/BaseBadge.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
 import BaseSpinner from "../../components/ui/BaseSpinner.vue";
 import BaseModal from "../../components/ui/BaseModal.vue";
+import BasePagination from "../../components/ui/BasePagination.vue";
 
 const adminStore = useAdminStore();
 const toast = useToast();
@@ -138,13 +126,9 @@ onMounted(() => {
   adminStore.fetchUsers();
 });
 
-let searchTimeout: ReturnType<typeof setTimeout>;
-function debouncedSearch() {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    adminStore.fetchUsers(1, searchQuery.value || undefined);
-  }, 300);
-}
+const debouncedSearch = useDebouncedCallback(() => {
+  adminStore.fetchUsers(1, searchQuery.value || undefined);
+});
 
 function goToPage(page: number) {
   adminStore.fetchUsers(page, searchQuery.value || undefined);
@@ -263,40 +247,6 @@ function formatDate(dateStr: string) {
 
 .role-select {
   width: auto;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.pagination-btn {
-  padding: 8px 16px;
-  background: var(--color-bg-surface-deep);
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: var(--radius-md);
-  color: var(--color-white);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover:not(:disabled) {
-    background: rgba(122, 15, 62, 0.4);
-    border-color: var(--color-accent2);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.pagination-info {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
 }
 
 @media (max-width: 480px) {

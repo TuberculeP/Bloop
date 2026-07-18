@@ -18,6 +18,7 @@ views/admin/
 ├── AdminSamples.vue      # Liste des packs
 ├── AdminPackDetail.vue   # Détail pack + folders
 ├── AdminFolderDetail.vue # Détail folder + samples (édition/suppression, pas d'upload individuel)
+├── AdminProjects.vue     # Export/import brut de projets (voyage entre environnements)
 └── CLAUDE.md
 
 components/admin/
@@ -104,6 +105,14 @@ Base: `/api/admin`
 - `POST /upload` - Upload fichier vers R2
   - `multipart/form-data` avec `file`, `packSlug`, `folderName?`
   - Retourne `{ filename, key, url, size, mimetype }`
+
+### Projects
+- `GET /projects` - Liste paginée (recherche par nom de projet ou email owner)
+- `GET /projects/:id/export` - Dump brut du projet en JSON téléchargeable (`data`, `name`, `description`, `mcpEnabled`, `isPublic`, métadonnées owner/date d'export)
+- `POST /projects/import` - Recrée un projet à partir d'un fichier d'export
+  - `multipart/form-data` avec `file` (JSON) et `ownerId` (utilisateur cible dans l'environnement courant)
+  - Le projet importé est toujours créé `isPublic: false` / `mcpEnabled: false` par sécurité
+  - Les `sampleId` référencés dans `data.data.tracks[].clips[]` ne sont pas remappés : si le sample (UserSample) référencé n'existe pas dans l'environnement cible, le lien est simplement ignoré (voir `syncSampleLinksForProject`). Les samples de la bibliothèque admin (AudioSample) fonctionnent tels quels s'ils sont seedés à l'identique.
 
 ## Stockage R2 (Cloudflare)
 

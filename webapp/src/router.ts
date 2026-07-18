@@ -139,6 +139,12 @@ const routes = [
     name: "admin-folder-detail",
     meta: { requiresAdmin: true },
   },
+  {
+    path: "/admin/projects",
+    component: () => import("./views/admin/AdminProjects.vue"),
+    name: "admin-projects",
+    meta: { requiresAdmin: true },
+  },
 ];
 
 const getGuardedRoutes = () => {

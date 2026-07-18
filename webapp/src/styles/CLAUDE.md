@@ -82,6 +82,7 @@ Toujours vérifier ici avant de recoder un bouton/modal/badge/etc. en local.
 | `BaseSelect` | `options: {value,label}[]`, `disabled`, `id`, `v-model` | Selects |
 | `RangeSlider` | `modelValue`, `min`, `max`, `step`, `unit`, `displayValue`, `thumbSize` | Sliders (volume, EQ, etc.) |
 | `BaseTooltip` | `text`, `position` (top/bottom) — wrap un élément via slot | Tooltips au survol |
+| `BasePagination` | `page`, `pages` — émet `update:page` | Pagination Previous/Next (listes admin paginées) |
 
 ## Composables partagés (`webapp/src/composables/`)
 
@@ -90,6 +91,7 @@ Toujours vérifier ici avant de recoder un bouton/modal/badge/etc. en local.
 | `useToast()` | Notifications succès/erreur/info — remplace `alert()`/messages inline. `toast.success(msg)`/`toast.error(msg)`/`toast.info(msg)` |
 | `useDropdown()` | État `{ isOpen, open, close, toggle }` pour tout menu/dropdown avec `v-on-click-outside` (`@vueuse/components`) |
 | `useResizablePanel({ storageKey, defaultWidth, minWidth, maxWidth })` | Panneau redimensionnable à la souris, largeur persistée (`{ width, isResizing, startResize }`) |
+| `useDebouncedCallback(fn, delay = 300)` | Retourne une fonction debounced (ex. recherche paginée sur `@input`) |
 
 ## Garde-fous stylelint (`.stylelintrc.json`, racine du repo)
 
