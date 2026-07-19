@@ -134,7 +134,7 @@
 
         <div class="features-grid" ref="featuresGridRef">
           <div
-            v-for="(feature, idx) in features"
+            v-for="(feature, idx) in landingContent.features"
             :key="feature.title"
             class="feature-card"
             :ref="(el) => setFeatureCardRef(el, idx)"
@@ -150,7 +150,7 @@
               />
             </div>
             <div class="feature-icon">
-              <component :is="feature.icon" />
+              <i :class="feature.icon" />
             </div>
             <h3 class="feature-title">{{ feature.title }}</h3>
             <p class="feature-description">{{ feature.description }}</p>
@@ -192,7 +192,7 @@
           </svg>
 
           <div
-            v-for="(step, index) in steps"
+            v-for="(step, index) in landingContent.steps"
             :key="step.title"
             class="step-item"
             :data-index="index"
@@ -206,7 +206,7 @@
             </div>
             <div class="step-visual">
               <div class="step-icon">
-                <component :is="step.icon" />
+                <i :class="step.icon" />
               </div>
             </div>
           </div>
@@ -232,7 +232,7 @@
 
         <div class="pricing-grid" ref="pricingGridRef">
           <div
-            v-for="(plan, idx) in plans"
+            v-for="(plan, idx) in landingContent.pricingPlans"
             :key="plan.name"
             class="pricing-card"
             :class="{ popular: plan.popular }"
@@ -311,7 +311,11 @@
 
         <div class="mcp-grid">
           <div class="mcp-steps">
-            <div v-for="(step, i) in mcpSteps" :key="i" class="mcp-step">
+            <div
+              v-for="(step, i) in landingContent.mcpSteps"
+              :key="i"
+              class="mcp-step"
+            >
               <div class="mcp-step-number">
                 {{ String(i + 1).padStart(2, "0") }}
               </div>
@@ -429,14 +433,12 @@ import {
   computed,
   onMounted,
   onUnmounted,
-  h,
   inject,
   type ComponentPublicInstance,
 } from "vue";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LandingIncluded from "./LandingIncluded.vue";
-import LandingCtaButton from "./LandingCtaButton.vue";
 import SplitText from "./effects/SplitText.vue";
 import CountUp from "./effects/CountUp.vue";
 import MorphShape from "./effects/MorphShape.vue";
@@ -565,285 +567,6 @@ const mockupTracks = [
   },
 ];
 
-// Icons
-const WaveformIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [h("path", { d: "M2 12h2l2-7 3 14 3-10 2 6 2-3h6" })],
-  );
-
-const CloudIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [h("path", { d: "M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" })],
-  );
-
-const LayoutIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("rect", { x: 3, y: 3, width: 18, height: 18, rx: 2, ry: 2 }),
-      h("line", { x1: 3, y1: 9, x2: 21, y2: 9 }),
-      h("line", { x1: 9, y1: 21, x2: 9, y2: 9 }),
-    ],
-  );
-
-const UsersIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("path", { d: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" }),
-      h("circle", { cx: 9, cy: 7, r: 4 }),
-      h("path", { d: "M23 21v-2a4 4 0 0 0-3-3.87" }),
-      h("path", { d: "M16 3.13a4 4 0 0 1 0 7.75" }),
-    ],
-  );
-
-const MicIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("path", { d: "M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" }),
-      h("path", { d: "M19 10v2a7 7 0 0 1-14 0v-2" }),
-      h("line", { x1: 12, y1: 19, x2: 12, y2: 23 }),
-      h("line", { x1: 8, y1: 23, x2: 16, y2: 23 }),
-    ],
-  );
-
-const InfinityIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("path", {
-        d: "M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z",
-      }),
-    ],
-  );
-
-const UserPlusIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" }),
-      h("circle", { cx: 8.5, cy: 7, r: 4 }),
-      h("line", { x1: 20, y1: 8, x2: 20, y2: 14 }),
-      h("line", { x1: 23, y1: 11, x2: 17, y2: 11 }),
-    ],
-  );
-
-const SlidersIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("line", { x1: 4, y1: 21, x2: 4, y2: 14 }),
-      h("line", { x1: 4, y1: 10, x2: 4, y2: 3 }),
-      h("line", { x1: 12, y1: 21, x2: 12, y2: 12 }),
-      h("line", { x1: 12, y1: 8, x2: 12, y2: 3 }),
-      h("line", { x1: 20, y1: 21, x2: 20, y2: 16 }),
-      h("line", { x1: 20, y1: 12, x2: 20, y2: 3 }),
-      h("line", { x1: 1, y1: 14, x2: 7, y2: 14 }),
-      h("line", { x1: 9, y1: 8, x2: 15, y2: 8 }),
-      h("line", { x1: 17, y1: 16, x2: 23, y2: 16 }),
-    ],
-  );
-
-const RocketIcon = () =>
-  h(
-    "svg",
-    {
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("path", {
-        d: "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z",
-      }),
-      h("path", {
-        d: "M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z",
-      }),
-      h("path", { d: "M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" }),
-      h("path", { d: "M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" }),
-    ],
-  );
-
-const features = [
-  {
-    icon: WaveformIcon,
-    title: "Audio professionnel",
-    description:
-      "Qualité studio avec notre moteur audio haute fidélité et nos effets professionnels.",
-    color: "#ffd269",
-  },
-  {
-    icon: CloudIcon,
-    title: "100% Cloud",
-    description:
-      "Vos projets sauvegardés automatiquement, accessibles depuis n'importe où.",
-    color: "#91a5f9",
-  },
-  {
-    icon: LayoutIcon,
-    title: "Interface intuitive",
-    description:
-      "Une expérience utilisateur pensee pour la créativité, pas la complexite.",
-    color: "#7cc8f5",
-  },
-  {
-    icon: UsersIcon,
-    title: "Collaboration live",
-    description:
-      "Créez ensemble en temps réel, ou que vous soyez dans le monde.",
-    color: "#60bd61",
-  },
-  {
-    icon: MicIcon,
-    title: "Multi-pistes",
-    description:
-      "Enregistrez et mixez autant de pistes que votre créativité l'exige.",
-    color: "#f59e0b",
-  },
-  {
-    icon: InfinityIcon,
-    title: "Sans limites",
-    description:
-      "Pistes, presets et exports illimites pour une création sans frontieres.",
-    color: "#ec4899",
-  },
-];
-
-const steps = [
-  {
-    icon: UserPlusIcon,
-    title: "Créez votre compte",
-    description:
-      "Inscription gratuite en quelques secondes. Commencez à créer immediatement.",
-  },
-  {
-    icon: SlidersIcon,
-    title: "Configurez votre studio",
-    description:
-      "Choisissez vos instruments, effets et configurez votre espace de travail ideal.",
-  },
-  {
-    icon: RocketIcon,
-    title: "Lancez-vous !",
-    description:
-      "Créez, collaborez et partagez vos créations avec le monde entier.",
-  },
-];
-
-const plans = [
-  {
-    name: "Freemium",
-    price: "0",
-    description: "Pour decouvrir BLOOP",
-    popular: false,
-    features: [
-      "Accès à l’espace MAO limité",
-      "Plus de 20 000 boucles",
-      "Plus de 500 instruments et sons",
-      "Espace communautaire",
-    ],
-    cta: "Commencer gratuitement",
-  },
-  {
-    name: "Medium",
-    price: "9.99",
-    description: "Pour les créateurs sérieux",
-    popular: true,
-    features: [
-      "Accès illimité à l’espace MAO",
-      "Plus de 30 000 boucles",
-      "Partage et collaboration",
-      "Espace communautaire enrichi",
-      "Support prioritaire",
-    ],
-    cta: "Essai gratuit 14 jours",
-  },
-  {
-    name: "Premium",
-    price: "14.99",
-    description: "Pour les professionnels",
-    popular: false,
-    features: [
-      "Accès illimité à l’espace MAO",
-      "Collaboration avancée",
-      "Real-time vocal tuning et + de 40 effets",
-      "Espace communautaire premium",
-      "Diffusion de podcast sur Spotify",
-    ],
-    cta: "Souscrire à l'offre",
-  },
-];
-
 const currentOrigin = computed(() =>
   typeof window !== "undefined"
     ? window.location.origin
@@ -851,29 +574,6 @@ const currentOrigin = computed(() =>
 );
 
 const configCopied = ref(false);
-
-const mcpSteps = [
-  {
-    title: "Installez Claude Code",
-    description:
-      "Téléchargez l'extension Claude Code pour VS Code ou utilisez la CLI.",
-  },
-  {
-    title: "Ajoutez la configuration",
-    description:
-      "Copiez le fichier .mcp.json ci-contre à la racine de votre projet et rechargez Claude Code.",
-  },
-  {
-    title: "Connectez-vous à BLOOP",
-    description:
-      "Claude Code ouvre votre navigateur — connectez-vous à votre compte BLOOP pour autoriser l'accès.",
-  },
-  {
-    title: "Créez de la musique",
-    description:
-      "Demandez à Claude de composer, arranger, ajouter des pistes… il agit directement sur vos projets.",
-  },
-];
 
 const copyMcpConfig = async () => {
   const config = JSON.stringify(
@@ -1650,6 +1350,7 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   margin-bottom: 1.5rem;
   color: var(--color);
+  font-size: 1.25rem;
   transition: all 0.3s ease;
   will-change: transform;
 }
@@ -1747,6 +1448,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
   color: var(--color-accent);
+  font-size: 1.25rem;
 }
 
 /* ==================== PRICING SECTION ==================== */

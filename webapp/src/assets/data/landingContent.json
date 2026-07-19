@@ -1,0 +1,134 @@
+{
+  "features": [
+    {
+      "icon": "fas fa-wave-square",
+      "title": "Audio professionnel",
+      "description": "Qualité studio avec notre moteur audio haute fidélité et nos effets professionnels.",
+      "color": "#ffd269"
+    },
+    {
+      "icon": "fas fa-cloud",
+      "title": "100% Cloud",
+      "description": "Vos projets sauvegardés automatiquement, accessibles depuis n'importe où.",
+      "color": "#91a5f9"
+    },
+    {
+      "icon": "fas fa-th-large",
+      "title": "Interface intuitive",
+      "description": "Une expérience utilisateur pensee pour la créativité, pas la complexite.",
+      "color": "#7cc8f5"
+    },
+    {
+      "icon": "fas fa-users",
+      "title": "Collaboration live",
+      "description": "Créez ensemble en temps réel, ou que vous soyez dans le monde.",
+      "color": "#60bd61"
+    },
+    {
+      "icon": "fas fa-microphone",
+      "title": "Multi-pistes",
+      "description": "Enregistrez et mixez autant de pistes que votre créativité l'exige.",
+      "color": "#f59e0b"
+    },
+    {
+      "icon": "fas fa-infinity",
+      "title": "Sans limites",
+      "description": "Pistes, presets et exports illimites pour une création sans frontieres.",
+      "color": "#ec4899"
+    }
+  ],
+  "steps": [
+    {
+      "icon": "fas fa-user-plus",
+      "title": "Créez votre compte",
+      "description": "Inscription gratuite en quelques secondes. Commencez à créer immediatement."
+    },
+    {
+      "icon": "fas fa-sliders-h",
+      "title": "Configurez votre studio",
+      "description": "Choisissez vos instruments, effets et configurez votre espace de travail ideal."
+    },
+    {
+      "icon": "fas fa-rocket",
+      "title": "Lancez-vous !",
+      "description": "Créez, collaborez et partagez vos créations avec le monde entier."
+    }
+  ],
+  "pricingPlans": [
+    {
+      "name": "Freemium",
+      "price": "0",
+      "description": "Pour decouvrir BLOOP",
+      "popular": false,
+      "features": [
+        "Accès à l’espace MAO limité",
+        "Plus de 20 000 boucles",
+        "Plus de 500 instruments et sons",
+        "Espace communautaire"
+      ],
+      "cta": "Commencer gratuitement"
+    },
+    {
+      "name": "Medium",
+      "price": "9.99",
+      "description": "Pour les créateurs sérieux",
+      "popular": true,
+      "features": [
+        "Accès illimité à l’espace MAO",
+        "Plus de 30 000 boucles",
+        "Partage et collaboration",
+        "Espace communautaire enrichi",
+        "Support prioritaire"
+      ],
+      "cta": "Essai gratuit 14 jours"
+    },
+    {
+      "name": "Premium",
+      "price": "14.99",
+      "description": "Pour les professionnels",
+      "popular": false,
+      "features": [
+        "Accès illimité à l’espace MAO",
+        "Collaboration avancée",
+        "Real-time vocal tuning et + de 40 effets",
+        "Espace communautaire premium",
+        "Diffusion de podcast sur Spotify"
+      ],
+      "cta": "Souscrire à l'offre"
+    }
+  ],
+  "mcpSteps": [
+    {
+      "title": "Installez Claude Code",
+      "description": "Téléchargez l'extension Claude Code pour VS Code ou utilisez la CLI."
+    },
+    {
+      "title": "Ajoutez la configuration",
+      "description": "Copiez le fichier .mcp.json ci-contre à la racine de votre projet et rechargez Claude Code."
+    },
+    {
+      "title": "Connectez-vous à BLOOP",
+      "description": "Claude Code ouvre votre navigateur — connectez-vous à votre compte BLOOP pour autoriser l'accès."
+    },
+    {
+      "title": "Créez de la musique",
+      "description": "Demandez à Claude de composer, arranger, ajouter des pistes… il agit directement sur vos projets."
+    }
+  ],
+  "aboutSection": [
+    {
+      "icon": "fas fa-laptop",
+      "title": "Accessible",
+      "description": "Directement dans ton navigateur. Aucune installation, aucune compétence technique requise."
+    },
+    {
+      "icon": "fas fa-gift",
+      "title": "Gratuit",
+      "description": "Des centaines d'instruments et de samples inclus, sans carte bancaire nécessaire."
+    },
+    {
+      "icon": "fas fa-sync-alt",
+      "title": "Collaboratif",
+      "description": "Partage tes créations et laisse la communauté les remixer à sa sauce."
+    }  ]
+}
