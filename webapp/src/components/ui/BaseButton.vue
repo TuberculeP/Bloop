@@ -9,10 +9,12 @@
         'base-button--disabled': disabled,
         'base-button--loading': loading,
         'base-button--icon-only': isIconOnly,
+        'base-button--active': active,
       },
     ]"
     :disabled="disabled || loading"
     @click="handleClick"
+    :title="tooltip"
   >
     <span v-if="loading" class="base-button__spinner">⟳</span>
     <i v-if="leftIcon" :class="leftIcon" />
@@ -54,9 +56,11 @@ export interface ButtonProps {
   size?: "small" | "normal" | "large";
   disabled?: boolean;
   loading?: boolean;
+  active?: boolean;
   rightIcon?: string;
   leftIcon?: string;
   label?: string;
+  tooltip?: string;
 }
 
 const props = withDefaults(defineProps<ButtonProps>(), {
@@ -65,6 +69,7 @@ const props = withDefaults(defineProps<ButtonProps>(), {
   size: "normal",
   disabled: false,
   loading: false,
+  active: false,
 });
 
 const isIconOnly = computed(() => !props.label);
@@ -113,6 +118,7 @@ const handleClick = (event: MouseEvent) => {
   padding: 6px 12px;
   font-size: 0.8rem;
   min-height: 28px;
+  border-radius: var(--radius-md);
 }
 .base-button--normal {
   padding: 8px 16px;
@@ -253,11 +259,7 @@ const handleClick = (event: MouseEvent) => {
   color: var(--color-white);
 }
 
-/* white n'a pas de teinte vive à diluer en fond pâle (contrairement aux
-   autres couleurs) — sans ceci, outline+white rend quasi identique au
-   rempli. Ici, un vrai bouton fantôme à la place. */
 .base-button--outline.base-button--white {
-  background: transparent;
   border-color: var(--color-white);
   color: var(--color-white);
 }
@@ -276,6 +278,31 @@ const handleClick = (event: MouseEvent) => {
     var(--btn-border, currentColor) 10%,
     transparent
   );
+}
+
+/* Actif = état "allumé" d'un toggle (ex: MCP activé, projet public, favori).
+   Fond = couleur de fond normale (--btn-bg), bordure = couleur hover
+   (--btn-bg-hover), pour que la bordure ressorte clairement plutôt que
+   de se fondre dans le fond (c'était le bug qui faisait paraître le
+   bouton actif plus "plat"/plus petit que les autres : fond et bordure
+   avaient la même valeur, donc aucune bordure visible). Ça reste affiché
+   même sans survol, et ça force le rendu plein peu importe la forme
+   (outline/link). */
+.base-button--active {
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  border-color: var(--btn-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--btn-border) 30%, transparent);
+}
+
+/* :hover:not(:disabled) a une spécificité plus forte que .base-button--active
+   à lui seul (3 sélecteurs vs 1) : sans cette règle, survoler un bouton
+   actif lui ferait perdre son style actif (fond + bordure) le temps du
+   survol. On réaffirme donc explicitement le style actif ici aussi. */
+.base-button--active:hover:not(:disabled) {
+  background: var(--btn-bg);
+  border-color: var(--btn-bg-hover);
 }
 
 /* États */

@@ -74,7 +74,8 @@ const handleUpdateParam = (
 
     <div class="add-effect-wrapper" v-on-click-outside="closeAddMenu">
       <button class="add-effect-btn" @click.stop="toggleAddMenu">
-        + Ajouter un effet
+        <i class="fas fa-plus" />
+        Ajouter un effet
       </button>
       <div v-if="showAddMenu" class="add-effect-menu">
         <button

@@ -638,12 +638,12 @@ defineExpose({
         </label>
       </div>
       <template #footer>
-        <BaseButton variant="secondary" @click="cancelExportModal">
-          Annuler
-        </BaseButton>
-        <BaseButton variant="accent" @click="confirmExport">
-          Exporter
-        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          @click="cancelExportModal"
+          label="Annuler"
+        />
+        <BaseButton variant="accent" @click="confirmExport" label="Exporter" />
       </template>
     </BaseModal>
 
@@ -653,16 +653,14 @@ defineExpose({
           variant="accent"
           @click="handleBackToProjects"
           title="Retour aux projets"
-        >
-          <i class="fas fa-home" />
-        </BaseButton>
+          left-icon="fas fa-home"
+        />
         <BaseButton
           @click="showAudioLibrary = !showAudioLibrary"
           title="Audio Library"
           :variant="showAudioLibrary ? 'secondary' : 'primary'"
-        >
-          Audio Library
-        </BaseButton>
+          label="Audio Library"
+        />
         <input
           v-if="isEditingProjectName"
           ref="projectNameInputRef"
@@ -897,11 +895,9 @@ defineExpose({
           title="Exporter en audio"
           :disabled="isExporting"
           variant="ghost"
-        >
-          Exporter
-          <i class="fas fa-download"></i>
-        </BaseButton>
-
+          label="Exporter"
+          right-icon="fas fa-download"
+        />
         <BaseButton
           class="save-project-btn"
           @click="handleSaveProject"
@@ -918,11 +914,10 @@ defineExpose({
               ? 'secondary'
               : 'primary'
           "
-        >
-          {{
-            saveMessage ? saveMessage.text : isSaving ? "..." : "Sauvegarder"
-          }}
-        </BaseButton>
+          :label="
+            saveMessage ? saveMessage.text : isSaving ? '...' : 'Sauvegarder'
+          "
+        />
       </div>
     </div>
 

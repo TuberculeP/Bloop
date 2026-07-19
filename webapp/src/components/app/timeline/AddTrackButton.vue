@@ -60,11 +60,9 @@ const handleSelect = (type: InstrumentType) => {
       variant="error"
       @click="toggleMenu"
       title="Ajouter une piste"
-    >
-      <span class="label">Nouvelle piste</span>
-      <i class="fas fa-plus" />
-    </BaseButton>
-
+      label="Piste"
+      right-icon="fas fa-plus"
+    />
     <Transition name="fade">
       <div v-if="showMenu" class="instrument-menu">
         <div class="menu-header">Choisir un instrument</div>

@@ -60,6 +60,7 @@ const isMenuOpen = ref(false);
 
 const menuItems = computed(() =>
   [
+    { id: "button", icon: "fas fa-home", name: "Button", route: "/button" },
     { id: "home", icon: "fas fa-home", name: "Accueil", route: "/" },
     { id: "app", icon: "fas fa-th-large", name: "Application", route: "/app" },
     { id: "blog", icon: "fas fa-newspaper", name: "Blog", route: "/blog" },

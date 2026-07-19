@@ -7,6 +7,7 @@ import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
 import RangeSlider from "../../ui/RangeSlider.vue";
 import EffectParamRow from "../effects/EffectParamRow.vue";
 import EffectRack from "../effects/EffectRack.vue";
+import BaseButton from "../../ui/BaseButton.vue";
 
 const props = defineProps<{
   track: Track;
@@ -136,9 +137,7 @@ const handleClose = () => {
         <div class="settings-panel">
           <div class="panel-header">
             <h3>{{ track.name }}</h3>
-            <button class="close-btn close-settings-btn" @click="handleClose">
-              ×
-            </button>
+            <BaseButton @click="handleClose" right-icon="fas fa-times" />
           </div>
 
           <div class="panel-body">
@@ -333,7 +332,6 @@ const handleClose = () => {
   h3 {
     margin: 0;
     font-size: 16px;
-    font-weight: 600;
     color: var(--color-white);
   }
 }
