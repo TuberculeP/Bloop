@@ -3,7 +3,9 @@ export type OnboardingStepId =
   | "add-track"
   | "add-instrument"
   | "open-settings"
+  | "open-instrument-params"
   | "select-instrument"
+  | "close-instrument-params"
   | "close-settings"
   | "add-notes"
   | "rename-project"
@@ -58,13 +60,30 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     side: "top",
   },
   {
+    id: "open-instrument-params",
+    route: "app-sequencer",
+    selector: ".instrument-params-btn",
+    title: "Configurez le son",
+    description:
+      "Cliquez sur « Régler » pour ouvrir les réglages de l'instrument.",
+    side: "left",
+  },
+  {
     id: "select-instrument",
     route: "app-sequencer",
-    selector: ".instrument-select",
+    selector: ".instrument-params-modal .param-select",
     title: "Choisissez la flûte",
     description:
       "Sélectionnez « flute » dans la liste pour changer le son de la piste.",
-    side: "left",
+    side: "bottom",
+  },
+  {
+    id: "close-instrument-params",
+    route: "app-sequencer",
+    selector: ".close-instrument-params-btn",
+    title: "Validez votre choix",
+    description: "Cliquez sur Fermer pour revenir à votre piste.",
+    side: "top",
   },
   {
     id: "close-settings",

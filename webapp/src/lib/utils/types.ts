@@ -106,27 +106,38 @@ export interface LegacySequenceData {
 // Types pour le système multi-pistes (Timeline GarageBand-style)
 // ============================================
 
-export type InstrumentType =
-  "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack";
+// Clé du registre d'instruments (lib/audio/instruments/registry.ts) — plus
+// une union fermée : un futur moteur externe peut s'enregistrer sans
+// modifier ce fichier.
+export type InstrumentType = string;
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 
+// Types internes documentaires par engine — ne composent plus l'union
+// InstrumentConfig exportée (voir plus bas), gardés pour typer les
+// constructeurs des engines concrets et leurs `definition.ts`. L'index
+// signature est nécessaire pour rester structurellement assignable à
+// InstrumentConfig (qui en a une) — sans elle, TS refuse l'assignation d'un
+// type nommé (par opposition à un littéral) vers un type indexé.
 export interface BasicSynthConfig {
   type: "basicSynth";
   oscillatorType: OscillatorType;
   gain?: number;
+  [key: string]: unknown;
 }
 
 export interface SmplrConfig {
   type: "smplr";
   soundfont: string;
   gain?: number;
+  [key: string]: unknown;
 }
 
 export interface ElementarySynthConfig {
   type: "elementarySynth";
   preset?: string;
   gain?: number;
+  [key: string]: unknown;
 }
 
 export interface UndertaleConfig {
@@ -137,30 +148,23 @@ export interface UndertaleConfig {
   decay?: number;
   sustain?: number;
   release?: number;
+  [key: string]: unknown;
 }
 
 export interface AudioTrackConfig {
   type: "audioTrack";
   gain?: number;
+  [key: string]: unknown;
 }
 
-export type InstrumentConfig =
-  | BasicSynthConfig
-  | SmplrConfig
-  | ElementarySynthConfig
-  | UndertaleConfig
-  | AudioTrackConfig;
-
-export interface InstrumentConfigUpdate {
-  oscillatorType?: OscillatorType;
-  soundfont?: string;
-  preset?: string;
-  instrument?: string;
+// Forme ouverte, à l'image d'EffectInstanceConfig — le `type` est une clé du
+// registre d'instruments, les champs spécifiques (oscillatorType, soundfont,
+// attack...) vivent à plat pour rester compatibles avec les projets déjà
+// sauvegardés.
+export interface InstrumentConfig {
+  type: string;
   gain?: number;
-  attack?: number;
-  decay?: number;
-  sustain?: number;
-  release?: number;
+  [key: string]: unknown;
 }
 
 export interface AudioClip {

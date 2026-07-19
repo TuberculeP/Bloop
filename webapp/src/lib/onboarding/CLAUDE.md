@@ -15,9 +15,11 @@ styles/onboarding.css              # thème driver.js + overrides de comportemen
 - **`useOnboardingTour()`** : instancié une seule fois dans `App.vue` (survit à la navigation `/app` <-> `/app/sequencer`). Contient tous les `watch()` sur le state réel (`timelineStore`, `projectStore`) qui appellent `advance()`, plus des helpers de polling DOM (`waitForElement`, `waitForElementGone`, `waitForPositionSettle`) pour les cas où l'état pertinent n'est pas dans un store.
 - **`steps.ts`** : uniquement des données. Le champ optionnel `expandedSelector` sert quand l'élément réellement highlighté n'existe qu'après une interaction dynamique (ex: le piano roll n'apparaît qu'après double-clic sur la piste).
 
-## Les 12 étapes
+## Les 14 étapes
 
-`create-project` → `add-track` → `add-instrument` (Sampler uniquement) → `open-settings` → `select-instrument` (flûte) → `close-settings` → `add-notes` (3 notes) → `rename-project` → `play` → `save` → `export` → `confirm-export`.
+`create-project` → `add-track` → `add-instrument` (Sampler uniquement) → `open-settings` (ouvre le tiroir de piste) → `open-instrument-params` (ouvre la modale de réglages instrument, `InstrumentParamsModal.vue`) → `select-instrument` (flûte) → `close-instrument-params` (ferme la modale) → `close-settings` (ferme le tiroir) → `add-notes` (3 notes) → `rename-project` → `play` → `save` → `export` → `confirm-export`.
+
+Les étapes `open-instrument-params`/`select-instrument`/`close-instrument-params` existent car les réglages propres à l'instrument (ex: le choix du soundfont) vivent dans une modale dédiée ouverte depuis le tiroir de piste (`InstrumentSettings.vue` → bouton `.instrument-params-btn`), pas inline dans le tiroir lui-même — d'où l'étape intermédiaire d'ouverture/fermeture en plus de `open-settings`/`close-settings`. Le sélecteur cible de `select-instrument` (`.instrument-params-modal .param-select`) s'appuie sur `modal-class="instrument-params-modal"` posé explicitement sur le `BaseModal` (voir gotcha ci-dessous sur le fallthrough d'attrs) plutôt que sur la seule classe de style `.param-select`, potentiellement ambiguë si un futur instrument expose plusieurs champs enum.
 
 `export` highlight le bouton header (`.export-audio-btn`) qui ouvre la modale de choix de format ; `confirm-export` highlight la modale elle-même (`.export-format-modal`, tous ses enfants restent cliquables puisqu'ils sont dans l'élément actif de driver.js) et avance via le même watcher `lastExportedAt` qu'avant. Si l'utilisateur clique "Annuler", `waitForExportModalClose` redétecte l'absence d'overlay de progression et revient à l'étape `export` plutôt que de rester bloqué.
 

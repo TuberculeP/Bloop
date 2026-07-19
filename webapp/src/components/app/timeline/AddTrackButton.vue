@@ -3,6 +3,7 @@ import { vOnClickOutside } from "@vueuse/components";
 import type { InstrumentType } from "../../../lib/utils/types";
 import BaseButton from "../../ui/BaseButton.vue";
 import { useDropdown } from "../../../composables/useDropdown";
+import { listInstrumentDefinitions } from "../../../lib/audio/instruments";
 
 const emit = defineEmits<{
   (e: "add-track", type: InstrumentType): void;
@@ -14,38 +15,7 @@ const {
   close: closeMenu,
 } = useDropdown();
 
-const instruments = [
-  {
-    type: "audioTrack" as InstrumentType,
-    name: "Audio",
-    icon: "🔊",
-    description: "Piste audio pour samples et boucles",
-  },
-  {
-    type: "basicSynth" as InstrumentType,
-    name: "Synth",
-    icon: "🎹",
-    description: "Oscillateur simple (sine, square, saw, triangle)",
-  },
-  {
-    type: "elementarySynth" as InstrumentType,
-    name: "Elementary",
-    icon: "🎛️",
-    description: "Synthétiseur avancé avec ADSR",
-  },
-  {
-    type: "smplr" as InstrumentType,
-    name: "Sampler",
-    icon: "🎸",
-    description: "Instruments réalistes (piano, guitare, etc.)",
-  },
-  {
-    type: "undertale" as InstrumentType,
-    name: "Undertale",
-    icon: "💀",
-    description: "Soundfont Undertale (plusieurs presets)",
-  },
-];
+const instruments = listInstrumentDefinitions();
 
 const handleSelect = (type: InstrumentType) => {
   emit("add-track", type);
@@ -76,7 +46,7 @@ const handleSelect = (type: InstrumentType) => {
         >
           <span class="inst-icon">{{ inst.icon }}</span>
           <div class="inst-info">
-            <span class="inst-name">{{ inst.name }}</span>
+            <span class="inst-name">{{ inst.label }}</span>
             <span class="inst-desc">{{ inst.description }}</span>
           </div>
         </button>

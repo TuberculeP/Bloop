@@ -129,6 +129,8 @@ export function useOnboardingTour() {
     });
     if (step.id === "add-track") waitForInstrumentMenu();
     if (step.id === "open-settings") waitForSettingsOpen();
+    if (step.id === "open-instrument-params") waitForInstrumentParamsOpen();
+    if (step.id === "close-instrument-params") waitForInstrumentParamsClose();
     if (step.id === "close-settings") waitForSettingsClose();
     if (step.id === "play") waitForPlayed();
     if (step.id === "rename-project") waitForRenameInput();
@@ -152,10 +154,30 @@ export function useOnboardingTour() {
   };
 
   const waitForSettingsOpen = async () => {
-    await waitForElement(".instrument-select");
+    await waitForElement(".instrument-params-btn");
     if (
       !onboardingStore.isActive ||
       onboardingStore.currentStepIndex !== stepIndex("open-settings")
+    )
+      return;
+    onboardingStore.advance();
+  };
+
+  const waitForInstrumentParamsOpen = async () => {
+    await waitForElement(".instrument-params-modal .param-select");
+    if (
+      !onboardingStore.isActive ||
+      onboardingStore.currentStepIndex !== stepIndex("open-instrument-params")
+    )
+      return;
+    onboardingStore.advance();
+  };
+
+  const waitForInstrumentParamsClose = async () => {
+    await waitForElementGone(".instrument-params-modal");
+    if (
+      !onboardingStore.isActive ||
+      onboardingStore.currentStepIndex !== stepIndex("close-instrument-params")
     )
       return;
     onboardingStore.advance();
@@ -358,7 +380,7 @@ export function useOnboardingTour() {
           (t) => t.id === onboardingStore.targetTrackId,
         );
         return track?.instrument.type === "smplr"
-          ? track.instrument.soundfont
+          ? (track.instrument as { soundfont?: string }).soundfont
           : null;
       },
       (soundfont) => {

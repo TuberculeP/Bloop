@@ -1,6 +1,6 @@
 import type {
   SmplrConfig,
-  InstrumentConfigUpdate,
+  InstrumentConfig,
   NoteName,
 } from "../../../utils/types";
 import { Soundfont } from "smplr";
@@ -114,8 +114,11 @@ export class SmplrEngine extends BaseEngine {
     }
   }
 
-  updateConfig(config: InstrumentConfigUpdate): void {
-    if (config.soundfont && config.soundfont !== this.currentSoundfontName) {
+  updateConfig(config: Partial<InstrumentConfig>): void {
+    if (
+      typeof config.soundfont === "string" &&
+      config.soundfont !== this.currentSoundfontName
+    ) {
       this.stopAllNotes();
       this.soundfont = null;
       this.loadPromise = null;
