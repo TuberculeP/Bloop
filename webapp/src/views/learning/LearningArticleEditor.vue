@@ -124,12 +124,17 @@ onMounted(loadArticle);
           {{ isEditing ? "Modifier l'article" : "Nouvel article" }}
         </h1>
         <div class="header-actions">
-          <BaseButton variant="ghost" @click="router.push('/learning')">
-            Annuler
-          </BaseButton>
-          <BaseButton variant="accent" :loading="isSaving" @click="save">
-            Enregistrer
-          </BaseButton>
+          <BaseButton
+            variant="ghost"
+            @click="router.push('/learning')"
+            label="Annuler"
+          />
+          <BaseButton
+            variant="secondary"
+            :loading="isSaving"
+            @click="save"
+            label="Enregistrer"
+          />
         </div>
       </header>
 
@@ -166,18 +171,16 @@ onMounted(loadArticle);
               type="button"
               variant="ghost"
               @click="showCoverModal = true"
-            >
-              {{ coverImage ? "Changer l'image" : "Ajouter une image" }}
-            </BaseButton>
+              :label="coverImage ? 'Changer l\'image' : 'Ajouter une image'"
+            />
             <BaseButton
               v-if="coverImage"
               type="button"
-              variant="link"
+              variant="outline"
               size="small"
               @click="coverImage = ''"
-            >
-              Retirer
-            </BaseButton>
+              label="Retirer"
+            />
           </div>
         </FormField>
 

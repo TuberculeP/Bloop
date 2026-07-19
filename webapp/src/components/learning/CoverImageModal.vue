@@ -132,21 +132,23 @@ onBeforeUnmount(() => window.removeEventListener("paste", handlePaste));
 
     <div v-else class="cover-preview">
       <img :src="previewUrl" alt="Aperçu de l'image de couverture" />
-      <BaseButton variant="ghost" size="small" @click="reset">
-        Choisir une autre image
-      </BaseButton>
+      <BaseButton
+        variant="ghost"
+        size="small"
+        @click="reset"
+        label="Choisir une autre image"
+      />
     </div>
 
     <template #footer>
-      <BaseButton variant="secondary" @click="close">Annuler</BaseButton>
+      <BaseButton variant="outline" @click="close" label="Annuler" />
       <BaseButton
-        variant="accent"
+        variant="secondary"
         :disabled="!selectedFile"
         :loading="isUploading"
         @click="confirm"
-      >
-        Valider
-      </BaseButton>
+        label="Valider"
+      />
     </template>
   </BaseModal>
 </template>

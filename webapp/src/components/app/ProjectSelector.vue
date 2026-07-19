@@ -244,6 +244,7 @@ onMounted(() => loadProjects());
         <p class="tagline">Votre bibliothèque de compositions</p>
       </div>
       <BaseButton
+        color="accent"
         label="Nouveau projet"
         right-icon="fas fa-plus"
         @click="emit('new-project')"
