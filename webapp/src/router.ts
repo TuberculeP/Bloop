@@ -56,6 +56,7 @@ import LandingCgu from "./views/landing/LandingCgu.vue";
 import LandingCgv from "./views/landing/LandingCgv.vue";
 import LandingAbout from "./views/landing/LandingAbout.vue";
 import LandingSupport from "./views/landing/LandingSupport.vue";
+import ButtonView from "./views/messages/ButtonView.vue";
 
 const routes = [
   { path: "/", component: LandingIndex, name: "landing-main" },
@@ -145,6 +146,11 @@ const routes = [
     name: "admin-projects",
     meta: { requiresAdmin: true },
   },
+  {
+    path: "/admin/buttons",
+    component: ButtonView,
+    name: "admin-buttons",
+    meta: { requiresAdmin: true },
 ];
 
 const getGuardedRoutes = () => {

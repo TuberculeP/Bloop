@@ -3,9 +3,12 @@
     <div class="admin-samples">
       <div class="page-header">
         <h1>Sample Library</h1>
-        <BaseButton variant="accent2" @click="showImportModal = true">
-          + Import Pack (ZIP)
-        </BaseButton>
+        <BaseButton
+          variant="accent2"
+          @click="showImportModal = true"
+          left-icon="fas fa-plus"
+          label="Import Pack (ZIP)"
+        />
       </div>
 
       <div v-if="packsLoading" class="loading">
@@ -43,25 +46,27 @@
               pack.author
             }}</span>
             <div class="pack-badges">
-              <BaseBadge v-if="pack.featured" variant="featured"
-                >Featured</BaseBadge
-              >
-              <BaseBadge v-if="!pack.isActive" variant="inactive"
-                >Inactive</BaseBadge
-              >
+              <BaseBadge v-if="pack.featured" variant="featured">
+                Featured
+              </BaseBadge>
+              <BaseBadge v-if="!pack.isActive" variant="inactive">
+                Inactive
+              </BaseBadge>
             </div>
           </div>
           <div class="pack-actions" @click.stop>
-            <BaseButton variant="outline" size="small" @click="editPack(pack)"
-              >Edit</BaseButton
-            >
+            <BaseButton
+              variant="outline"
+              size="small"
+              @click="editPack(pack)"
+              label="Edit"
+            />
             <BaseButton
               variant="error"
               size="small"
               @click="confirmDeletePack(pack)"
-            >
-              Delete
-            </BaseButton>
+              label="Delete"
+            />
           </div>
         </div>
       </div>
@@ -125,9 +130,12 @@
       </form>
       <template #footer>
         <BaseButton variant="outline" @click="closeModal">Cancel</BaseButton>
-        <BaseButton variant="accent2" type="submit" form="edit-pack-form"
-          >Save</BaseButton
-        >
+        <BaseButton
+          variant="accent2"
+          type="submit"
+          form="edit-pack-form"
+          label="Save"
+        />
       </template>
     </BaseModal>
 
@@ -144,12 +152,12 @@
         folders and samples.
       </p>
       <template #footer>
-        <BaseButton variant="outline" @click="cancelDeletePack"
-          >Cancel</BaseButton
-        >
-        <BaseButton variant="error" @click="executeDeletePack">
-          Delete
-        </BaseButton>
+        <BaseButton
+          variant="outline"
+          @click="cancelDeletePack"
+          label="Cancel"
+        />
+        <BaseButton variant="error" @click="executeDeletePack" label="Delete" />
       </template>
     </BaseModal>
   </AdminLayout>
@@ -276,7 +284,6 @@ async function executeDeletePack() {
   h1 {
     margin: 0;
     font-size: 24px;
-    font-weight: 600;
     color: var(--color-white);
   }
 }
@@ -349,7 +356,6 @@ async function executeDeletePack() {
   h3 {
     margin: 0 0 4px;
     font-size: 16px;
-    font-weight: 600;
     color: var(--color-white);
   }
 }

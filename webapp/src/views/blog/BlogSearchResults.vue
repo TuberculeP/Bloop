@@ -126,9 +126,12 @@ onMounted(() => {
 
         <div v-else-if="error" class="error">
           <p>{{ error }}</p>
-          <BaseButton variant="ghost" size="small" @click="fetchPosts">
-            Réessayer
-          </BaseButton>
+          <BaseButton
+            variant="ghost"
+            size="small"
+            @click="fetchPosts"
+            label="Réessayer"
+          />
         </div>
 
         <EmptyState
