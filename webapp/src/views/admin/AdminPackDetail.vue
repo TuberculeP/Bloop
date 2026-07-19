@@ -7,9 +7,12 @@
           <span>/</span>
           <span>{{ currentPack?.name || "Loading..." }}</span>
         </div>
-        <BaseButton variant="accent2" @click="showCreateFolder = true">
-          + New Folder
-        </BaseButton>
+        <BaseButton
+          variant="accent2"
+          @click="showCreateFolder = true"
+          label="New Folder"
+          left-icon="fas fa-plus"
+        />
       </div>
 
       <div v-if="!currentPack" class="loading">
@@ -49,9 +52,11 @@
 
         <EmptyState v-if="currentFolders.length === 0" title="No folders yet">
           <template #action>
-            <BaseButton variant="accent2" @click="showCreateFolder = true">
-              Create first folder
-            </BaseButton>
+            <BaseButton
+              variant="accent2"
+              @click="showCreateFolder = true"
+              label="Create first folder"
+            />
           </template>
         </EmptyState>
 
@@ -72,16 +77,14 @@
                 variant="outline"
                 size="small"
                 @click="editFolder(folder)"
-              >
-                Edit
-              </BaseButton>
+                label="Edit"
+              />
               <BaseButton
                 variant="danger"
                 size="small"
                 @click="confirmDeleteFolder(folder)"
-              >
-                Delete
-              </BaseButton>
+                label="Delete"
+              />
             </div>
           </div>
         </div>
@@ -106,9 +109,12 @@
       </form>
       <template #footer>
         <BaseButton variant="outline" @click="closeModal">Cancel</BaseButton>
-        <BaseButton variant="accent2" type="submit" form="folder-form">
-          {{ editingFolder ? "Save" : "Create" }}
-        </BaseButton>
+        <BaseButton
+          variant="accent2"
+          type="submit"
+          form="folder-form"
+          :label="editingFolder ? 'Save' : 'Create'"
+        />
       </template>
     </BaseModal>
 
@@ -125,12 +131,16 @@
         all samples in it.
       </p>
       <template #footer>
-        <BaseButton variant="outline" @click="cancelDeleteFolder"
-          >Cancel</BaseButton
-        >
-        <BaseButton variant="danger" @click="executeDeleteFolder">
-          Delete
-        </BaseButton>
+        <BaseButton
+          variant="outline"
+          @click="cancelDeleteFolder"
+          label="Cancel"
+        />
+        <BaseButton
+          variant="danger"
+          @click="executeDeleteFolder"
+          label="Delete"
+        />
       </template>
     </BaseModal>
   </AdminLayout>

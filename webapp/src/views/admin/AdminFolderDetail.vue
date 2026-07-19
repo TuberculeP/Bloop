@@ -59,16 +59,14 @@
                 variant="outline"
                 size="small"
                 @click="editSample(sample)"
-              >
-                Edit
-              </BaseButton>
+                label="Edit"
+              />
               <BaseButton
                 variant="danger"
                 size="small"
                 @click="confirmDeleteSample(sample)"
-              >
-                Delete
-              </BaseButton>
+                label="Delete"
+              />
             </div>
           </div>
         </div>
@@ -97,10 +95,13 @@
         </FormField>
       </form>
       <template #footer>
-        <BaseButton variant="outline" @click="closeModal">Cancel</BaseButton>
-        <BaseButton variant="accent2" type="submit" form="sample-form"
-          >Save</BaseButton
-        >
+        <BaseButton variant="outline" @click="closeModal" label="Cancel" />
+        <BaseButton
+          variant="accent2"
+          type="submit"
+          form="sample-form"
+          label="Save"
+        />
       </template>
     </BaseModal>
 
@@ -114,12 +115,16 @@
       </template>
       <p>Delete sample "{{ pendingDeleteSample?.name }}"?</p>
       <template #footer>
-        <BaseButton variant="outline" @click="cancelDeleteSample"
-          >Cancel</BaseButton
-        >
-        <BaseButton variant="danger" @click="executeDeleteSample">
-          Delete
-        </BaseButton>
+        <BaseButton
+          variant="outline"
+          @click="cancelDeleteSample"
+          label="Cancel"
+        />
+        <BaseButton
+          variant="danger"
+          @click="executeDeleteSample"
+          label="Delete"
+        />
       </template>
     </BaseModal>
   </AdminLayout>

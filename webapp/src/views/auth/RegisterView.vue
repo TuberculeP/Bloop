@@ -55,7 +55,7 @@
         </div>
       </FormField>
 
-      <BaseButton type="submit">Créer mon compte</BaseButton>
+      <BaseButton type="submit" label="Créer mon compte" />
 
       <div class="form-footer">
         <router-link :to="{ name: 'app-login' }" class="login-link">

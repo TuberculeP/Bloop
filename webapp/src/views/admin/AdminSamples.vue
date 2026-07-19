@@ -17,9 +17,11 @@
 
       <EmptyState v-else-if="packs.length === 0" title="No sample packs yet">
         <template #action>
-          <BaseButton variant="accent2" @click="showImportModal = true">
-            Import your first pack
-          </BaseButton>
+          <BaseButton
+            variant="accent2"
+            @click="showImportModal = true"
+            label="Import your first pack"
+          />
         </template>
       </EmptyState>
 

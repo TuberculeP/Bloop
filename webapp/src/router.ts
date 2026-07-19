@@ -151,6 +151,7 @@ const routes = [
     component: ButtonView,
     name: "admin-buttons",
     meta: { requiresAdmin: true },
+  },
 ];
 
 const getGuardedRoutes = () => {

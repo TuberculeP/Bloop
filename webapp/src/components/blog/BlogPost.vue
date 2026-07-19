@@ -372,7 +372,6 @@ fetchComments();
               : 'Voir' + ' commentaires (' + commentsCount + ')'
           "
         />
-
         <!-- Bouton pour ajouter un commentaire (uniquement si connecté) -->
         <BaseButton
           v-if="authStore.isAuthenticated"
@@ -450,9 +449,8 @@ fetchComments();
             size="small"
             @click="fetchComments"
             class="retry-button"
-          >
-            Réessayer
-          </BaseButton>
+            label="Réessayer"
+          />
         </div>
 
         <div v-else-if="comments.length === 0" class="comments-empty">
