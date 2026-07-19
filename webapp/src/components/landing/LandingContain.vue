@@ -36,35 +36,21 @@
           </div>
 
           <div class="hero-actions" ref="heroActionsRef">
-            <LandingCtaButton to="/app">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              <span>Commencer gratuitement</span>
-            </LandingCtaButton>
-            <button class="btn-cta secondary" @click="scrollToFeatures">
-              <span class="btn-content">
-                <span>Découvrir</span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <polyline points="19 12 12 19 5 12"></polyline>
-                </svg>
-              </span>
-            </button>
+            <BaseButton
+              size="large"
+              color="gradient"
+              label="Commencer gratuitement"
+              @click="handleStartClick"
+              left-icon="fas fa-play"
+            />
+            <BaseButton
+              size="large"
+              variant="outline"
+              color="white"
+              label="Découvrir"
+              @click="scrollToFeatures"
+              right-icon="fas fa-arrow-down"
+            />
           </div>
         </div>
 
@@ -417,26 +403,19 @@
                 class="trust-avatar"
               />
             </div>
-            <span
-              >+<CountUp :target="20000" :separator="' '" /> créateurs nous font
-              confiance</span
-            >
+            <span>
+              +<CountUp :target="20000" :separator="' '" /> créateurs nous font
+              confiance
+            </span>
           </div>
           <div class="cta-actions">
-            <LandingCtaButton to="/app">
-              <span>Lancer le studio</span>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </LandingCtaButton>
+            <BaseButton
+              size="large"
+              color="gradient"
+              label="Lancer le studio"
+              @click="handleStartClick"
+              right-icon="fas fa-arrow-right"
+            />
           </div>
         </div>
       </div>
@@ -461,6 +440,9 @@ import LandingCtaButton from "./LandingCtaButton.vue";
 import SplitText from "./effects/SplitText.vue";
 import CountUp from "./effects/CountUp.vue";
 import MorphShape from "./effects/MorphShape.vue";
+import BaseButton from "../ui/BaseButton.vue";
+import { useRouter } from "vue-router";
+import landingContent from "../../assets/data/landingContent.json";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -474,12 +456,17 @@ gsap.registerPlugin(ScrollTrigger);
 // smooth-scroll setup (like the injected `scrollTo`), sometimes locking
 // scroll entirely on mobile/trackpad.
 ScrollTrigger.config({ ignoreMobileResize: true });
+const router = useRouter();
 
 const isMobile = ref(
   typeof window !== "undefined"
     ? window.matchMedia("(max-width: 768px)").matches
     : false,
 );
+
+const handleStartClick = () => {
+  router.push("/app");
+};
 
 // rotate3d relies on CSS perspective/3D transforms which some mobile
 // browsers render with a horizontal offset while animating (this is what
@@ -1339,40 +1326,6 @@ onUnmounted(() => {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-.btn-cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  padding: 1rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-cta.secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--color-white);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-cta.secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.btn-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 /* Hero Visual */
@@ -2290,13 +2243,6 @@ onUnmounted(() => {
   .hero-actions {
     flex-direction: column;
     align-items: center;
-  }
-
-  .btn-cta,
-  :deep(.landing-cta-button) {
-    width: 100%;
-    max-width: 300px;
-    justify-content: center;
   }
 
   .features,
