@@ -491,12 +491,16 @@ fetchComments();
       </template>
       <p>Cette action est irréversible.</p>
       <template #footer>
-        <BaseButton variant="secondary" @click.stop="cancelDelete">
-          Annuler
-        </BaseButton>
-        <BaseButton variant="danger" @click.stop="confirmDelete">
-          Supprimer
-        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          @click.stop="cancelDelete"
+          label="Annuler"
+        />
+        <BaseButton
+          color="error"
+          @click.stop="confirmDelete"
+          label="Supprimer"
+        />
       </template>
     </BaseModal>
   </div>

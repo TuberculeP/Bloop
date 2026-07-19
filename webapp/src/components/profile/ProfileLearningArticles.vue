@@ -104,19 +104,16 @@ onMounted(loadArticles);
           <BaseButton
             variant="outline"
             size="small"
-            @click="router.push(`/learning/editor/${article.id}`)"
-          >
-            <i class="fas fa-pencil-alt"></i>
-            <span>Modifier</span>
-          </BaseButton>
-          <BaseButton
-            variant="danger"
-            size="small"
             @click="article.id && (pendingDeleteId = article.id)"
-          >
-            <i class="fas fa-trash-alt"></i>
-            <span>Supprimer</span>
-          </BaseButton>
+            left-icon="fas fa-trash-alt"
+            label="Supprimer"
+          />
+          <BaseButton
+            size="small"
+            @click="router.push(`/learning/editor/${article.id}`)"
+            label="Modifier"
+            left-icon="fas fa-pencil-alt"
+          />
         </div>
       </div>
     </div>
@@ -130,12 +127,8 @@ onMounted(loadArticles);
       </template>
       <p>Cette action est irréversible.</p>
       <template #footer>
-        <BaseButton variant="secondary" @click="cancelDelete">
-          Annuler
-        </BaseButton>
-        <BaseButton variant="danger" @click="confirmDelete">
-          Supprimer
-        </BaseButton>
+        <BaseButton variant="secondary" @click="cancelDelete" label="Annuler" />
+        <BaseButton variant="danger" @click="confirmDelete" label="Supprimer" />
       </template>
     </BaseModal>
   </div>
