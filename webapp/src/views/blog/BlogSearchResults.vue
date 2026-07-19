@@ -113,9 +113,9 @@ onMounted(() => {
           size="small"
           @click="handleNewSearch"
           color="secondary"
-        >
-          ← Nouvelle recherche
-        </BaseButton>
+          label="Nouvelle recherche"
+          left-icon="fas fa-arrow-left"
+        />
       </div>
       <!-- Statistiques et état -->
       <div class="search-stats">

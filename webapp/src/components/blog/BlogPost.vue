@@ -355,7 +355,7 @@ fetchComments();
     </div>
 
     <div class="post-footer" @click.stop>
-      <div>
+      <div class="post-footer-action">
         <BaseButton
           variant="lightlink"
           size="small"
@@ -366,11 +366,12 @@ fetchComments();
               ? 'Masquer les commentaires'
               : 'Afficher les commentaires'
           "
-        >
-          {{ showComments ? "Masquer" : "Voir" }} commentaires ({{
-            commentsCount
-          }})
-        </BaseButton>
+          :label="
+            showComments
+              ? 'Masquer'
+              : 'Voir' + ' commentaires (' + commentsCount + ')'
+          "
+        />
 
         <!-- Bouton pour ajouter un commentaire (uniquement si connecté) -->
         <BaseButton
@@ -380,9 +381,8 @@ fetchComments();
           @click="toggleCommentForm"
           :title="showCommentForm ? 'Annuler' : 'Ajouter un commentaire'"
           color="primary"
-        >
-          {{ showCommentForm ? "Réduire" : "Commenter" }}
-        </BaseButton>
+          :label="showCommentForm ? 'Réduire' : 'Commenter'"
+        />
       </div>
       <div class="date">{{ formatFullDate(props.post.createdAt) }}</div>
     </div>
@@ -423,18 +423,16 @@ fetchComments();
               size="small"
               @click="toggleCommentForm"
               :disabled="isSubmittingComment"
-            >
-              Annuler
-            </BaseButton>
+              label="Annuler"
+            />
             <BaseButton
               type="submit"
               variant="secondary"
               size="small"
               :disabled="loadingComments"
               :loading="loadingComments"
-            >
-              Poster
-            </BaseButton>
+              label="Poster"
+            />
           </div>
         </div>
       </form>
