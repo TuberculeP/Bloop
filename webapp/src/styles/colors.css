@@ -75,6 +75,15 @@
   --color-bg-error: #fef3f7;
   --color-bg-warning: #fff8f0;
 
+  --color-primary-pale: rgba(199, 172, 181, 0.1);
+  --color-secondary-pale: rgba(255, 228, 227, 0.1);
+  --color-accent-pale: rgba(255, 250, 204, 0.1);
+  --color-accent2-pale: rgba(255, 200, 234, 0.1);
+  --color-success-pale: rgba(240, 220, 255, 0.1);
+  --color-error-pale: rgba(240, 185, 207, 0.1);
+  --color-gradient-pale: rgba(255, 239, 216, 0.1);
+  --color-white-pale: rgba(255, 255, 255, 0.1);
+
   /* Dark Backgrounds (Tinted with primary colors) */
   --color-bg-primary-dark: #1a0e15;
   --color-bg-secondary-dark: #2d0f20;
@@ -304,4 +313,3 @@
 .bg-layout-success {
   background-color: var(--color-bg-success);
 }
-
