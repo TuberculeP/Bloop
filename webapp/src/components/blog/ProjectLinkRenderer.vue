@@ -1,77 +1,89 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { reactive, watch } from "vue";
 
 import { formatShortDate } from "../../lib/utils/dateFormatter";
+import { getProjectLinkPreview } from "../../services/projects";
+import type { ProjectLinkPreview } from "../../lib/utils/types";
 
 const props = withDefaults(
   defineProps<{
     text?: string | null;
-    authorFirstName?: string | null;
-    authorLastName?: string | null;
-    date?: string | null;
   }>(),
   {
     text: "",
-    authorFirstName: null,
-    authorLastName: null,
-    date: null,
   },
 );
 
-const authorSuffix = computed(() => {
-  const authorName = [props.authorFirstName, props.authorLastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-  const formattedDate = props.date ? formatShortDate(props.date) : "";
-
-  if (!authorName && !formattedDate) {
-    return "";
-  }
-
-  if (authorName && formattedDate) {
-    return ` - ${authorName} (${formattedDate})`;
-  }
-
-  return ` - ${authorName || formattedDate}`;
-});
+// Seuls ces hosts sont considérés comme des liens Bloop éligibles à l'enrichissement.
+const BLOOP_HOSTS = [
+  "localhost:3000",
+  "staging.bloop-on.cloud",
+  "bloop-on.cloud",
+];
 
 type Segment =
   | { type: "text"; content: string }
-  | { type: "link"; label: string; url: string };
+  | {
+      type: "link";
+      url: string;
+      label: string;
+      projectId: string | null;
+      preview: ProjectLinkPreview | null;
+    };
 
-const segments = computed(() => buildSegments(props.text ?? ""));
+const segments = reactive<Segment[]>([]);
+
+// Renvoie l'id du projet si l'URL pointe vers un des hosts Bloop, sinon null.
+function resolveBloopProjectId(url: string): string | null {
+  try {
+    const parsedUrl = new URL(url);
+    if (!BLOOP_HOSTS.includes(parsedUrl.host)) return null;
+    return parsedUrl.searchParams.get("projectId");
+  } catch {
+    return null;
+  }
+}
 
 function buildSegments(text: string): Segment[] {
   const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
   const bareUrlRegex = /(https?:\/\/[^\s]+)/g;
 
-  const regex = markdownLinkRegex.test(text) ? markdownLinkRegex : bareUrlRegex;
-  regex.lastIndex = 0;
-
   const result: Segment[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null;
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
+  const pushMatches = (regex: RegExp, isMarkdownLink: boolean) => {
+    let match: RegExpExecArray | null;
+    let found = false;
+
+    while ((match = regex.exec(text)) !== null) {
+      found = true;
+
+      if (match.index > lastIndex) {
+        result.push({
+          type: "text",
+          content: text.slice(lastIndex, match.index),
+        });
+      }
+
+      const rawLabel = match[1];
+      const rawUrl = isMarkdownLink ? match[2] : match[1];
+
       result.push({
-        type: "text",
-        content: text.slice(lastIndex, match.index),
+        type: "link",
+        url: rawUrl,
+        label: formatLinkLabel(rawLabel),
+        projectId: resolveBloopProjectId(rawUrl),
+        preview: null,
       });
+
+      lastIndex = match.index + match[0].length;
     }
 
-    const isMarkdownLink = match.length > 2;
-    const rawLabel = match[1];
-    const rawUrl = isMarkdownLink ? match[2] : match[1];
+    return found;
+  };
 
-    result.push({
-      type: "link",
-      label: formatLinkLabel(rawLabel) + authorSuffix.value,
-      url: rawUrl,
-    });
-
-    lastIndex = match.index + match[0].length;
+  if (!pushMatches(markdownLinkRegex, true)) {
+    pushMatches(bareUrlRegex, false);
   }
 
   if (lastIndex < text.length) {
@@ -80,6 +92,30 @@ function buildSegments(text: string): Segment[] {
 
   return result;
 }
+
+async function enrichSegments(target: Segment[]) {
+  await Promise.all(
+    target.map(async (segment) => {
+      if (segment.type !== "link" || !segment.projectId) return;
+
+      const preview = await getProjectLinkPreview(segment.projectId);
+      // Projet introuvable ou privé : on laisse le lien brut tel quel.
+      if (preview) {
+        segment.preview = preview;
+      }
+    }),
+  );
+}
+
+watch(
+  () => props.text,
+  (text) => {
+    const built = buildSegments(text ?? "");
+    segments.splice(0, segments.length, ...built);
+    enrichSegments(segments);
+  },
+  { immediate: true },
+);
 
 function formatLinkLabel(rawLabel: string) {
   const cleaned = rawLabel
@@ -121,7 +157,7 @@ function deriveLabelFromUrl(url: string) {
   <div class="renderer">
     <template v-for="(segment, index) in segments" :key="index">
       <a
-        v-if="segment.type === 'link'"
+        v-if="segment.type === 'link' && segment.preview"
         :href="segment.url"
         target="_blank"
         rel="noopener noreferrer"
@@ -132,6 +168,18 @@ function deriveLabelFromUrl(url: string) {
           alt=""
           class="project-card-icon"
         />
+        {{ segment.preview.name }} - {{ segment.preview.owner.firstName }}
+        {{ segment.preview.owner.lastName }} ({{
+          formatShortDate(segment.preview.createdAt)
+        }})
+      </a>
+      <a
+        v-else-if="segment.type === 'link'"
+        :href="segment.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="plain-link"
+      >
         {{ segment.label }}
       </a>
       <template v-else>{{ segment.content }}</template>
@@ -143,6 +191,16 @@ function deriveLabelFromUrl(url: string) {
 .renderer {
   margin-top: 8px;
   white-space: pre-wrap;
+}
+
+.plain-link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.plain-link:hover {
+  color: var(--color-accent-hover);
 }
 
 .project-card {
