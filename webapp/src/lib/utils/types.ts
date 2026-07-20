@@ -364,6 +364,13 @@ export interface PublicProjectListItem {
   owner: { id: string; firstName: string; lastName: string };
 }
 
+export interface ProjectLinkPreview {
+  id: string;
+  name: string;
+  createdAt: string;
+  owner: { firstName: string; lastName: string };
+}
+
 export type FavoriteProjectListItem = PublicProjectListItem & {
   favoriteId: string;
   favoritedAt: string;
