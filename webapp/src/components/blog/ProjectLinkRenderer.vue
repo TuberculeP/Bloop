@@ -1,43 +1,84 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import { formatShortDate } from "../../lib/utils/dateFormatter";
+
 const props = withDefaults(
   defineProps<{
     text?: string | null;
+    authorFirstName?: string | null;
+    authorLastName?: string | null;
+    date?: string | null;
   }>(),
   {
     text: "",
+    authorFirstName: null,
+    authorLastName: null,
+    date: null,
   },
 );
 
-const projectLinks = computed(() => extractProjectLinks(props.text ?? ""));
+const authorSuffix = computed(() => {
+  const authorName = [props.authorFirstName, props.authorLastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const formattedDate = props.date ? formatShortDate(props.date) : "";
 
-function extractProjectLinks(text: string) {
-  const links: Array<{ label: string; url: string }> = [];
+  if (!authorName && !formattedDate) {
+    return "";
+  }
+
+  if (authorName && formattedDate) {
+    return ` - ${authorName} (${formattedDate})`;
+  }
+
+  return ` - ${authorName || formattedDate}`;
+});
+
+type Segment =
+  | { type: "text"; content: string }
+  | { type: "link"; label: string; url: string };
+
+const segments = computed(() => buildSegments(props.text ?? ""));
+
+function buildSegments(text: string): Segment[] {
   const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
   const bareUrlRegex = /(https?:\/\/[^\s]+)/g;
 
+  const regex = markdownLinkRegex.test(text) ? markdownLinkRegex : bareUrlRegex;
+  regex.lastIndex = 0;
+
+  const result: Segment[] = [];
+  let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = markdownLinkRegex.exec(text)) !== null) {
-    const [, rawLabel, rawUrl] = match;
-    links.push({
-      label: formatLinkLabel(rawLabel),
-      url: rawUrl,
-    });
-  }
-
-  if (links.length === 0) {
-    while ((match = bareUrlRegex.exec(text)) !== null) {
-      const rawUrl = match[1];
-      links.push({
-        label: formatLinkLabel(rawUrl),
-        url: rawUrl,
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      result.push({
+        type: "text",
+        content: text.slice(lastIndex, match.index),
       });
     }
+
+    const isMarkdownLink = match.length > 2;
+    const rawLabel = match[1];
+    const rawUrl = isMarkdownLink ? match[2] : match[1];
+
+    result.push({
+      type: "link",
+      label: formatLinkLabel(rawLabel) + authorSuffix.value,
+      url: rawUrl,
+    });
+
+    lastIndex = match.index + match[0].length;
   }
 
-  return links;
+  if (lastIndex < text.length) {
+    result.push({ type: "text", content: text.slice(lastIndex) });
+  }
+
+  return result;
 }
 
 function formatLinkLabel(rawLabel: string) {
@@ -60,8 +101,8 @@ function formatLinkLabel(rawLabel: string) {
 function deriveLabelFromUrl(url: string) {
   try {
     const parsedUrl = new URL(url);
-    const segments = parsedUrl.pathname.split("/").filter(Boolean);
-    const lastSegment = segments[segments.length - 1];
+    const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+    const lastSegment = pathSegments[pathSegments.length - 1];
 
     if (lastSegment) {
       return decodeURIComponent(lastSegment)
@@ -77,41 +118,61 @@ function deriveLabelFromUrl(url: string) {
 </script>
 
 <template>
-  <div v-if="projectLinks.length" class="renderer">
-    <a
-      v-for="link in projectLinks"
-      :key="link.url"
-      :href="link.url"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="project-card"
-    >
-      {{ link.label }}
-    </a>
-  </div>
-
-  <div v-else class="renderer">
-    {{ props.text }}
+  <div class="renderer">
+    <template v-for="(segment, index) in segments" :key="index">
+      <a
+        v-if="segment.type === 'link'"
+        :href="segment.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="project-card"
+      >
+        <img
+          src="../../assets/logo/logo_background_yellow_compact.svg"
+          alt=""
+          class="project-card-icon"
+        />
+        {{ segment.label }}
+      </a>
+      <template v-else>{{ segment.content }}</template>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .renderer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   margin-top: 8px;
+  white-space: pre-wrap;
 }
 
 .project-card {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
-  border-radius: 10px;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 8px;
   text-decoration: none;
   background: #3d2540;
   border: 1px solid #6e4670;
   color: white;
   font-weight: 600;
+  font-size: 0.9em;
+  cursor: pointer;
+  vertical-align: middle;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.project-card:hover {
+  background: #4d2f52;
+  border-color: #8a5c8d;
+}
+
+.project-card-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 </style>

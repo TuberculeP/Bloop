@@ -340,7 +340,12 @@ fetchComments();
       </div>
     </div>
     <div class="post-content">
-        <ProjectLinkRenderer :text="post.body"/>
+      <ProjectLinkRenderer
+        :text="post.body"
+        :author-first-name="post.author?.firstName"
+        :author-last-name="post.author?.lastName"
+        :date="post.createdAt"
+      />
     </div>
 
     <!-- Affichage des tags du post -->
