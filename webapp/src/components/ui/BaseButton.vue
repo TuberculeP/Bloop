@@ -17,9 +17,9 @@
     :title="tooltip"
   >
     <span v-if="loading" class="base-button__spinner">⟳</span>
-    <i v-if="leftIcon" :class="leftIcon" />
+    <i v-if="leftIcon && !loading" :class="leftIcon" />
     <span v-if="label">{{ label }}</span>
-    <i v-if="rightIcon" :class="rightIcon" />
+    <i v-if="rightIcon && !loading" :class="rightIcon" />
     <slot v-else />
   </button>
 </template>
@@ -31,7 +31,6 @@ export interface ButtonProps {
   variant?:
     | "contain"
     | "round"
-    | "square"
     | "primary"
     | "secondary"
     | "accent"
@@ -196,10 +195,16 @@ const handleClick = (event: MouseEvent) => {
   --btn-outline-text: var(--color-success-active);
 }
 .base-button--error {
-  --btn-bg: var(--color-error-hover);
+  /* --color-error et --color-error-hover sont deux rouges de luminosité
+     quasi identique (ni le texte noir ni blanc n'atteint 4.5:1 dessus,
+     3.28-3.94:1 mesurés) — contrairement aux autres palettes, on ne peut
+     pas juste garder le même schéma "-hover au repos / base au survol".
+     On utilise donc -active (plus foncé) au repos avec du texte blanc
+     (5.83:1, conforme AA), et -error (un peu plus clair) au survol. */
+  --btn-bg: var(--color-error-active);
   --btn-bg-hover: var(--color-error);
-  --btn-color: var(--color-black);
-  --btn-border: var(--color-error-hover);
+  --btn-color: var(--color-white);
+  --btn-border: var(--color-error-active);
   --btn-bg-pale: var(--color-error-pale);
   --btn-outline-text: var(--color-error-active);
 }
@@ -233,10 +238,6 @@ const handleClick = (event: MouseEvent) => {
   border-radius: 999px;
 }
 
-.base-button--square {
-  border-radius: var(--radius-md);
-}
-
 .base-button--outline {
   background: var(
     --btn-bg-pale,
@@ -250,24 +251,46 @@ const handleClick = (event: MouseEvent) => {
   color: var(--btn-color, var(--color-white));
 }
 
-.base-button--outline.base-button--primary,
+.base-button--outline.base-button--primary {
+  color: var(--color-white);
+}
+
 .base-button--outline.base-button--gradient {
   color: var(--color-white);
+  background: var(--btn-bg-pale);
+  border: 1px solid var(--color-accent);
 }
 
 .base-button--outline.base-button--gradient:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-hover) 0%,
+    var(--color-accent2-hover) 100%
+  );
+  color: var(--color-black);
+}
+
+/* white a bien une teinte pâle dédiée (--color-white-pale, blanc 10%
+   d'opacité), câblée sur --btn-bg-pale comme les autres couleurs — on
+   n'a donc plus besoin de forcer un fond transparent ici, ça ferait
+   perdre le fond pâle attendu pour rien. On garde juste bordure/texte
+   en blanc plein pour la lisibilité. */
+.base-button--outline.base-button--white {
+  border-color: var(--color-white);
   color: var(--color-white);
 }
 
-.base-button--outline.base-button--white {
-  border-color: var(--color-white);
+/* --color-error-active (texte outline par défaut pour error) donne un
+   contraste de 2.56:1 sur le fond sombre de la page — illisible. Même
+   traitement que primary/gradient/white ci-dessus : on force du blanc. */
+.base-button--outline.base-button--error {
   color: var(--color-white);
 }
 
 .base-button--link {
   background: transparent;
   border: none;
-  padding: 4px 8px;
+  padding: 10px 18px;
   text-decoration: underline;
   color: var(--btn-border, var(--color-white));
 }
