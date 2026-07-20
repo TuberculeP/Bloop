@@ -14,6 +14,7 @@ import {
   updatePost,
 } from "../../services/posts";
 import type { CreatePostData, Post } from "../../lib/utils/types";
+import ProjectLinkRenderer from "./ProjectLinkRenderer.vue";
 
 const props = defineProps<{
   post: Post;
@@ -339,7 +340,7 @@ fetchComments();
       </div>
     </div>
     <div class="post-content">
-      {{ post.body }}
+      <ProjectLinkRenderer :text="post.body" />
     </div>
 
     <!-- Affichage des tags du post -->

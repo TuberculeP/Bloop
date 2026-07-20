@@ -7,6 +7,13 @@ import { syncSampleLinksForProject } from "../../services/sampleProjectLinks.ser
 
 const projectsRouter = Router();
 
+function findPublicProject(id: string) {
+  return pg.getRepository(Project).findOne({
+    where: { id, isPublic: true, deletedAt: IsNull() },
+    relations: ["user"],
+  });
+}
+
 projectsRouter.get("/", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
@@ -172,10 +179,7 @@ projectsRouter.get("/:id", async (req, res) => {
       return;
     }
 
-    const publicProject = await projectRepository.findOne({
-      where: { id: req.params.id, isPublic: true, deletedAt: IsNull() },
-      relations: ["user"],
-    });
+    const publicProject = await findPublicProject(req.params.id);
 
     if (publicProject) {
       res.json({
@@ -195,6 +199,40 @@ projectsRouter.get("/:id", async (req, res) => {
     res.status(404).json({ error: "Project not found" });
   } catch (error) {
     console.error("Error fetching project:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Aperçu léger d'un projet pour l'enrichissement des liens dans le blog.
+// Volontairement limité aux projets publics : un projet privé ou introuvable
+// renvoie 404, peu importe qui fait la requête.
+projectsRouter.get("/:id/link-preview", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const project = await findPublicProject(req.params.id);
+
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+
+    res.json({
+      body: {
+        id: project.id,
+        name: project.name,
+        createdAt: project.createdAt,
+        owner: {
+          firstName: project.user.firstName,
+          lastName: project.user.lastName,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching project link preview:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
