@@ -444,7 +444,6 @@ const getSampleCount = (pack: SamplePack): number => {
   h3 {
     margin: 0;
     font-size: 14px;
-    font-weight: 600;
     color: var(--color-white);
     text-transform: uppercase;
     letter-spacing: 0.5px;

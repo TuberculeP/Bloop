@@ -196,9 +196,8 @@ const handleSubmit = async () => {
                 size="small"
                 :variant="showAllTags ? 'accent' : 'lightghost'"
                 @click="toggleShowAllTags"
-              >
-                {{ showAllTags ? "Masquer" : "Voir les tags" }}
-              </BaseButton>
+                :label="showAllTags ? 'Masquer' : 'Voir les tags'"
+              />
             </div>
             <!-- Liste des suggestions ou tous les tags -->
             <ul
@@ -228,9 +227,8 @@ const handleSubmit = async () => {
           size="normal"
           :disabled="loading"
           :loading="loading"
-        >
-          Poster
-        </BaseButton>
+          label="Poster"
+        />
       </div>
     </form>
   </div>

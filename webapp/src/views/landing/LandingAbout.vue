@@ -40,29 +40,16 @@
         <section class="about-section">
           <h2 class="about-section-title">Ce qu'on défend</h2>
           <div class="values-grid">
-            <div class="value-card">
-              <div class="value-icon">🎹</div>
-              <h3>Accessible</h3>
-              <p>
-                Directement dans ton navigateur. Aucune installation, aucune
-                compétence technique requise.
-              </p>
-            </div>
-            <div class="value-card">
-              <div class="value-icon">🆓</div>
-              <h3>Gratuit</h3>
-              <p>
-                Des centaines d'instruments et de samples inclus, sans carte
-                bancaire nécessaire.
-              </p>
-            </div>
-            <div class="value-card">
-              <div class="value-icon">🔁</div>
-              <h3>Collaboratif</h3>
-              <p>
-                Partage tes créations et laisse la communauté les remixer à sa
-                sauce.
-              </p>
+            <div
+              v-for="value in landingContent.aboutSection"
+              :key="value.title"
+              class="value-card"
+            >
+              <div class="value-icon">
+                <i :class="value.icon"></i>
+              </div>
+              <h3>{{ value.title }}</h3>
+              <p>{{ value.description }}</p>
             </div>
           </div>
         </section>
@@ -72,7 +59,13 @@
           <p>
             Ta première création t'attend, elle ne prend que quelques minutes.
           </p>
-          <LandingCtaButton to="/register">Créer gratuitement</LandingCtaButton>
+          <BaseButton
+            to="/register"
+            label="Créer gratuitement"
+            color="gradient"
+            size="large"
+            @click="goToRegisterPage"
+          />
         </section>
       </div>
     </main>
@@ -84,7 +77,14 @@
 import LandingLayout from "../../layouts/LandingLayout.vue";
 import LandingHeader from "../../components/landing/LandingHeader.vue";
 import LandingFooter from "../../components/landing/LandingFooter.vue";
-import LandingCtaButton from "../../components/landing/LandingCtaButton.vue";
+import BaseButton from "../../components/ui/BaseButton.vue";
+import landingContent from "../../assets/data/landingContent.json";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const goToRegisterPage = () => {
+  router.push("/register");
+};
 </script>
 
 <style scoped>
@@ -191,7 +191,6 @@ import LandingCtaButton from "../../components/landing/LandingCtaButton.vue";
 
 .value-card h3 {
   font-size: 1.1rem;
-  font-weight: 600;
   color: var(--color-white);
   margin-bottom: 0.5rem;
 }

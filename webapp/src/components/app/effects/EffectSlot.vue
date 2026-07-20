@@ -74,7 +74,7 @@ const handleEQUpdate = (bandId: string, gain: number) => {
         />
       </label>
       <button class="remove-btn" title="Supprimer" @click="emit('remove')">
-        ×
+        <i class="fas fa-times" />
       </button>
     </div>
 

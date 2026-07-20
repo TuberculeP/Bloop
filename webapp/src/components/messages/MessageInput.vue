@@ -29,19 +29,19 @@ defineEmits<{
     />
     <BaseButton
       variant="primary"
-      size="normal"
+      size="large"
       @click="$emit('send')"
       :loading="sending"
-    >
-      <i class="fas fa-paper-plane"></i>
-    </BaseButton>
+      right-icon="fas fa-paper-plane"
+    />
   </div>
 </template>
 
 <style scoped>
 .message-input-area {
   display: flex;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 12px;
   padding: 1rem 1.5rem;
   background: var(--color-bg-secondary-dark);
 }

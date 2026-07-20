@@ -108,16 +108,14 @@
           variant="secondary"
           :disabled="isDeleting"
           @click="cancelDelete"
-        >
-          Annuler
-        </BaseButton>
+          label="Annuler"
+        />
         <BaseButton
           variant="error"
           :loading="isDeleting"
           @click="confirmDelete"
-        >
-          Supprimer
-        </BaseButton>
+          label="Supprimer"
+        />
       </template>
     </BaseModal>
   </div>

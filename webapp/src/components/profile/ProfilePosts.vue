@@ -148,9 +148,11 @@ onMounted(loadUserPosts);
       message="Commencez à partager vos idées !"
     >
       <template #action>
-        <BaseButton variant="ghost" @click="router.push('/blog')">
-          Créer mon premier post
-        </BaseButton>
+        <BaseButton
+          variant="outline"
+          @click="router.push('/blog')"
+          label="Créer mon premier post"
+        />
       </template>
     </EmptyState>
 
@@ -169,34 +171,35 @@ onMounted(loadUserPosts);
           ></textarea>
           <div class="edit-actions">
             <BaseButton
-              variant="primary"
+              variant="outline"
+              size="small"
+              @click="cancelEdit"
+              label="Annuler"
+            />
+            <BaseButton
+              color="secondary"
               size="small"
               @click="saveEdit"
               :disabled="!editForm.body.trim()"
-            >
-              Sauvegarder
-            </BaseButton>
-            <BaseButton variant="ghost" size="small" @click="cancelEdit">
-              Annuler
-            </BaseButton>
+              label="Sauvegarder"
+            />
           </div>
         </div>
 
         <div v-else class="post-display">
           <BlogPost :post="post" />
           <div class="post-actions">
-            <BaseButton variant="outline" size="small" @click="startEdit(post)">
-              <i class="fas fa-pencil-alt"></i>
-              <span>Modifier</span>
-            </BaseButton>
             <BaseButton
-              variant="danger"
-              size="small"
+              variant="outline"
               @click="post.id !== undefined && handleDeletePost(post.id)"
-            >
-              <i class="fas fa-trash-alt"></i>
-              <span>Supprimer</span>
-            </BaseButton>
+              left-icon="fas fa-trash-alt"
+              label="Supprimer"
+            />
+            <BaseButton
+              @click="startEdit(post)"
+              label="Modifier"
+              left-icon="fas fa-pencil-alt"
+            />
           </div>
         </div>
       </div>
@@ -211,12 +214,12 @@ onMounted(loadUserPosts);
       </template>
       <p>Cette action est irréversible.</p>
       <template #footer>
-        <BaseButton variant="secondary" @click="cancelDeletePost">
-          Annuler
-        </BaseButton>
-        <BaseButton variant="danger" @click="confirmDeletePost">
-          Supprimer
-        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          @click="cancelDeletePost"
+          label="Annuler"
+        />
+        <BaseButton @click="confirmDeletePost" label="Supprimer" />
       </template>
     </BaseModal>
   </div>

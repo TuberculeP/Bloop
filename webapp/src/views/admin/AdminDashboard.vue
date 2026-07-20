@@ -53,7 +53,6 @@ onMounted(() => {
   h1 {
     margin: 0 0 24px;
     font-size: 24px;
-    font-weight: 600;
     color: var(--color-white);
   }
 

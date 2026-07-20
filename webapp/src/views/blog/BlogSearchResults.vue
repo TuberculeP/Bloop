@@ -113,9 +113,9 @@ onMounted(() => {
           size="small"
           @click="handleNewSearch"
           color="secondary"
-        >
-          ← Nouvelle recherche
-        </BaseButton>
+          label="Nouvelle recherche"
+          left-icon="fas fa-arrow-left"
+        />
       </div>
       <!-- Statistiques et état -->
       <div class="search-stats">
@@ -126,9 +126,12 @@ onMounted(() => {
 
         <div v-else-if="error" class="error">
           <p>{{ error }}</p>
-          <BaseButton variant="ghost" size="small" @click="fetchPosts">
-            Réessayer
-          </BaseButton>
+          <BaseButton
+            variant="ghost"
+            size="small"
+            @click="fetchPosts"
+            label="Réessayer"
+          />
         </div>
 
         <EmptyState

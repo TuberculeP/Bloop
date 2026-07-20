@@ -200,6 +200,11 @@
   justify-content: space-between;
 }
 
+.post-footer-action {
+  display: flex;
+  gap: 12px;
+}
+
 /* Styles pour le bouton like avec icône de cœur */
 .like-button {
   display: flex;
@@ -502,14 +507,12 @@
   color: var(--color-white);
   margin: 0 0 8px 0;
   font-size: 1.5rem;
-  font-weight: 600;
 }
 
 .search-header h3 {
   color: var(--color-white);
   margin: 0 0 4px 0;
   font-size: 1.2rem;
-  font-weight: 600;
 }
 
 .search-header {

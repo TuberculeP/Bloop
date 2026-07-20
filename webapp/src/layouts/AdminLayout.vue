@@ -21,8 +21,12 @@
           <span class="nav-icon"><i class="fas fa-file-export"></i></span>
           Projects
         </router-link>
+        <router-link :to="{ name: 'admin-buttons' }" class="nav-item">
+          <span class="nav-icon"><i class="fas fa-hand-pointer" /></span>
+          Buttons
+        </router-link>
         <div class="nav-spacer"></div>
-        <router-link :to="{ name: 'landing-main' }" class="nav-item nav-back">
+        <router-link :to="{ name: 'app-main' }" class="nav-item nav-back">
           <span class="nav-icon">←</span>
           Back to App
         </router-link>
@@ -59,7 +63,6 @@
   h2 {
     margin: 0;
     font-size: 18px;
-    font-weight: 600;
     color: var(--color-white);
   }
 }

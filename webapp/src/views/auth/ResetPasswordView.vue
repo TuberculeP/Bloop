@@ -31,9 +31,8 @@
         class="submit-button"
         :disabled="isLoading"
         :loading="isLoading"
-      >
-        Modifier le mot de passe
-      </BaseButton>
+        label="Modifier le mot de passe"
+      />
 
       <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>

@@ -66,17 +66,17 @@
           <h2>Pas trouvé ta réponse ?</h2>
           <p>Écris-nous, on répond rapidement.</p>
           <div class="contact-actions">
-            <a href="mailto:support@bloop.com" class="contact-btn primary">
-              Nous écrire
-            </a>
-            <a
-              href="https://www.instagram.com/bloop_music/"
-              target="_blank"
-              rel="noopener"
-              class="contact-btn"
-            >
-              Nous rejoindre sur Instagram
-            </a>
+            <BaseButton
+              color="gradient"
+              label="Nous écrire"
+              @click="openMail"
+            />
+            <BaseButton
+              variant="outline"
+              color="white"
+              label="Nous rejoindre sur Instagram"
+              @click="openInstagram"
+            />
           </div>
         </section>
       </div>
@@ -89,6 +89,15 @@
 import LandingLayout from "../../layouts/LandingLayout.vue";
 import LandingHeader from "../../components/landing/LandingHeader.vue";
 import LandingFooter from "../../components/landing/LandingFooter.vue";
+import BaseButton from "../../components/ui/BaseButton.vue";
+
+const openMail = () => {
+  window.location.href = "mailto:support@bloop.com";
+};
+
+const openInstagram = () => {
+  window.open("https://www.instagram.com/bloop_music/", "_blank", "noopener");
+};
 </script>
 
 <style scoped>

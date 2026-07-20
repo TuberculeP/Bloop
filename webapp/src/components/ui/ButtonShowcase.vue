@@ -6,9 +6,9 @@
     <section class="showcase-section">
       <h3>Tailles</h3>
       <div class="buttons-row">
-        <BaseButton size="small" @click="handleClick">Petit</BaseButton>
-        <BaseButton size="normal" @click="handleClick">Normal</BaseButton>
-        <BaseButton size="large" @click="handleClick">Grand</BaseButton>
+        <BaseButton size="small" @click="handleClick" label="Petit" />
+        <BaseButton size="normal" @click="handleClick" label="Normal" />
+        <BaseButton size="large" @click="handleClick" label="Grand" />
       </div>
     </section>
 
@@ -16,14 +16,16 @@
     <section class="showcase-section">
       <h3>Variantes</h3>
       <div class="buttons-row">
-        <BaseButton variant="primary" @click="handleClick">Primary</BaseButton>
-        <BaseButton variant="secondary" @click="handleClick"
-          >Secondary</BaseButton
-        >
-        <BaseButton variant="accent" @click="handleClick">Accent</BaseButton>
-        <BaseButton variant="error" @click="handleClick">Error</BaseButton>
-        <BaseButton variant="link" @click="handleClick">Link</BaseButton>
-        <BaseButton variant="ghost" @click="handleClick">Ghost</BaseButton>
+        <BaseButton variant="primary" @click="handleClick" label="Primary" />
+        <BaseButton
+          variant="secondary"
+          @click="handleClick"
+          label="Secondary"
+        />
+        <BaseButton variant="accent" @click="handleClick" label="Accent" />
+        <BaseButton variant="error" @click="handleClick" label="Error" />
+        <BaseButton variant="link" @click="handleClick" label="Link" />
+        <BaseButton variant="ghost" @click="handleClick" label="Ghost" />
       </div>
     </section>
 
@@ -31,9 +33,9 @@
     <section class="showcase-section">
       <h3>États</h3>
       <div class="buttons-row">
-        <BaseButton @click="handleClick">Normal</BaseButton>
-        <BaseButton disabled @click="handleClick">Disabled</BaseButton>
-        <BaseButton loading @click="handleClick">Loading</BaseButton>
+        <BaseButton @click="handleClick" label="Normal" />
+        <BaseButton disabled @click="handleClick" label="Disabled" />
+        <BaseButton loading @click="handleClick" label="Loading" />
       </div>
     </section>
 
@@ -41,18 +43,30 @@
     <section class="showcase-section">
       <h3>Combinaisons</h3>
       <div class="buttons-row">
-        <BaseButton variant="primary" size="small" @click="handleClick"
-          >Primary Small</BaseButton
-        >
-        <BaseButton variant="secondary" size="large" @click="handleClick"
-          >Secondary Large</BaseButton
-        >
-        <BaseButton variant="accent" size="normal" @click="handleClick"
-          >Accent Normal</BaseButton
-        >
-        <BaseButton variant="ghost" size="normal" @click="handleClick"
-          >Accent Normal</BaseButton
-        >
+        <BaseButton
+          variant="primary"
+          size="small"
+          @click="handleClick"
+          label="Primary Small"
+        />
+        <BaseButton
+          variant="secondary"
+          size="large"
+          @click="handleClick"
+          label="Secondary Large"
+        />
+        <BaseButton
+          variant="accent"
+          size="normal"
+          @click="handleClick"
+          label="Accent Normal"
+        />
+        <BaseButton
+          variant="ghost"
+          size="normal"
+          @click="handleClick"
+          label="Accent Normal"
+        />
       </div>
     </section>
   </div>
