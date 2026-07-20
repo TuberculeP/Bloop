@@ -9,6 +9,9 @@ import {
   useAudioClipClipboard,
   useAudioClipKeyboard,
 } from "../../../../composables/audioClip";
+import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
+import { useVisibleGrid } from "../../../../composables/useVisibleGrid";
+import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
@@ -17,11 +20,14 @@ const props = defineProps<{
   colWidth: number;
   playbackPosition: number;
   isPlaying: boolean;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const timelineStore = useTimelineStore();
 const trackHistoryStore = useTrackHistoryStore();
 const audioLibraryStore = useAudioLibraryStore();
+const { placeFilesOnTrack } = useSampleFileDrop();
 
 const containerRef = ref<HTMLElement | null>(null);
 const isContainerFocused = ref(false);
@@ -35,6 +41,32 @@ onMounted(() => {
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const clips = computed(() => props.track.clips ?? []);
+
+const {
+  barLength,
+  visibleTickRange,
+  visibleMeasureRange,
+  visibleSubdivisionTicks,
+} = useVisibleGrid(
+  () => props.scrollLeft,
+  () => props.viewportWidth,
+  () => props.colWidth,
+  () => props.cols,
+);
+
+const visibleMeasureIndices = computed(() => {
+  const [firstBar, lastBar] = visibleMeasureRange.value;
+  const result: number[] = [];
+  for (let i = firstBar; i <= lastBar; i++) result.push(i);
+  return result;
+});
+
+const visibleClips = computed(() => {
+  const [tickStart, tickEnd] = visibleTickRange.value;
+  return clips.value.filter(
+    (clip) => clip.x < tickEnd && clip.x + clip.w > tickStart,
+  );
+});
 
 const {
   selectedClipIds,
@@ -88,6 +120,26 @@ const handleDeleteSelected = (): void => {
   selectedClipIds.value.clear();
 };
 
+const handleSplitSelected = (): void => {
+  if (selectedClipIds.value.size === 0) return;
+
+  const cutPosition = Math.round(props.playbackPosition);
+  const clipIdsToSplit = Array.from(selectedClipIds.value).filter((clipId) => {
+    const clip = clips.value.find((c) => c.id === clipId);
+    return !!clip && cutPosition > clip.x && cutPosition < clip.x + clip.w;
+  });
+  if (clipIdsToSplit.length === 0) return;
+
+  trackHistoryStore.startBatch(
+    props.track.id,
+    `Split ${clipIdsToSplit.length} clip(s)`,
+  );
+  for (const clipId of clipIdsToSplit) {
+    timelineStore.splitClipInTrack(props.track.id, clipId, cutPosition);
+  }
+  trackHistoryStore.endBatch();
+};
+
 useAudioClipKeyboard(
   selectedClipIds,
   {
@@ -98,12 +150,17 @@ useAudioClipKeyboard(
     onCopy: copySelectedClips,
     onPaste: pasteClips,
     onDuplicate: duplicateSelectedClips,
+    onSplit: handleSplitSelected,
   },
   isContainerFocused,
 );
 
 const handleClipSelect = (clipId: string, event: MouseEvent): void => {
   selectClip(clipId, event);
+  // preventDefault() sur le mousedown de l'item (voir AudioClipItem.vue) coupe
+  // la mise au focus native du navigateur : on la redéclenche explicitement
+  // pour que les raccourcis clavier scoped (delete/copy/split...) restent actifs.
+  containerRef.value?.focus();
 };
 
 const handleClipDelete = (clipId: string): void => {
@@ -140,13 +197,21 @@ const handleClipResize = (
 
 const handleDrop = async (event: DragEvent): Promise<void> => {
   event.preventDefault();
-  const sampleId = event.dataTransfer?.getData("application/x-sample-id");
-  if (!sampleId) return;
+  event.stopPropagation();
 
   const rect = containerRef.value?.getBoundingClientRect();
   if (!rect) return;
 
   const x = Math.floor((event.clientX - rect.left) / props.colWidth);
+
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    await placeFilesOnTrack(files, props.track.id, x);
+    return;
+  }
+
+  const sampleId = event.dataTransfer?.getData("application/x-sample-id");
+  if (!sampleId) return;
 
   const sample = audioLibraryStore.getSample(sampleId);
   if (!sample) return;
@@ -155,8 +220,8 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
   const loadedSample = audioLibraryStore.getSample(sampleId);
   if (!loadedSample) return;
 
-  const stepsPerSecond = (timelineStore.tempo / 60) * 4;
-  const durationInSteps = Math.ceil(loadedSample.duration * stepsPerSecond);
+  const tickRate = ticksPerSecond(timelineStore.tempo);
+  const durationInSteps = Math.ceil(loadedSample.duration * tickRate);
 
   trackHistoryStore.recordAddClip(
     props.track.id,
@@ -180,6 +245,8 @@ const handleDragOver = (event: DragEvent): void => {
 const handleContainerMouseDown = (event: MouseEvent): void => {
   if (event.target !== containerRef.value) return;
   if (event.button !== 0) return;
+  event.preventDefault();
+  containerRef.value?.focus();
 
   if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
     clearSelection();
@@ -234,21 +301,27 @@ onBeforeUnmount(() => {
     >
       <div class="grid-lines">
         <div
-          v-for="i in Math.ceil(cols / 4)"
+          v-for="tick in visibleSubdivisionTicks"
+          :key="`sub-${tick}`"
+          class="subdivision-line"
+          :style="{ left: `${tick * colWidth}px` }"
+        />
+        <div
+          v-for="i in visibleMeasureIndices"
           :key="i"
           class="measure-line"
-          :style="{ left: `${(i - 1) * 4 * colWidth}px` }"
+          :style="{ left: `${i * barLength * colWidth}px` }"
         />
       </div>
 
       <div
         v-if="isPlaying"
         class="playback-cursor"
-        :style="{ left: `${playbackPosition * colWidth}px` }"
+        :style="{ transform: `translateX(${playbackPosition * colWidth}px)` }"
       />
 
       <AudioClipItem
-        v-for="clip in clips"
+        v-for="clip in visibleClips"
         :key="clip.id"
         :clip="clip"
         :col-width="colWidth"
@@ -280,13 +353,13 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .audio-clip-row-wrapper {
   display: flex;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   overflow: visible;
 }
 
 .audio-clip-container {
   position: relative;
-  background: #1a0e15;
+  background: var(--color-bg-primary-dark);
   outline: none;
 
   &:focus {
@@ -300,27 +373,37 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.subdivision-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--color-accent3-rgb), 0.12);
+}
+
 .measure-line {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(122, 15, 62, 0.3);
+  background: rgba(var(--color-accent3-rgb), 0.3);
 }
 
 .playback-cursor {
   position: absolute;
   top: 0;
   bottom: 0;
+  left: 0;
   width: 2px;
-  background: #ef4444;
+  background: var(--color-status-error);
   z-index: 100;
   pointer-events: none;
+  will-change: transform;
 }
 
 .selection-rect {
   position: absolute;
-  border: 1px solid #fbbf24;
+  border: 1px solid var(--color-audio-clip-selected);
   background: rgba(251, 191, 36, 0.1);
   pointer-events: none;
   z-index: 50;

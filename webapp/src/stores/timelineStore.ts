@@ -6,31 +6,176 @@ import type {
   MidiNote,
   AudioClip,
   AudioSample,
-  EQBand,
   InstrumentConfig,
   InstrumentType,
   TrackColor,
-  AutomatableParam,
+  AutomationTarget,
   AutomationLane,
   AutomationPoint,
-  MasterCompressorConfig,
-  MasterLimiterConfig,
+  EffectInstanceConfig,
+  TimeSignature,
 } from "../lib/utils/types";
 import { TRACK_COLORS } from "../lib/utils/types";
 import {
   cloneEQBands,
   cloneCompressorConfig,
   cloneLimiterConfig,
-  DEFAULT_COMPRESSOR_CONFIG,
-  DEFAULT_LIMITER_CONFIG,
 } from "../lib/audio/config";
+import { getEffectDefinition } from "../lib/audio/effects";
+import {
+  DEFAULT_TIME_SIGNATURE,
+  DEFAULT_SUBDIVISION,
+  LEGACY_TO_TICKS_SCALE,
+  migrateLegacyProject,
+} from "../lib/audio/timeGrid";
 import { useProjectStore } from "./projectStore";
+import { useUiLayoutPreference } from "../composables/useUiLayoutStorage";
 
 const STORAGE_KEY = "bloop-timeline-project";
-const DEFAULT_COLS = 128; // 32 mesures
+const CURRENT_PROJECT_VERSION = "6.0";
+const DEFAULT_COLS = 128 * LEGACY_TO_TICKS_SCALE; // 8 mesures en 4/4
 const DEFAULT_TEMPO = 120;
 const DEFAULT_VOLUME = 100;
-const DEFAULT_REVERB = 20;
+
+// ============================================
+// Effets : création + migration depuis l'ancien format
+// ============================================
+
+const generateId = (prefix: string): string => {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+const createEffectInstanceConfig = (type: string): EffectInstanceConfig => {
+  const definition = getEffectDefinition(type);
+  if (!definition) throw new Error(`Unknown effect type: ${type}`);
+  return {
+    id: generateId("effect"),
+    type,
+    enabled: true,
+    params: definition.createDefaultParams(),
+  };
+};
+
+// Bus master d'un nouveau projet : EQ + Reverb par défaut (comportement
+// identique à l'ancien `eqBands`/`reverb` toujours présents). Les nouvelles
+// pistes, elles, démarrent sans effet — l'utilisateur en ajoute depuis le rack.
+const createDefaultMasterEffects = (): EffectInstanceConfig[] => [
+  createEffectInstanceConfig("eq5"),
+  createEffectInstanceConfig("reverb"),
+];
+
+// Convertit un ancien `AutomatableParam` (union fermée) en cible générique,
+// en pointant vers l'id de l'effet EQ/Reverb migré correspondant.
+const migrateAutomationTarget = (
+  parameter: string,
+  trackId: string,
+  eqEffectId: string,
+  reverbEffectId: string,
+): AutomationTarget => {
+  if (parameter === "volume") {
+    return { trackId, effectId: "channel", paramId: "volume" };
+  }
+  if (parameter === "reverb") {
+    return { trackId, effectId: reverbEffectId, paramId: "amount" };
+  }
+  const bandId = parameter.replace("eq_", "");
+  return { trackId, effectId: eqEffectId, paramId: `${bandId}_gain` };
+};
+
+// Migration in-place d'une piste chargée depuis un projet antérieur à ce
+// chantier (`track.reverb`/`track.eqBands` -> `track.effects`, et
+// `lane.parameter` -> `lane.target`). No-op si déjà migrée.
+const migrateTrackEffects = (track: any): void => {
+  if (Array.isArray(track.effects)) return;
+
+  const eqBands = track.eqBands ?? cloneEQBands();
+  const reverbAmount = track.reverb ?? 0;
+
+  const eqEffect = createEffectInstanceConfig("eq5");
+  for (const band of eqBands) {
+    eqEffect.params[`${band.id}_gain`] = band.gain;
+  }
+
+  const reverbEffect = createEffectInstanceConfig("reverb");
+  reverbEffect.params.amount = reverbAmount;
+
+  track.effects = [eqEffect, reverbEffect];
+
+  for (const lane of track.automationLanes ?? []) {
+    if (lane.target) continue;
+    lane.target = migrateAutomationTarget(
+      lane.parameter,
+      track.id,
+      eqEffect.id,
+      reverbEffect.id,
+    );
+    delete lane.parameter;
+  }
+
+  delete track.reverb;
+  delete track.eqBands;
+};
+
+// Idem pour le bus master (`project.compressor`/`project.limiter` ne
+// deviennent des entrées de la pile que s'ils étaient `enabled`, sinon ils
+// étaient déjà transparents et l'absence d'entrée produit le même résultat).
+const migrateMasterEffects = (data: any): void => {
+  if (Array.isArray(data.effects)) return;
+
+  const eqBands = data.eqBands ?? cloneEQBands();
+  const reverbAmount = data.reverb ?? 0;
+  const compressorConfig = data.compressor ?? cloneCompressorConfig();
+  const limiterConfig = data.limiter ?? cloneLimiterConfig();
+
+  const eqEffect = createEffectInstanceConfig("eq5");
+  for (const band of eqBands) {
+    eqEffect.params[`${band.id}_gain`] = band.gain;
+  }
+
+  const reverbEffect = createEffectInstanceConfig("reverb");
+  reverbEffect.params.amount = reverbAmount;
+
+  const effects: EffectInstanceConfig[] = [eqEffect, reverbEffect];
+
+  if (compressorConfig.enabled) {
+    const compressorEffect = createEffectInstanceConfig("compressor");
+    compressorEffect.params = {
+      threshold: compressorConfig.threshold,
+      ratio: compressorConfig.ratio,
+      attack: compressorConfig.attack,
+      release: compressorConfig.release,
+      knee: compressorConfig.knee,
+    };
+    effects.push(compressorEffect);
+  }
+
+  if (limiterConfig.enabled) {
+    const limiterEffect = createEffectInstanceConfig("limiter");
+    limiterEffect.params = {
+      threshold: limiterConfig.threshold,
+      release: limiterConfig.release,
+    };
+    effects.push(limiterEffect);
+  }
+
+  data.effects = effects;
+
+  for (const lane of data.automationLanes ?? []) {
+    if (lane.target) continue;
+    lane.target = migrateAutomationTarget(
+      lane.parameter,
+      "master",
+      eqEffect.id,
+      reverbEffect.id,
+    );
+    delete lane.parameter;
+  }
+
+  delete data.reverb;
+  delete data.eqBands;
+  delete data.compressor;
+  delete data.limiter;
+};
 
 export const useTimelineStore = defineStore("timelineStore", () => {
   // ============================================
@@ -41,13 +186,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     tracks: [],
     cols: DEFAULT_COLS,
     tempo: DEFAULT_TEMPO,
+    timeSignature: { ...DEFAULT_TIME_SIGNATURE },
+    subdivision: DEFAULT_SUBDIVISION,
     volume: DEFAULT_VOLUME,
-    reverb: DEFAULT_REVERB,
-    eqBands: cloneEQBands(),
-    compressor: cloneCompressorConfig(),
-    limiter: cloneLimiterConfig(),
+    effects: createDefaultMasterEffects(),
     automationLanes: [],
-    version: "4.0",
+    version: CURRENT_PROJECT_VERSION,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -56,10 +200,28 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // État de l'édition
   // ============================================
   const activeTrackId = ref<string | null>(null);
+  // Piste armée pour recevoir l'input live (clavier MIDI) : une seule à la fois.
+  const armedTrackId = ref<string | null>(null);
   const expandedTrackId = ref<string | null>(null);
   const automationExpandedTrackId = ref<string | null>(null);
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
+  const metronomeEnabled = useUiLayoutPreference("metronome-enabled", false);
+  // Aide d'édition éphémère (non persistée) : dernière largeur donnée à une
+  // note via un resize individuel, utilisée comme largeur par défaut pour la
+  // prochaine note posée au clic dans le piano roll.
+  const lastResizedNoteWidth = ref<number | null>(null);
+  // Zoom horizontal de la timeline : préférence de vue par navigateur, pas
+  // une donnée de projet (non partagée entre collaborateurs).
+  const ZOOM_MIN = 0.25;
+  const ZOOM_MAX = 4;
+  const zoomLevel = useUiLayoutPreference("timeline-zoom", 1);
+  // Vitesse du zoom Ctrl+molette/pincement trackpad : le delta d'un geste de
+  // pincement macOS est bien plus faible que celui d'un clic de molette, d'où
+  // un réglage par utilisateur plutôt qu'une constante unique. 1-20, défaut 5.
+  const ZOOM_WHEEL_SPEED_MIN = 1;
+  const ZOOM_WHEEL_SPEED_MAX = 20;
+  const zoomWheelSpeed = useUiLayoutPreference("timeline-zoom-wheel-speed", 5);
 
   // ============================================
   // Computed Properties
@@ -75,6 +237,22 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     },
   });
 
+  const timeSignature = computed<TimeSignature>({
+    get: () => project.value.timeSignature ?? DEFAULT_TIME_SIGNATURE,
+    set: (value: TimeSignature) => {
+      project.value.timeSignature = value;
+      project.value.updatedAt = new Date();
+    },
+  });
+
+  const subdivision = computed({
+    get: () => project.value.subdivision ?? DEFAULT_SUBDIVISION,
+    set: (value: number) => {
+      project.value.subdivision = value;
+      project.value.updatedAt = new Date();
+    },
+  });
+
   const volume = computed({
     get: () => project.value.volume,
     set: (value: number) => {
@@ -83,29 +261,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     },
   });
 
-  const reverb = computed({
-    get: () => project.value.reverb,
-    set: (value: number) => {
-      project.value.reverb = value;
-      project.value.updatedAt = new Date();
-    },
-  });
-
-  const eqBands = computed({
-    get: () => project.value.eqBands ?? cloneEQBands(),
-    set: (value: EQBand[]) => {
-      project.value.eqBands = value;
-      project.value.updatedAt = new Date();
-    },
-  });
-
-  const compressor = computed(
-    () => project.value.compressor ?? DEFAULT_COMPRESSOR_CONFIG,
-  );
-
-  const limiter = computed(
-    () => project.value.limiter ?? DEFAULT_LIMITER_CONFIG,
-  );
+  const masterEffects = computed(() => project.value.effects);
 
   const masterAutomationLanes = computed(
     () => project.value.automationLanes ?? [],
@@ -133,10 +289,6 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // ============================================
   // Utilitaires
   // ============================================
-
-  const generateId = (prefix: string): string => {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
 
   const generateNoteId = (trackId: string): string => {
     return `${trackId}_note_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
@@ -192,8 +344,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       instrument,
       color: getNextTrackColor(),
       volume: 100,
-      reverb: 0,
-      eqBands: cloneEQBands(),
+      effects: [],
       muted: false,
       solo: false,
       order: getNextTrackOrder(),
@@ -224,6 +375,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         project.value.tracks.length > 0 ? project.value.tracks[0].id : null;
     }
 
+    if (armedTrackId.value === trackId) {
+      armedTrackId.value = null;
+    }
+
     // Fermer le piano roll si c'était cette piste
     if (expandedTrackId.value === trackId) {
       expandedTrackId.value = null;
@@ -235,6 +390,14 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     });
 
     return true;
+  };
+
+  const armTrack = (trackId: string): void => {
+    armedTrackId.value = trackId;
+  };
+
+  const unarmTrack = (): void => {
+    armedTrackId.value = null;
   };
 
   const updateTrack = (trackId: string, updates: Partial<Track>): boolean => {
@@ -260,27 +423,6 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
   const setTrackVolume = (trackId: string, volume: number): boolean => {
     return updateTrack(trackId, { volume: Math.max(0, Math.min(100, volume)) });
-  };
-
-  const setTrackReverb = (trackId: string, reverb: number): boolean => {
-    return updateTrack(trackId, { reverb: Math.max(0, Math.min(100, reverb)) });
-  };
-
-  const updateTrackEQBand = (
-    trackId: string,
-    bandId: string,
-    gain: number,
-  ): boolean => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    if (!track) return false;
-
-    const band = track.eqBands.find((b) => b.id === bandId);
-    if (!band) return false;
-
-    band.gain = gain;
-    track.updatedAt = new Date();
-    project.value.updatedAt = new Date();
-    return true;
   };
 
   const updateTrackInstrument = (
@@ -460,6 +602,38 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     return true;
   };
 
+  const splitClipInTrack = (
+    trackId: string,
+    clipId: string,
+    cutPosition: number,
+  ): string | null => {
+    const track = project.value.tracks.find((t) => t.id === trackId);
+    if (!track || !track.clips) return null;
+
+    const clip = track.clips.find((c) => c.id === clipId);
+    if (!clip) return null;
+
+    // cutPosition doit être strictement à l'intérieur du clip
+    if (cutPosition <= clip.x || cutPosition >= clip.x + clip.w) return null;
+
+    const rightW = clip.x + clip.w - cutPosition;
+    const rightStartOffset = clip.startOffset + (cutPosition - clip.x);
+
+    clip.w = cutPosition - clip.x; // le clip existant devient la partie gauche
+
+    const rightClipId = addClipToTrack(trackId, {
+      sampleId: clip.sampleId,
+      x: cutPosition,
+      w: rightW,
+      startOffset: rightStartOffset,
+    });
+
+    track.updatedAt = new Date();
+    project.value.updatedAt = new Date();
+
+    return rightClipId;
+  };
+
   const setTrackClips = (trackId: string, clips: AudioClip[]): boolean => {
     const track = project.value.tracks.find((t) => t.id === trackId);
     if (!track) return false;
@@ -508,6 +682,25 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     }
   };
 
+  const setLastResizedNoteWidth = (width: number): void => {
+    lastResizedNoteWidth.value = width;
+  };
+
+  const clamp = (value: number, min: number, max: number): number =>
+    Math.min(max, Math.max(min, value));
+
+  const setZoomLevel = (value: number): void => {
+    zoomLevel.value = clamp(value, ZOOM_MIN, ZOOM_MAX);
+  };
+
+  const setZoomWheelSpeed = (value: number): void => {
+    zoomWheelSpeed.value = clamp(
+      value,
+      ZOOM_WHEEL_SPEED_MIN,
+      ZOOM_WHEEL_SPEED_MAX,
+    );
+  };
+
   const toggleAutomationExpanded = (trackId: string): void => {
     automationExpandedTrackId.value =
       automationExpandedTrackId.value === trackId ? null : trackId;
@@ -554,235 +747,205 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   };
 
   // ============================================
-  // Actions - EQ
+  // Actions - Effets (pile réordonnable, tracks + master)
   // ============================================
 
-  const updateEQBand = (bandId: string, gain: number): void => {
-    const bands = project.value.eqBands ?? cloneEQBands();
-    const band = bands.find((b) => b.id === bandId);
-    if (band) {
-      band.gain = gain;
-      project.value.eqBands = bands;
-      project.value.updatedAt = new Date();
+  const getEffectsArray = (
+    trackId: string | "master",
+  ): EffectInstanceConfig[] | undefined => {
+    if (trackId === "master") return project.value.effects;
+    return project.value.tracks.find((t) => t.id === trackId)?.effects;
+  };
+
+  const markTrackOrProjectUpdated = (trackId: string | "master"): void => {
+    if (trackId !== "master") {
+      const track = project.value.tracks.find((t) => t.id === trackId);
+      if (track) track.updatedAt = new Date();
     }
-  };
-
-  // ============================================
-  // Actions - Mastering (Compresseur / Limiteur)
-  // ============================================
-
-  const clamp = (value: number, min: number, max: number): number =>
-    Math.min(max, Math.max(min, value));
-
-  const updateCompressor = (patch: Partial<MasterCompressorConfig>): void => {
-    const current = project.value.compressor ?? cloneCompressorConfig();
-    const next: MasterCompressorConfig = { ...current, ...patch };
-    next.threshold = clamp(next.threshold, -100, 0);
-    next.ratio = clamp(next.ratio, 1, 20);
-    next.attack = clamp(next.attack, 0, 1);
-    next.release = clamp(next.release, 0, 1);
-    next.knee = clamp(next.knee, 0, 40);
-    project.value.compressor = next;
     project.value.updatedAt = new Date();
   };
 
-  const updateLimiter = (patch: Partial<MasterLimiterConfig>): void => {
-    const current = project.value.limiter ?? cloneLimiterConfig();
-    const next: MasterLimiterConfig = { ...current, ...patch };
-    next.threshold = clamp(next.threshold, -100, 0);
-    next.release = clamp(next.release, 0, 1);
-    project.value.limiter = next;
-    project.value.updatedAt = new Date();
-  };
-
-  // ============================================
-  // Actions - Automation Lanes
-  // ============================================
-
-  const addAutomationLane = (
-    trackId: string,
-    parameter: AutomatableParam,
+  const addEffect = (
+    trackId: string | "master",
+    type: string,
   ): string | null => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    if (!track) return null;
+    const effects = getEffectsArray(trackId);
+    if (!effects) return null;
 
-    if (!track.automationLanes) track.automationLanes = [];
+    const config = createEffectInstanceConfig(type);
+    effects.push(config);
+    markTrackOrProjectUpdated(trackId);
+    return config.id;
+  };
 
-    if (track.automationLanes.some((l) => l.parameter === parameter))
+  const removeEffect = (
+    trackId: string | "master",
+    effectId: string,
+  ): boolean => {
+    const effects = getEffectsArray(trackId);
+    const index = effects?.findIndex((e) => e.id === effectId) ?? -1;
+    if (!effects || index === -1) return false;
+
+    effects.splice(index, 1);
+    markTrackOrProjectUpdated(trackId);
+    return true;
+  };
+
+  const reorderEffect = (
+    trackId: string | "master",
+    fromIndex: number,
+    toIndex: number,
+  ): boolean => {
+    const effects = getEffectsArray(trackId);
+    if (
+      !effects ||
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= effects.length ||
+      toIndex >= effects.length
+    ) {
+      return false;
+    }
+
+    const [moved] = effects.splice(fromIndex, 1);
+    effects.splice(toIndex, 0, moved);
+    markTrackOrProjectUpdated(trackId);
+    return true;
+  };
+
+  const setEffectEnabled = (
+    trackId: string | "master",
+    effectId: string,
+    enabled: boolean,
+  ): boolean => {
+    const effect = getEffectsArray(trackId)?.find((e) => e.id === effectId);
+    if (!effect) return false;
+
+    effect.enabled = enabled;
+    markTrackOrProjectUpdated(trackId);
+    return true;
+  };
+
+  const updateEffectParam = (
+    trackId: string | "master",
+    effectId: string,
+    paramId: string,
+    value: number,
+  ): boolean => {
+    const effect = getEffectsArray(trackId)?.find((e) => e.id === effectId);
+    if (!effect || !Number.isFinite(value)) return false;
+
+    effect.params[paramId] = value;
+    markTrackOrProjectUpdated(trackId);
+    return true;
+  };
+
+  // ============================================
+  // Actions - Automation Lanes (tracks + master, ciblage générique)
+  // ============================================
+
+  const getAutomationLanesArray = (
+    trackId: string | "master",
+  ): AutomationLane[] | undefined => {
+    if (trackId === "master") {
+      if (!project.value.automationLanes) project.value.automationLanes = [];
+      return project.value.automationLanes;
+    }
+    return project.value.tracks.find((t) => t.id === trackId)?.automationLanes;
+  };
+
+  const isSameAutomationTarget = (
+    a: AutomationTarget,
+    b: AutomationTarget,
+  ): boolean =>
+    a.trackId === b.trackId &&
+    a.effectId === b.effectId &&
+    a.paramId === b.paramId;
+
+  const addAutomationLane = (target: AutomationTarget): string | null => {
+    const lanes = getAutomationLanesArray(target.trackId);
+    if (!lanes) return null;
+
+    if (lanes.some((l) => isSameAutomationTarget(l.target, target))) {
       return null;
+    }
 
     const laneId = generateId("lane");
-    const lane: AutomationLane = { id: laneId, parameter, points: [] };
-    track.automationLanes.push(lane);
-    track.updatedAt = new Date();
-    project.value.updatedAt = new Date();
+    lanes.push({ id: laneId, target, points: [] });
+    markTrackOrProjectUpdated(target.trackId);
     return laneId;
   };
 
-  const removeAutomationLane = (trackId: string, laneId: string): boolean => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    if (!track) return false;
+  const removeAutomationLane = (
+    trackId: string | "master",
+    laneId: string,
+  ): boolean => {
+    const lanes = getAutomationLanesArray(trackId);
+    const index = lanes?.findIndex((l) => l.id === laneId) ?? -1;
+    if (!lanes || index === -1) return false;
 
-    const index =
-      track.automationLanes?.findIndex((l) => l.id === laneId) ?? -1;
-    if (index === -1) return false;
-
-    track.automationLanes.splice(index, 1);
-    track.updatedAt = new Date();
-    project.value.updatedAt = new Date();
+    lanes.splice(index, 1);
+    markTrackOrProjectUpdated(trackId);
     return true;
   };
 
   const addAutomationPoint = (
-    trackId: string,
+    trackId: string | "master",
     laneId: string,
     point: Omit<AutomationPoint, "id">,
   ): string | null => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    const lane = getAutomationLanesArray(trackId)?.find((l) => l.id === laneId);
     if (!lane) return null;
 
     const pointId = generateId("pt");
     lane.points.push({ ...point, id: pointId });
     lane.points.sort((a, b) => a.x - b.x);
-    track!.updatedAt = new Date();
-    project.value.updatedAt = new Date();
+    markTrackOrProjectUpdated(trackId);
     return pointId;
   };
 
   const updateAutomationPoint = (
-    trackId: string,
+    trackId: string | "master",
     laneId: string,
     pointId: string,
     updates: Partial<Pick<AutomationPoint, "x" | "y">>,
   ): boolean => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    const lane = getAutomationLanesArray(trackId)?.find((l) => l.id === laneId);
     const point = lane?.points.find((p) => p.id === pointId);
-    if (!point) return false;
+    if (!lane || !point) return false;
 
     Object.assign(point, updates);
-    lane!.points.sort((a, b) => a.x - b.x);
-    track!.updatedAt = new Date();
-    project.value.updatedAt = new Date();
+    lane.points.sort((a, b) => a.x - b.x);
+    markTrackOrProjectUpdated(trackId);
     return true;
   };
 
   const removeAutomationPoint = (
-    trackId: string,
+    trackId: string | "master",
     laneId: string,
     pointId: string,
   ): boolean => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    const lane = getAutomationLanesArray(trackId)?.find((l) => l.id === laneId);
     if (!lane) return false;
 
     const index = lane.points.findIndex((p) => p.id === pointId);
     if (index === -1) return false;
 
     lane.points.splice(index, 1);
-    track!.updatedAt = new Date();
-    project.value.updatedAt = new Date();
+    markTrackOrProjectUpdated(trackId);
     return true;
   };
 
   const setAutomationPoints = (
-    trackId: string,
+    trackId: string | "master",
     laneId: string,
     points: AutomationPoint[],
   ): boolean => {
-    const track = project.value.tracks.find((t) => t.id === trackId);
-    const lane = track?.automationLanes?.find((l) => l.id === laneId);
+    const lane = getAutomationLanesArray(trackId)?.find((l) => l.id === laneId);
     if (!lane) return false;
 
     lane.points = [...points].sort((a, b) => a.x - b.x);
-    track!.updatedAt = new Date();
-    project.value.updatedAt = new Date();
-    return true;
-  };
-
-  // ============================================
-  // Actions - Automation Lanes (Master)
-  // ============================================
-
-  const addMasterAutomationLane = (
-    parameter: AutomatableParam,
-  ): string | null => {
-    if (!project.value.automationLanes) project.value.automationLanes = [];
-
-    if (project.value.automationLanes.some((l) => l.parameter === parameter))
-      return null;
-
-    const laneId = generateId("lane");
-    const lane: AutomationLane = { id: laneId, parameter, points: [] };
-    project.value.automationLanes.push(lane);
-    project.value.updatedAt = new Date();
-    return laneId;
-  };
-
-  const removeMasterAutomationLane = (laneId: string): boolean => {
-    const index =
-      project.value.automationLanes?.findIndex((l) => l.id === laneId) ?? -1;
-    if (index === -1) return false;
-
-    project.value.automationLanes!.splice(index, 1);
-    project.value.updatedAt = new Date();
-    return true;
-  };
-
-  const addMasterAutomationPoint = (
-    laneId: string,
-    point: Omit<AutomationPoint, "id">,
-  ): string | null => {
-    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
-    if (!lane) return null;
-
-    const pointId = generateId("pt");
-    lane.points.push({ ...point, id: pointId });
-    lane.points.sort((a, b) => a.x - b.x);
-    project.value.updatedAt = new Date();
-    return pointId;
-  };
-
-  const updateMasterAutomationPoint = (
-    laneId: string,
-    pointId: string,
-    updates: Partial<Pick<AutomationPoint, "x" | "y">>,
-  ): boolean => {
-    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
-    const point = lane?.points.find((p) => p.id === pointId);
-    if (!point) return false;
-
-    Object.assign(point, updates);
-    lane!.points.sort((a, b) => a.x - b.x);
-    project.value.updatedAt = new Date();
-    return true;
-  };
-
-  const removeMasterAutomationPoint = (
-    laneId: string,
-    pointId: string,
-  ): boolean => {
-    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
-    if (!lane) return false;
-
-    const index = lane.points.findIndex((p) => p.id === pointId);
-    if (index === -1) return false;
-
-    lane.points.splice(index, 1);
-    project.value.updatedAt = new Date();
-    return true;
-  };
-
-  const setMasterAutomationPoints = (
-    laneId: string,
-    points: AutomationPoint[],
-  ): boolean => {
-    const lane = project.value.automationLanes?.find((l) => l.id === laneId);
-    if (!lane) return false;
-
-    lane.points = [...points].sort((a, b) => a.x - b.x);
-    project.value.updatedAt = new Date();
+    markTrackOrProjectUpdated(trackId);
     return true;
   };
 
@@ -797,6 +960,35 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       console.error("Erreur lors de la sauvegarde locale:", error);
     }
   };
+
+  // Le watcher deep sur `project` déclenche saveToLocalStorage() à chaque
+  // mutation, y compris les mutations à la volée pendant un drag (clip,
+  // note, point d'automation). JSON.stringify + localStorage.setItem sur
+  // tout le projet est synchrone et coûteux : on le debounce pour ne pas
+  // bloquer le thread principal (et donc la boucle rAF du playback) en
+  // rafale. `flushSaveToLocalStorage` garantit qu'on ne perd pas les
+  // dernières modifications si l'utilisateur ferme l'onglet juste après.
+  let saveDebounceId: ReturnType<typeof setTimeout> | null = null;
+  const SAVE_DEBOUNCE_MS = 500;
+
+  const scheduleSaveToLocalStorage = (): void => {
+    if (saveDebounceId) clearTimeout(saveDebounceId);
+    saveDebounceId = setTimeout(() => {
+      saveDebounceId = null;
+      saveToLocalStorage();
+    }, SAVE_DEBOUNCE_MS);
+  };
+
+  const flushSaveToLocalStorage = (): void => {
+    if (!saveDebounceId) return;
+    clearTimeout(saveDebounceId);
+    saveDebounceId = null;
+    saveToLocalStorage();
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", flushSaveToLocalStorage);
+  }
 
   const loadFromLocalStorage = (): boolean => {
     isLoadingProject.value = true;
@@ -815,12 +1007,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         return false;
       }
 
-      // Vérifier la version - si ancienne version avec clips, on repart de zéro
-      if (data.version !== "4.0") {
-        console.log("Ancienne version détectée, création nouveau projet");
-        isLoadingProject.value = false;
-        return false;
-      }
+      // Migration vers la grille en ticks pour les projets antérieurs à ce chantier
+      migrateLegacyProject(data);
+      migrateMasterEffects(data);
+      data.version = CURRENT_PROJECT_VERSION;
 
       // Convertir les dates
       data.createdAt = new Date(data.createdAt);
@@ -836,25 +1026,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         if (track.instrument.type === "audioTrack" && !track.clips) {
           track.clips = [];
         }
-        // Migration: ajouter reverb et eqBands si manquants
-        if (track.reverb === undefined) {
-          track.reverb = 0;
-        }
-        if (!track.eqBands) {
-          track.eqBands = cloneEQBands();
-        }
         if (!track.automationLanes) {
           track.automationLanes = [];
         }
+        migrateTrackEffects(track);
       });
 
-      // Migration: ajouter compressor et limiter master si manquants
-      if (!data.compressor) {
-        data.compressor = cloneCompressorConfig();
-      }
-      if (!data.limiter) {
-        data.limiter = cloneLimiterConfig();
-      }
       if (!data.automationLanes) {
         data.automationLanes = [];
       }
@@ -874,6 +1051,11 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const loadProjectData = (data: TimelineProject): void => {
     isLoadingProject.value = true;
 
+    // Migration vers la grille en ticks pour les projets antérieurs à ce chantier
+    migrateLegacyProject(data);
+    migrateMasterEffects(data);
+    data.version = CURRENT_PROJECT_VERSION;
+
     // Convertir les dates
     data.createdAt = new Date(data.createdAt);
     data.updatedAt = new Date(data.updatedAt);
@@ -887,29 +1069,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       if (track.instrument.type === "audioTrack" && !track.clips) {
         track.clips = [];
       }
-      // Migration: ajouter reverb et eqBands si manquants
-      if (track.reverb === undefined) {
-        track.reverb = 0;
-      }
-      if (!track.eqBands) {
-        track.eqBands = cloneEQBands();
-      }
       if (!track.automationLanes) {
         track.automationLanes = [];
       }
+      migrateTrackEffects(track);
     });
 
-    // S'assurer que les EQ bands globaux sont présents
-    if (!data.eqBands) {
-      data.eqBands = cloneEQBands();
-    }
-    // Migration: ajouter compressor et limiter master si manquants
-    if (!data.compressor) {
-      data.compressor = cloneCompressorConfig();
-    }
-    if (!data.limiter) {
-      data.limiter = cloneLimiterConfig();
-    }
     if (!data.automationLanes) {
       data.automationLanes = [];
     }
@@ -960,13 +1125,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       tracks: [],
       cols: DEFAULT_COLS,
       tempo: DEFAULT_TEMPO,
+      timeSignature: { ...DEFAULT_TIME_SIGNATURE },
+      subdivision: DEFAULT_SUBDIVISION,
       volume: DEFAULT_VOLUME,
-      reverb: DEFAULT_REVERB,
-      eqBands: cloneEQBands(),
-      compressor: cloneCompressorConfig(),
-      limiter: cloneLimiterConfig(),
+      effects: createDefaultMasterEffects(),
       automationLanes: [],
-      version: "4.0",
+      version: CURRENT_PROJECT_VERSION,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -997,7 +1161,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   watch(
     project,
     () => {
-      saveToLocalStorage();
+      scheduleSaveToLocalStorage();
       // Ne pas marquer comme "changed" pendant le chargement d'un projet
       if (!isLoadingProject.value) {
         const projectStore = useProjectStore();
@@ -1013,30 +1177,34 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     tracks,
     sortedTracks,
     tempo,
+    timeSignature,
+    subdivision,
     volume,
-    reverb,
-    eqBands,
-    compressor,
-    limiter,
+    masterEffects,
     masterAutomationLanes,
 
     // État édition
     activeTrackId,
     activeTrack,
+    armedTrackId,
     expandedTrackId,
     expandedTrack,
     automationExpandedMaster,
+    metronomeEnabled,
+    lastResizedNoteWidth,
+    zoomLevel,
+    zoomWheelSpeed,
 
     // Actions - Tracks
     createTrack,
     deleteTrack,
+    armTrack,
+    unarmTrack,
     updateTrack,
     renameTrack,
     setTrackMuted,
     setTrackSolo,
     setTrackVolume,
-    setTrackReverb,
-    updateTrackEQBand,
     updateTrackInstrument,
     reorderTracks,
 
@@ -1050,6 +1218,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     addClipToTrack,
     removeClipFromTrack,
     updateClipInTrack,
+    splitClipInTrack,
     setTrackClips,
     getTrackClipsAtPosition,
 
@@ -1057,6 +1226,13 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     expandTrack,
     collapseTrack,
     toggleTrackExpanded,
+    setLastResizedNoteWidth,
+    setZoomLevel,
+    ZOOM_MIN,
+    ZOOM_MAX,
+    setZoomWheelSpeed,
+    ZOOM_WHEEL_SPEED_MIN,
+    ZOOM_WHEEL_SPEED_MAX,
     setActiveTrack,
     automationExpandedTrackId,
     toggleAutomationExpanded,
@@ -1066,29 +1242,21 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     getNotesAtPosition,
     getTrackNotesAtPosition,
 
-    // Actions - EQ
-    updateEQBand,
+    // Actions - Effets (tracks + master)
+    addEffect,
+    removeEffect,
+    reorderEffect,
+    setEffectEnabled,
+    updateEffectParam,
 
-    // Actions - Mastering
-    updateCompressor,
-    updateLimiter,
-
-    // Actions - Automation
+    // Actions - Automation (tracks + master)
+    toggleMasterAutomationExpanded,
     addAutomationLane,
     removeAutomationLane,
     addAutomationPoint,
     updateAutomationPoint,
     removeAutomationPoint,
     setAutomationPoints,
-
-    // Actions - Automation (Master)
-    toggleMasterAutomationExpanded,
-    addMasterAutomationLane,
-    removeMasterAutomationLane,
-    addMasterAutomationPoint,
-    updateMasterAutomationPoint,
-    removeMasterAutomationPoint,
-    setMasterAutomationPoints,
 
     // Persistence
     saveToLocalStorage,

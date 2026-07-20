@@ -3,6 +3,7 @@ import pg from "../../config/db.config";
 import { IsNull, Not } from "typeorm";
 import { Project } from "../../config/entities/Project";
 import { ProjectFavorite } from "../../config/entities/ProjectFavorite";
+import { syncSampleLinksForProject } from "../../services/sampleProjectLinks.service";
 
 const projectsRouter = Router();
 
@@ -222,6 +223,7 @@ projectsRouter.post("/", async (req, res) => {
     });
 
     const savedProject = await projectRepository.save(project);
+    await syncSampleLinksForProject(savedProject.id, savedProject.data?.data);
 
     res.status(201).json({
       body: {
@@ -266,6 +268,10 @@ projectsRouter.put("/:id", async (req, res) => {
     if (data !== undefined) project.data = data;
 
     const savedProject = await projectRepository.save(project);
+
+    if (data !== undefined) {
+      await syncSampleLinksForProject(savedProject.id, savedProject.data?.data);
+    }
 
     res.json({
       body: {
@@ -421,6 +427,7 @@ projectsRouter.post("/:id/clone", async (req, res) => {
     });
 
     const saved = await projectRepository.save(clone);
+    await syncSampleLinksForProject(saved.id, saved.data?.data);
 
     res.status(201).json({
       body: {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from "vue";
+import { ref, computed, watchEffect, onBeforeUnmount } from "vue";
 import type { Track, MidiNote, NoteName } from "../../../../lib/utils/types";
 import { useTimelineStore } from "../../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../../stores/trackAudioStore";
@@ -9,35 +9,53 @@ import {
   NOTE_ROW_HEIGHT,
   noteIndexToName,
 } from "../../../../lib/audio/pianoRollConstants";
+import { snapTicks } from "../../../../lib/audio/timeGrid";
 import PianoKeys from "./PianoKeys.vue";
 import PianoKeysCanvas from "./PianoKeysCanvas.vue";
-import PianoGrid from "./PianoGrid.vue";
 import PianoGridCanvas from "./PianoGridCanvas.vue";
 
 const USE_CANVAS = true;
 
 const keysContainerRef = ref<HTMLElement | null>(null);
 const gridContainerRef = ref<HTMLElement | null>(null);
-let isSyncingScroll = false;
+
+// Hauteur fixe du viewport piano roll (voir .piano-roll-wrapper ci-dessous) :
+// PianoGridCanvas/PianoKeysCanvas n'ont plus besoin de rendre que cette
+// tranche visible plutôt que la hauteur complète de la grille (1392px).
+const PIANO_ROLL_VIEWPORT_HEIGHT = 400;
+
+// scrollTop courant, utilisé par PianoGridCanvas/PianoKeysCanvas pour savoir
+// quelle tranche verticale peindre (canvas maintenant dimensionné au
+// viewport, plus à la grille complète).
+const scrollTop = ref(0);
+
+// Sync basée sur la valeur plutôt qu'un flag+rAF : un flag temporel suppose
+// au plus un scroll par frame, ce qui casse sous charge (pendant le playback,
+// activeNotes change de référence à chaque frame et force un redraw canvas
+// continu) — un scroll réel arrivant pendant la fenêtre de verrouillage était
+// silencieusement ignoré, désynchronisant les deux conteneurs jusqu'à ce
+// qu'un scroll ultérieur écrase l'un avec la valeur périmée de l'autre
+// (symptôme : la vue des octaves "rollback"). Comparer les valeurs élimine
+// la boucle infinie sans jamais pouvoir perdre un événement. Le même garde-fou
+// protège maintenant aussi la mise à jour de `scrollTop` (qui déclenche un
+// redraw canvas) pour ne pas réintroduire cette classe de bug.
+const syncScrollTop = (source: HTMLElement, target: HTMLElement) => {
+  if (target.scrollTop !== source.scrollTop) {
+    target.scrollTop = source.scrollTop;
+  }
+  if (scrollTop.value !== source.scrollTop) {
+    scrollTop.value = source.scrollTop;
+  }
+};
 
 const syncScrollFromGrid = () => {
-  if (isSyncingScroll || !keysContainerRef.value || !gridContainerRef.value)
-    return;
-  isSyncingScroll = true;
-  keysContainerRef.value.scrollTop = gridContainerRef.value.scrollTop;
-  requestAnimationFrame(() => {
-    isSyncingScroll = false;
-  });
+  if (!keysContainerRef.value || !gridContainerRef.value) return;
+  syncScrollTop(gridContainerRef.value, keysContainerRef.value);
 };
 
 const syncScrollFromKeys = () => {
-  if (isSyncingScroll || !keysContainerRef.value || !gridContainerRef.value)
-    return;
-  isSyncingScroll = true;
-  gridContainerRef.value.scrollTop = keysContainerRef.value.scrollTop;
-  requestAnimationFrame(() => {
-    isSyncingScroll = false;
-  });
+  if (!keysContainerRef.value || !gridContainerRef.value) return;
+  syncScrollTop(keysContainerRef.value, gridContainerRef.value);
 };
 
 const props = defineProps<{
@@ -46,6 +64,8 @@ const props = defineProps<{
   colWidth: number;
   playbackPosition: number;
   isPlaying: boolean;
+  scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const timelineStore = useTimelineStore();
@@ -56,24 +76,38 @@ const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
 
 const activePreviewNotes = ref<Set<NoteName>>(new Set());
 
-const playbackActiveNotes = computed(() => {
-  if (!props.isPlaying) return new Set<NoteName>();
-  const activeNotes = new Set<NoteName>();
-  const intPosition = Math.floor(props.playbackPosition);
-  for (const note of props.track.notes) {
-    if (intPosition >= note.x && intPosition < note.x + note.w) {
-      activeNotes.add(noteIndexToName(note.y));
+const setsAreEqual = (a: Set<NoteName>, b: Set<NoteName>): boolean => {
+  if (a.size !== b.size) return false;
+  for (const note of a) {
+    if (!b.has(note)) return false;
+  }
+  return true;
+};
+
+// allActiveNotes ref réassigné seulement si son contenu change réellement
+// (pas juste à chaque tick de playbackPosition, qui bouge à 60fps) : cette
+// valeur est passée en prop à PianoGridCanvas/PianoKeysCanvas, dont les watch
+// déclenchent un redraw complet du canvas dès que la référence change. Avec
+// un computed recréant un Set à chaque frame (même quand aucune note n'a
+// réellement démarré/stoppé), les deux canvases redessinaient 60x/s, ce qui
+// sature le thread principal pendant le playback (lag au zoom, et scroll
+// vertical du piano roll qui "rollback" sous la charge — voir le fix de sync
+// scrollTop plus haut, insuffisant seul face à cette charge).
+const allActiveNotes = ref<Set<NoteName>>(new Set());
+
+watchEffect(() => {
+  const combined = new Set<NoteName>(activePreviewNotes.value);
+  if (props.isPlaying) {
+    const intPosition = Math.floor(props.playbackPosition);
+    for (const note of props.track.notes) {
+      if (intPosition >= note.x && intPosition < note.x + note.w) {
+        combined.add(noteIndexToName(note.y));
+      }
     }
   }
-  return activeNotes;
-});
-
-const allActiveNotes = computed(() => {
-  const combined = new Set<NoteName>(activePreviewNotes.value);
-  for (const note of playbackActiveNotes.value) {
-    combined.add(note);
+  if (!setsAreEqual(combined, allActiveNotes.value)) {
+    allActiveNotes.value = combined;
   }
-  return combined;
 });
 
 const getPreviewNoteId = (note: NoteName): string => `preview_${note}`;
@@ -97,12 +131,21 @@ const handleAllNotesStop = (): void => {
   activePreviewNotes.value.clear();
 };
 
-const handleAddNote = (x: number, y: number): void => {
+const handleAddNote = (x: number, y: number, useGridSize: boolean): void => {
+  const gridSize = snapTicks(timelineStore.subdivision);
+  const width = useGridSize
+    ? gridSize
+    : (timelineStore.lastResizedNoteWidth ?? gridSize);
+  // Ajouter une note à taille minimale (useGridSize) réinitialise aussi la
+  // largeur mémorisée : les clics simples suivants repartent sur la taille
+  // de maille, jusqu'au prochain resize individuel.
+  if (useGridSize) {
+    timelineStore.setLastResizedNoteWidth(gridSize);
+  }
   const noteId = trackHistoryStore.recordAddNote(props.track.id, {
     x,
     y,
-    w: 1,
-    h: 1,
+    w: width,
   });
   if (noteId) {
     const noteName = noteIndexToName(y);
@@ -127,7 +170,6 @@ const handlePasteNotes = (
       x: note.x,
       y: note.y,
       w: note.w,
-      h: 1,
     });
   }
   trackHistoryStore.endBatch();
@@ -180,6 +222,8 @@ onBeforeUnmount(() => {
         :is="USE_CANVAS ? PianoKeysCanvas : PianoKeys"
         :active-notes="allActiveNotes"
         :grid-height="gridHeight"
+        :scroll-top="scrollTop"
+        :viewport-height="PIANO_ROLL_VIEWPORT_HEIGHT"
         @note-start="handleNoteStart"
         @note-stop="handleNoteStop"
         @all-notes-stop="handleAllNotesStop"
@@ -188,16 +232,20 @@ onBeforeUnmount(() => {
     <div
       ref="gridContainerRef"
       class="piano-grid-container"
+      :style="{ width: `${viewportWidth}px` }"
       @scroll="syncScrollFromGrid"
     >
-      <component
-        :is="USE_CANVAS ? PianoGridCanvas : PianoGrid"
+      <PianoGridCanvas
         :notes="track.notes"
         :cols="cols"
         :col-width="colWidth"
         :color="track.color"
         :active-notes="allActiveNotes"
         :track-id="track.id"
+        :scroll-left="scrollLeft"
+        :scroll-top="scrollTop"
+        :viewport-width="viewportWidth"
+        :viewport-height="PIANO_ROLL_VIEWPORT_HEIGHT"
         @add-note="handleAddNote"
         @remove-note="handleRemoveNote"
         @update-notes="handleUpdateNotes"
@@ -214,8 +262,8 @@ onBeforeUnmount(() => {
 .piano-roll-wrapper {
   display: flex;
   height: 400px;
-  background: #1a0e15;
-  border-top: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-top: 1px solid var(--color-border-secondary);
 }
 
 .piano-keys-container {
@@ -226,7 +274,7 @@ onBeforeUnmount(() => {
   position: sticky;
   left: 0;
   z-index: 5;
-  background: #2a2a2a;
+  background: var(--color-piano-key-black);
 
   &::-webkit-scrollbar {
     display: none;
@@ -234,9 +282,18 @@ onBeforeUnmount(() => {
 }
 
 .piano-grid-container {
-  flex: 1;
-  overflow: auto;
+  // Bornée à la largeur du viewport visible (pas cols*colWidth) et épinglée
+  // juste après la colonne des touches, comme TrackHeader.vue pour le header
+  // de piste : le scroll horizontal partagé de .timeline-scroll continue de
+  // s'appliquer normalement (rien entre ce conteneur et .timeline-scroll ne
+  // définit d'overflow), donc `sticky` se résout bien contre lui.
+  flex: 0 0 auto;
+  position: sticky;
+  left: 180px;
+  z-index: 5;
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(122, 15, 62, 0.5) transparent;
+  scrollbar-color: var(--color-border-secondary) transparent;
 }
 </style>

@@ -2,8 +2,6 @@
 
 import "dotenv/config";
 import session from "express-session";
-import * as sqlite3 from "sqlite3";
-import sqliteStoreFactory from "express-session-sqlite";
 import { RedisStore } from "connect-redis";
 import { createClient } from "redis";
 
@@ -14,7 +12,7 @@ const DEFAULT_TTL =
     : 60 * 60 * 24 * 7; // 7 jours
 const DEFAULT_PREFIX = "sess:";
 
-function createStore() {
+async function createStore() {
   if (process.env.NODE_ENV === "production") {
     const redisClient = createClient({
       url: "redis://cache", // Use the Docker service name for Redis
@@ -26,6 +24,9 @@ function createStore() {
       ttl: DEFAULT_TTL,
     });
   } else {
+    // Chargés dynamiquement : sqlite3 est dev-only, absent de l'image Docker
+    const [{ default: sqlite3 }, { default: sqliteStoreFactory }] =
+      await Promise.all([import("sqlite3"), import("express-session-sqlite")]);
     const SqliteStore = sqliteStoreFactory(session);
 
     return new SqliteStore({
@@ -39,8 +40,8 @@ function createStore() {
 }
 
 // Will be used in app.use
-export default function customSession() {
-  const store = createStore();
+export default async function customSession() {
+  const store = await createStore();
 
   return session({
     secret: "you'll never guess this (poulet froid)",

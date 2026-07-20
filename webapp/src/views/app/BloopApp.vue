@@ -210,14 +210,14 @@ defineExpose({
   width: 300px;
   height: 8px;
   background: var(--color-bg-primary-dark);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: var(--color-primary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: width 0.3s ease;
 }
 </style>

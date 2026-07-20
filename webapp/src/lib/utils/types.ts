@@ -13,10 +13,10 @@ export type Note = {
 // Types pour le séquenceur de notes MIDI
 export interface MidiNote {
   i: string; // ID unique de la note
-  x: number; // Position horizontale (temps/position dans la séquence)
+  x: number; // Position horizontale (en ticks, TICKS_PER_BEAT par temps)
   y: number; // Position verticale (hauteur de note/pitch)
-  w: number; // Largeur (durée de la note)
-  h: number; // Hauteur (toujours 1 pour les notes MIDI)
+  w: number; // Largeur (durée de la note, en ticks)
+  v?: number; // Vélocité (0-127), optionnelle — absente = 100 à la lecture
 }
 
 export type NoteName = string; // Type pour les noms de notes comme "C4", "A#5", etc.
@@ -107,11 +107,7 @@ export interface LegacySequenceData {
 // ============================================
 
 export type InstrumentType =
-  | "basicSynth"
-  | "elementarySynth"
-  | "smplr"
-  | "undertale"
-  | "audioTrack";
+  "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -201,14 +197,25 @@ export interface SamplePack {
   folders: SampleFolder[];
 }
 
-export type AutomatableParam =
-  | "volume"
-  | "reverb"
-  | "eq_sub"
-  | "eq_bass"
-  | "eq_mid"
-  | "eq_presence"
-  | "eq_brilliance";
+// Un effet en cours d'exécution dans la pile d'une piste ou du bus master.
+// `params` stocke des valeurs réelles (dB, %, etc.), pas normalisées — voir
+// `lib/audio/effects/types.ts` (EffectParamDescriptor) pour la résolution
+// dynamique min/max côté audio.
+export interface EffectInstanceConfig {
+  id: string; // uuid stable, sert d'ancre pour l'automation (AutomationTarget.effectId)
+  type: string; // clé du registre, ex: "eq5" | "reverb" | "compressor" | "limiter" | "overdrive"
+  enabled: boolean; // bypass
+  params: Record<string, number>;
+}
+
+// Cible d'un paramètre automatisable : une piste (ou "master") + un effet de
+// sa pile (ou la sentinelle "channel" pour le fader de volume, qui n'est pas
+// dans la pile d'effets) + un paramètre de cet effet.
+export interface AutomationTarget {
+  trackId: string | "master";
+  effectId: string; // EffectInstanceConfig.id, ou "channel" (fader volume)
+  paramId: string; // paramId de l'effet, ou "volume" si effectId === "channel"
+}
 
 export interface AutomationPoint {
   id: string;
@@ -218,7 +225,7 @@ export interface AutomationPoint {
 
 export interface AutomationLane {
   id: string;
-  parameter: AutomatableParam;
+  target: AutomationTarget;
   points: AutomationPoint[];
 }
 
@@ -228,8 +235,7 @@ export interface Track {
   instrument: InstrumentConfig;
   color: string;
   volume: number; // 0-100
-  reverb: number; // 0-100 (wet/dry mix)
-  eqBands: EQBand[]; // EQ 5 bandes par piste
+  effects: EffectInstanceConfig[]; // pile d'effets réordonnable (EQ, reverb, etc.)
   muted: boolean;
   solo: boolean;
   order: number;
@@ -251,18 +257,22 @@ export interface Clip {
   updatedAt: Date;
 }
 
+export interface TimeSignature {
+  numerator: number; // Nombre de temps par mesure (ex: 7 pour 7/8)
+  denominator: number; // Valeur du temps (1,2,4,8,16,32 — ex: 8 pour 7/8)
+}
+
 export interface TimelineProject {
   id?: string;
   name: string;
   tracks: Track[];
-  cols: number; // Longueur totale de la timeline
+  cols: number; // Longueur totale de la timeline (en ticks)
   tempo: number; // BPM global
+  timeSignature: TimeSignature; // Signature rythmique (défaut 4/4)
+  subdivision: number; // Résolution de la grille de snap (pas par temps, ex: 4 = double-croches)
   volume: number; // Volume master (0-100)
-  reverb: number; // Reverb master (0-100)
-  eqBands?: EQBand[];
-  compressor?: MasterCompressorConfig;
-  limiter?: MasterLimiterConfig;
-  automationLanes?: AutomationLane[]; // Automation du bus master (volume/reverb/EQ)
+  effects: EffectInstanceConfig[]; // pile d'effets du bus master (EQ, reverb, compressor, limiter...)
+  automationLanes?: AutomationLane[]; // Automation du bus master (volume + effets)
   usedSamples?: Record<string, AudioSample>; // Samples utilisés par les audio clips
   version: string;
   createdAt: Date;
@@ -358,3 +368,27 @@ export type FavoriteProjectListItem = PublicProjectListItem & {
   favoriteId: string;
   favoritedAt: string;
 };
+
+export interface LearningArticle {
+  id?: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  body: string;
+  coverImage?: string;
+  author: User;
+  status: "draft" | "published";
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string | null;
+  score?: number;
+  myVote?: number;
+}
+
+export interface CreateLearningArticleData {
+  title: string;
+  body: string;
+  excerpt?: string;
+  coverImage?: string;
+  status: "draft" | "published";
+}

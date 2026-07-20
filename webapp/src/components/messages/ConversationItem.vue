@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Conversation } from "../../services/messages";
 import { formatRelativeDate } from "../../lib/utils/dateFormatter";
+import ProfileAvatar from "../shared/ProfileAvatar.vue";
 
 defineProps<{
   conversation: Conversation;
@@ -18,9 +19,7 @@ defineEmits<{
     :class="{ active: isActive }"
     @click="$emit('select')"
   >
-    <div class="conversation-avatar">
-      {{ conversation.user.firstName[0] }}{{ conversation.user.lastName[0] }}
-    </div>
+    <ProfileAvatar :user="conversation.user" size="small" />
     <div class="conversation-info">
       <div class="conversation-header">
         <span class="conversation-name">
@@ -51,7 +50,7 @@ defineEmits<{
   padding: 1rem;
   cursor: pointer;
   transition: background 0.2s;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .conversation-item:hover {
@@ -67,7 +66,7 @@ defineEmits<{
   height: 40px;
   border-radius: 50%;
   background: var(--color-primary-hover);
-  box-shadow: 0 4px 15px rgba(122, 15, 62, 0.4);
+  box-shadow: 0 4px 15px rgba(var(--color-accent3-rgb), 0.4);
   color: white;
   display: flex;
   align-items: center;

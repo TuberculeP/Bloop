@@ -408,7 +408,6 @@ onUnmounted(() => {
 
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
   margin-bottom: 1rem;
 }
 
@@ -432,7 +431,7 @@ onUnmounted(() => {
   position: relative;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
   opacity: 0;
   transform: translateY(30px);
@@ -515,6 +514,7 @@ onUnmounted(() => {
     rgba(200, 145, 249, 0.2) 0%,
     rgba(200, 145, 249, 0.05) 100%
   );
+  /* stylelint-disable-next-line color-no-hex -- couleur de catégorie illustrative, usage unique */
   color: #c891f9;
   border: 1px solid rgba(200, 145, 249, 0.3);
 }
@@ -526,7 +526,6 @@ onUnmounted(() => {
 
 .card-title {
   font-size: 1.1rem;
-  font-weight: 600;
   color: var(--color-white);
   margin: 0 0 0.25rem 0;
   transition: all 0.3s ease;
@@ -590,7 +589,7 @@ onUnmounted(() => {
   padding: 0.875rem 1rem;
   margin-bottom: 0.5rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   opacity: 0;
   transform: translateY(-10px);
   transition: all 0.3s ease;
@@ -628,7 +627,6 @@ onUnmounted(() => {
 
 .feature-title {
   font-size: 0.9rem;
-  font-weight: 600;
   color: var(--color-white);
   margin: 0 0 0.2rem 0;
 }

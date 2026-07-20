@@ -1,10 +1,19 @@
-import type { AutomationPoint } from "../utils/types";
+import type { AutomationPoint, TimeSignature } from "../utils/types";
 import { getAutomationValueAt } from "../audio/automation";
+import {
+  ticksPerBar,
+  getVisibleTickRange,
+  getVisibleMeasureRange,
+  getVisibleSubdivisionTicks,
+  tickToGridLineX,
+} from "../audio/timeGrid";
 
 export interface AutomationRenderConfig {
   cols: number;
   colWidth: number;
   trackColor: string;
+  timeSignature: TimeSignature;
+  subdivision: number;
 }
 
 const COLORS = {
@@ -25,6 +34,8 @@ export class AutomationLaneRenderer {
   private config: AutomationRenderConfig;
   private width: number;
   private height: number;
+  private scrollLeft = 0;
+  private visibleTickRange: [number, number] = [0, 0];
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -52,11 +63,29 @@ export class AutomationLaneRenderer {
     points: AutomationPoint[],
     hoveredPointId: string | null = null,
     selectedPointIds: Set<string> = new Set(),
+    marqueeRect: {
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+    } | null = null,
+    scrollLeft = 0,
   ): void {
     const { ctx } = this;
-    ctx.clearRect(0, 0, this.width, this.height);
+    this.scrollLeft = scrollLeft;
+    this.visibleTickRange = getVisibleTickRange(
+      scrollLeft,
+      this.width,
+      this.config.colWidth,
+      this.config.cols,
+    );
 
+    ctx.clearRect(0, 0, this.width, this.height);
     this.drawBackground();
+
+    ctx.save();
+    ctx.translate(-scrollLeft, 0);
+
     this.drawGrid();
 
     const sorted = [...points].sort((a, b) => a.x - b.x);
@@ -67,17 +96,20 @@ export class AutomationLaneRenderer {
     }
 
     this.drawPoints(sorted, hoveredPointId, selectedPointIds);
+
+    if (marqueeRect) {
+      this.drawMarquee(marqueeRect);
+    }
+
+    ctx.restore();
   }
 
-  renderMarquee(
-    rect: {
-      startX: number;
-      startY: number;
-      currentX: number;
-      currentY: number;
-    } | null,
-  ): void {
-    if (!rect) return;
+  private drawMarquee(rect: {
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  }): void {
     const { ctx } = this;
     const x = Math.min(rect.startX, rect.currentX);
     const y = Math.min(rect.startY, rect.currentY);
@@ -100,30 +132,45 @@ export class AutomationLaneRenderer {
 
   private drawGrid(): void {
     const { ctx, config } = this;
+    const [tickStart, tickEnd] = this.visibleTickRange;
 
     // Mid horizontal line
     ctx.strokeStyle = COLORS.midLine;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0, this.height / 2);
-    ctx.lineTo(this.width, this.height / 2);
+    ctx.moveTo(this.scrollLeft, this.height / 2);
+    ctx.lineTo(this.scrollLeft + this.width, this.height / 2);
     ctx.stroke();
 
-    // Step lines
+    const barLength = ticksPerBar(config.timeSignature);
+
+    // Step lines (résolution de snap)
     ctx.strokeStyle = COLORS.gridVertical;
     ctx.beginPath();
-    for (let col = 1; col <= config.cols; col++) {
-      const x = col * config.colWidth - 0.5;
+    const subdivisionTicks = getVisibleSubdivisionTicks(
+      tickStart,
+      tickEnd,
+      config.subdivision,
+      barLength,
+    );
+    for (const tick of subdivisionTicks) {
+      const x = tickToGridLineX(tick, config.colWidth);
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
     ctx.stroke();
 
-    // Measure lines
+    // Measure lines (une par mesure, selon la signature rythmique)
     ctx.strokeStyle = COLORS.measureLine;
     ctx.beginPath();
-    for (let measure = 0; measure <= Math.ceil(config.cols / 4); measure++) {
-      const x = measure * 4 * config.colWidth - 0.5;
+    const [firstMeasure, lastMeasure] = getVisibleMeasureRange(
+      tickStart,
+      tickEnd,
+      barLength,
+      config.cols,
+    );
+    for (let measure = firstMeasure; measure <= lastMeasure; measure++) {
+      const x = tickToGridLineX(measure * barLength, config.colWidth);
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
@@ -142,16 +189,16 @@ export class AutomationLaneRenderer {
     let started = false;
 
     for (let i = 0; i <= steps; i++) {
-      const canvasX = (i / steps) * this.width;
-      const col = canvasX / config.colWidth;
+      const worldX = this.scrollLeft + (i / steps) * this.width;
+      const col = worldX / config.colWidth;
       const value = getAutomationValueAt(sorted, col);
       const canvasY = (1 - value) * this.height;
 
       if (!started) {
-        ctx.moveTo(canvasX, canvasY);
+        ctx.moveTo(worldX, canvasY);
         started = true;
       } else {
-        ctx.lineTo(canvasX, canvasY);
+        ctx.lineTo(worldX, canvasY);
       }
     }
 
@@ -167,20 +214,20 @@ export class AutomationLaneRenderer {
     ctx.beginPath();
 
     for (let i = 0; i <= steps; i++) {
-      const canvasX = (i / steps) * this.width;
-      const col = canvasX / config.colWidth;
+      const worldX = this.scrollLeft + (i / steps) * this.width;
+      const col = worldX / config.colWidth;
       const value = getAutomationValueAt(sorted, col);
       const canvasY = (1 - value) * this.height;
 
       if (i === 0) {
-        ctx.moveTo(canvasX, canvasY);
+        ctx.moveTo(worldX, canvasY);
       } else {
-        ctx.lineTo(canvasX, canvasY);
+        ctx.lineTo(worldX, canvasY);
       }
     }
 
-    ctx.lineTo(this.width, this.height);
-    ctx.lineTo(0, this.height);
+    ctx.lineTo(this.scrollLeft + this.width, this.height);
+    ctx.lineTo(this.scrollLeft, this.height);
     ctx.closePath();
 
     // Convert hex color to rgba with alpha
@@ -260,12 +307,8 @@ export class AutomationLaneRenderer {
     });
   }
 
-  canvasToPoint(
-    canvasX: number,
-    canvasY: number,
-    scrollLeft: number,
-  ): { x: number; y: number } {
-    const x = (canvasX + scrollLeft) / this.config.colWidth;
+  canvasToPoint(canvasX: number, canvasY: number): { x: number; y: number } {
+    const x = canvasX / this.config.colWidth;
     const y = Math.max(0, Math.min(1, 1 - canvasY / this.height));
     return { x, y };
   }

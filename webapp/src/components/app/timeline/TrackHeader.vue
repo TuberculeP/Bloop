@@ -2,12 +2,14 @@
 import { computed, ref } from "vue";
 import type { Track } from "../../../lib/utils/types";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
+import BaseSpinner from "../../ui/BaseSpinner.vue";
 
 const props = defineProps<{
   track: Track;
   isActive?: boolean;
   isExpanded: boolean;
   isAudioTrack?: boolean;
+  isArmed?: boolean;
 }>();
 
 const trackAudioStore = useTrackAudioStore();
@@ -23,7 +25,9 @@ const emit = defineEmits<{
   (e: "rename"): void;
   (e: "open-settings"): void;
   (e: "toggle-expand"): void;
+  (e: "toggle-arm"): void;
   (e: "delete-track"): void;
+  (e: "import-midi"): void;
 }>();
 
 const headerStyle = { borderLeftColor: props.track.color };
@@ -31,14 +35,24 @@ const headerStyle = { borderLeftColor: props.track.color };
 const menuOpen = ref(false);
 const menuPosition = ref({ x: 0, y: 0 });
 
-const menuItems = [
-  {
+const menuItems = computed(() => {
+  const items = [];
+  if (!props.isAudioTrack) {
+    items.push({
+      label: "Importer MIDI",
+      icon: "fas fa-file-import",
+      action: () => emit("import-midi"),
+      danger: false,
+    });
+  }
+  items.push({
     label: "Supprimer",
     icon: "fas fa-trash",
     action: () => emit("delete-track"),
     danger: true,
-  },
-];
+  });
+  return items;
+});
 
 function openMenu(e: MouseEvent) {
   e.preventDefault();
@@ -69,9 +83,12 @@ function handleAction(action: () => void) {
         <span class="track-name" @dblclick.stop="emit('rename')">
           {{ track.name }}
         </span>
-        <span v-if="isLoading" class="loading-spinner" title="Chargement...">
-          ⟳
-        </span>
+        <BaseSpinner
+          v-if="isLoading"
+          size="small"
+          color="accent2"
+          title="Chargement..."
+        />
       </div>
       <div class="track-controls">
         <button
@@ -91,7 +108,20 @@ function handleAction(action: () => void) {
           S
         </button>
         <button
-          class="control-btn settings-btn"
+          v-if="!isAudioTrack"
+          class="control-btn arm-btn"
+          :class="{ active: isArmed }"
+          @click.stop="emit('toggle-arm')"
+          :title="
+            isArmed
+              ? 'Désarmer (arrêter de recevoir le clavier MIDI)'
+              : 'Armer pour le jeu en live au clavier MIDI'
+          "
+        >
+          <i class="fas fa-keyboard"></i>
+        </button>
+        <button
+          class="control-btn settings-btn track-settings-btn"
           @click.stop="emit('open-settings')"
           title="Paramètres"
         >
@@ -181,7 +211,7 @@ function handleAction(action: () => void) {
 .track-name {
   font-size: 14px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -189,21 +219,6 @@ function handleAction(action: () => void) {
 
   &:hover {
     text-decoration: underline;
-  }
-}
-
-.loading-spinner {
-  font-size: 14px;
-  color: #ff3fb4;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
   }
 }
 
@@ -240,7 +255,12 @@ function handleAction(action: () => void) {
   }
 
   &.expand-btn.active {
-    background: #ff3fb4;
+    background: var(--color-accent2);
+  }
+
+  &.arm-btn.active {
+    background: var(--color-error-active);
+    color: var(--color-white);
   }
 }
 
@@ -256,9 +276,9 @@ function handleAction(action: () => void) {
 
 .dropdown {
   position: fixed;
-  background: #2d0f20;
-  border: 1px solid #ff3fb4;
-  border-radius: 4px;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-accent2);
+  border-radius: var(--radius-sm);
   min-width: 150px;
   z-index: 1000;
   overflow: hidden;
@@ -269,7 +289,7 @@ function handleAction(action: () => void) {
 
 .dropdown-item {
   padding: 8px 14px;
-  color: #f2efe8;
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   display: flex;
@@ -277,16 +297,18 @@ function handleAction(action: () => void) {
   gap: 10px;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
   }
 
   &.danger {
-    color: #ff6b6b;
+    color: var(--color-error-light);
 
+    /* stylelint-disable color-no-hex -- rouge de hover danger + blanc de contraste, usage unique */
     &:hover {
       background: #c0392b;
       color: #fff;
     }
+    /* stylelint-enable color-no-hex */
   }
 }
 </style>

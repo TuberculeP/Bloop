@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type {
-  Track,
-  OscillatorType,
-  AutomatableParam,
-} from "../../../lib/utils/types";
+import type { Track, OscillatorType } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
-import TrackEqualizer from "./TrackEqualizer.vue";
+import RangeSlider from "../../ui/RangeSlider.vue";
+import EffectParamRow from "../effects/EffectParamRow.vue";
+import EffectRack from "../effects/EffectRack.vue";
 
 const props = defineProps<{
   track: Track;
@@ -126,20 +124,6 @@ const handleVolumeChange = (volume: number) => {
   timelineStore.setTrackVolume(props.track.id, volume);
 };
 
-const handleReverbChange = (reverb: number) => {
-  timelineStore.setTrackReverb(props.track.id, reverb);
-};
-
-const handleEQBandUpdate = (bandId: string, gain: number) => {
-  timelineStore.updateTrackEQBand(props.track.id, bandId, gain);
-};
-
-const hasAutomation = (param: AutomatableParam): boolean => {
-  return (
-    props.track.automationLanes?.some((l) => l.parameter === param) ?? false
-  );
-};
-
 const handleClose = () => {
   emit("close");
 };
@@ -152,71 +136,29 @@ const handleClose = () => {
         <div class="settings-panel">
           <div class="panel-header">
             <h3>{{ track.name }}</h3>
-            <button class="close-btn" @click="handleClose">×</button>
+            <button class="close-btn close-settings-btn" @click="handleClose">
+              ×
+            </button>
           </div>
 
           <div class="panel-body">
             <div class="setting-group">
-              <label class="setting-label">
-                Volume
-                <span v-if="hasAutomation('volume')" class="auto-badge"
-                  >AUTO</span
-                >
-              </label>
-              <div
-                class="slider-control"
-                :class="{ automated: hasAutomation('volume') }"
-              >
-                <input
-                  type="range"
-                  :value="track.volume"
-                  min="0"
-                  max="100"
-                  :disabled="hasAutomation('volume')"
-                  @input="
-                    handleVolumeChange(
-                      Number(($event.target as HTMLInputElement).value),
-                    )
-                  "
-                />
-                <span class="slider-value">{{ track.volume }}%</span>
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">
-                Reverb
-                <span v-if="hasAutomation('reverb')" class="auto-badge"
-                  >AUTO</span
-                >
-              </label>
-              <div
-                class="slider-control"
-                :class="{ automated: hasAutomation('reverb') }"
-              >
-                <input
-                  type="range"
-                  :value="track.reverb ?? 0"
-                  min="0"
-                  max="100"
-                  :disabled="hasAutomation('reverb')"
-                  @input="
-                    handleReverbChange(
-                      Number(($event.target as HTMLInputElement).value),
-                    )
-                  "
-                />
-                <span class="slider-value">{{ track.reverb ?? 0 }}%</span>
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">Égaliseur</label>
-              <TrackEqualizer
-                v-if="track.eqBands"
-                :bands="track.eqBands"
-                @update="handleEQBandUpdate"
+              <EffectParamRow
+                :track-id="track.id"
+                effect-id="channel"
+                param-id="volume"
+                label="Volume"
+                unit="%"
+                :min="0"
+                :max="100"
+                :model-value="track.volume"
+                @update:model-value="handleVolumeChange"
               />
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Effets</label>
+              <EffectRack :track-id="track.id" :effects="track.effects" />
             </div>
 
             <template v-if="instrumentType === 'basicSynth'">
@@ -242,7 +184,7 @@ const handleClose = () => {
               <div class="setting-group">
                 <label class="setting-label">Instrument</label>
                 <select
-                  class="soundfont-select"
+                  class="soundfont-select instrument-select"
                   :value="currentSoundfont"
                   @change="
                     handleSoundfontChange(
@@ -265,7 +207,7 @@ const handleClose = () => {
                 </template>
                 <template v-else-if="undertaleInstruments.length > 0">
                   <select
-                    class="soundfont-select"
+                    class="soundfont-select instrument-select"
                     :value="currentUndertaleInstrument"
                     @change="
                       handleUndertaleInstrumentChange(
@@ -292,79 +234,59 @@ const handleClose = () => {
                 <div class="adsr-controls">
                   <div class="adsr-slider">
                     <span class="adsr-label">A</span>
-                    <input
-                      type="range"
-                      :value="undertaleAttack"
-                      min="0"
-                      max="2"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'attack',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleAttack"
+                      :min="0"
+                      :max="2"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${undertaleAttack.toFixed(2)}s`"
+                      @update:model-value="
+                        (value) => handleADSRChange('attack', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ undertaleAttack.toFixed(2) }}s</span
-                    >
                   </div>
                   <div class="adsr-slider">
                     <span class="adsr-label">D</span>
-                    <input
-                      type="range"
-                      :value="undertaleDecay"
-                      min="0"
-                      max="2"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'decay',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleDecay"
+                      :min="0"
+                      :max="2"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${undertaleDecay.toFixed(2)}s`"
+                      @update:model-value="
+                        (value) => handleADSRChange('decay', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ undertaleDecay.toFixed(2) }}s</span
-                    >
                   </div>
                   <div class="adsr-slider">
                     <span class="adsr-label">S</span>
-                    <input
-                      type="range"
-                      :value="undertaleSustain"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'sustain',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleSustain"
+                      :min="0"
+                      :max="1"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${(undertaleSustain * 100).toFixed(0)}%`"
+                      @update:model-value="
+                        (value) => handleADSRChange('sustain', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ (undertaleSustain * 100).toFixed(0) }}%</span
-                    >
                   </div>
                   <div class="adsr-slider">
                     <span class="adsr-label">R</span>
-                    <input
-                      type="range"
-                      :value="undertaleRelease"
-                      min="0"
-                      max="3"
-                      step="0.01"
-                      @input="
-                        handleADSRChange(
-                          'release',
-                          Number(($event.target as HTMLInputElement).value),
-                        )
+                    <RangeSlider
+                      :model-value="undertaleRelease"
+                      :min="0"
+                      :max="3"
+                      :step="0.01"
+                      thumb-size="small"
+                      :display-value="`${undertaleRelease.toFixed(2)}s`"
+                      @update:model-value="
+                        (value) => handleADSRChange('release', value)
                       "
                     />
-                    <span class="adsr-value"
-                      >{{ undertaleRelease.toFixed(2) }}s</span
-                    >
                   </div>
                 </div>
               </div>
@@ -395,7 +317,7 @@ const handleClose = () => {
 .settings-panel {
   width: 320px;
   height: 100%;
-  background: #2d0f20;
+  background: var(--color-bg-secondary-dark);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
@@ -406,13 +328,13 @@ const handleClose = () => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  border-bottom: 1px solid var(--color-border-secondary);
 
   h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #f2efe8;
+    color: var(--color-white);
   }
 }
 
@@ -420,15 +342,15 @@ const handleClose = () => {
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.6);
   font-size: 20px;
   cursor: pointer;
 
   &:hover {
-    background: #7a0f3e;
-    color: #f2efe8;
+    background: var(--color-accent3);
+    color: var(--color-white);
   }
 }
 
@@ -454,52 +376,6 @@ const handleClose = () => {
   margin-bottom: 8px;
 }
 
-.auto-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(255, 63, 180, 0.2);
-  color: #ff3fb4;
-  border: 1px solid rgba(255, 63, 180, 0.4);
-  letter-spacing: 0.05em;
-}
-
-.slider-control {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  &.automated {
-    opacity: 0.4;
-    pointer-events: none;
-  }
-
-  input[type="range"] {
-    flex: 1;
-    height: 6px;
-    -webkit-appearance: none;
-    background: #7a0f3e;
-    border-radius: 3px;
-
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: #ff3fb4;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-  }
-
-  .slider-value {
-    font-size: 13px;
-    color: #f2efe8;
-    min-width: 45px;
-    text-align: right;
-  }
-}
-
 .waveform-selector {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -508,45 +384,45 @@ const handleClose = () => {
 
 .waveform-btn {
   padding: 10px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
-  background: #1a0e15;
-  color: #f2efe8;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
   font-size: 13px;
   text-transform: capitalize;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background: #3d1528;
-    border-color: rgba(122, 15, 62, 0.7);
+    background: var(--color-bg-daw-active);
+    border-color: rgba(var(--color-accent3-rgb), 0.7);
   }
 
   &.active {
-    background: #ff3fb4;
-    border-color: #ff3fb4;
-    color: #1a0e15;
+    background: var(--color-accent2);
+    border-color: var(--color-accent2);
+    color: var(--color-bg-primary-dark);
   }
 }
 
 .soundfont-select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid rgba(122, 15, 62, 0.5);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
-  background: #1a0e15;
-  color: #f2efe8;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
   font-size: 13px;
   cursor: pointer;
   color-scheme: dark;
 
   &:focus {
     outline: none;
-    border-color: #ff3fb4;
+    border-color: var(--color-accent2);
   }
 
   option {
-    background: #2d0f20;
+    background: var(--color-bg-secondary-dark);
     text-transform: capitalize;
   }
 }
@@ -559,7 +435,7 @@ const handleClose = () => {
 
 .loading-text {
   font-size: 13px;
-  color: #ff3fb4;
+  color: var(--color-accent2);
   font-style: italic;
 }
 
@@ -578,32 +454,8 @@ const handleClose = () => {
     width: 16px;
     font-size: 12px;
     font-weight: 700;
-    color: #ff3fb4;
+    color: var(--color-accent2);
     text-align: center;
-  }
-
-  input[type="range"] {
-    flex: 1;
-    height: 6px;
-    -webkit-appearance: none;
-    background: #7a0f3e;
-    border-radius: 3px;
-
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      background: #ff3fb4;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-  }
-
-  .adsr-value {
-    min-width: 50px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-    text-align: right;
   }
 }
 
@@ -616,6 +468,12 @@ const handleClose = () => {
 .slide-leave-to {
   .settings-panel {
     transform: translateX(100%);
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-panel {
+    width: 100%;
   }
 }
 </style>

@@ -5,11 +5,21 @@ import {
   isOctaveStart,
   noteIndexToName,
 } from "../audio/pianoRollConstants";
+import {
+  TICKS_PER_BEAT,
+  ticksPerBar,
+  getVisibleTickRange,
+  getVisibleSubdivisionTicks,
+  tickToGridLineX,
+} from "../audio/timeGrid";
+import type { TimeSignature } from "../utils/types";
 
 export interface GridRenderConfig {
   cols: number;
   colWidth: number;
   trackColor: string;
+  timeSignature: TimeSignature;
+  subdivision: number;
 }
 
 export interface NoteRenderData {
@@ -39,6 +49,7 @@ const COLORS = {
   cellBorderVertical: "rgba(122, 15, 62, 0.2)",
   cellBorderHorizontal: "rgba(122, 15, 62, 0.15)",
   measureLine: "rgba(122, 15, 62, 0.5)",
+  metronomeBeatLine: "rgba(170, 27, 86, 0.7)",
   noteSelectedOutline: "#fff7ab",
   noteSelectedShadow: "rgba(255, 247, 171, 0.4)",
   noteDraggingOutline: "#fff7ab",
@@ -52,6 +63,16 @@ export class PianoGridRenderer {
   private config: GridRenderConfig;
   private width: number;
   private height: number;
+  // Le canvas ne couvre plus que le viewport visible (voir usePianoGridCanvas.ts) ;
+  // scrollLeft/scrollTop indiquent quelle tranche du monde (cols*colWidth ×
+  // TOTAL_NOTES*NOTE_ROW_HEIGHT) afficher. Mis à jour à chaque render(), pas
+  // seulement au resize, car le scroll change bien plus souvent.
+  private scrollLeft = 0;
+  private scrollTop = 0;
+  // Calculées une seule fois par render() (au lieu d'une fois par méthode de
+  // dessin) puisqu'elles ne changent pas pendant tout le pass de rendu.
+  private visibleTickRange: [number, number] = [0, 0];
+  private visibleRowRange: [number, number] = [0, 0];
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -71,14 +92,40 @@ export class PianoGridRenderer {
     this.height = height;
   }
 
+  // Marge d'une colonne/ligne de part et d'autre de la plage strictement
+  // visible : évite qu'une note ou une poignée de resize pile à la frontière
+  // du viewport disparaisse ou devienne non cliquable.
+  private getVisibleRowRange(): [number, number] {
+    const start = Math.max(0, Math.floor(this.scrollTop / NOTE_ROW_HEIGHT) - 1);
+    const end = Math.min(
+      TOTAL_NOTES,
+      Math.ceil((this.scrollTop + this.height) / NOTE_ROW_HEIGHT) + 1,
+    );
+    return [start, end];
+  }
+
   render(
     notes: NoteRenderData[],
     activeRows: Set<number>,
     selectionRect: SelectionRectData | null,
+    scrollLeft: number,
+    scrollTop: number,
   ) {
     const { ctx } = this;
+    this.scrollLeft = scrollLeft;
+    this.scrollTop = scrollTop;
+    this.visibleTickRange = getVisibleTickRange(
+      scrollLeft,
+      this.width,
+      this.config.colWidth,
+      this.config.cols,
+    );
+    this.visibleRowRange = this.getVisibleRowRange();
 
     ctx.clearRect(0, 0, this.width, this.height);
+
+    ctx.save();
+    ctx.translate(-scrollLeft, -scrollTop);
 
     this.drawBlackKeyRows();
     this.drawActiveRowHighlights(activeRows);
@@ -90,18 +137,21 @@ export class PianoGridRenderer {
     if (selectionRect) {
       this.drawSelectionRect(selectionRect);
     }
+
+    ctx.restore();
   }
 
   private drawBlackKeyRows() {
     const { ctx } = this;
+    const [rowStart, rowEnd] = this.visibleRowRange;
 
     ctx.fillStyle = COLORS.blackKeyRow;
 
-    for (let row = 0; row < TOTAL_NOTES; row++) {
+    for (let row = rowStart; row < rowEnd; row++) {
       const noteName = noteIndexToName(row);
       if (isBlackKey(noteName)) {
         const y = row * NOTE_ROW_HEIGHT;
-        ctx.fillRect(0, y, this.width, NOTE_ROW_HEIGHT);
+        ctx.fillRect(this.scrollLeft, y, this.width, NOTE_ROW_HEIGHT);
       }
     }
   }
@@ -110,73 +160,121 @@ export class PianoGridRenderer {
     if (activeRows.size === 0) return;
 
     const { ctx } = this;
+    const [rowStart, rowEnd] = this.visibleRowRange;
     ctx.fillStyle = COLORS.activeRowHighlight;
 
     for (const row of activeRows) {
+      if (row < rowStart || row >= rowEnd) continue;
       const y = row * NOTE_ROW_HEIGHT;
-      ctx.fillRect(0, y, this.width, NOTE_ROW_HEIGHT);
+      ctx.fillRect(this.scrollLeft, y, this.width, NOTE_ROW_HEIGHT);
     }
   }
 
   private drawGridLines() {
     const { ctx, config } = this;
+    const [rowStart, rowEnd] = this.visibleRowRange;
+    const [tickStart, tickEnd] = this.visibleTickRange;
 
     ctx.strokeStyle = COLORS.cellBorderHorizontal;
     ctx.lineWidth = 1;
 
     ctx.beginPath();
-    for (let row = 1; row <= TOTAL_NOTES; row++) {
+    for (let row = Math.max(1, rowStart); row <= rowEnd; row++) {
       const y = row * NOTE_ROW_HEIGHT - 0.5;
-      ctx.moveTo(0, y);
-      ctx.lineTo(this.width, y);
+      ctx.moveTo(this.scrollLeft, y);
+      ctx.lineTo(this.scrollLeft + this.width, y);
     }
     ctx.stroke();
 
     ctx.strokeStyle = COLORS.cellBorderVertical;
     ctx.beginPath();
-    for (let col = 1; col <= config.cols; col++) {
-      const x = col * config.colWidth - 0.5;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, this.height);
+    const barLength = ticksPerBar(config.timeSignature);
+    const subdivisionTicks = getVisibleSubdivisionTicks(
+      tickStart,
+      tickEnd,
+      config.subdivision,
+      barLength,
+    );
+    for (const tick of subdivisionTicks) {
+      const x = tickToGridLineX(tick, config.colWidth);
+      ctx.moveTo(x, this.scrollTop);
+      ctx.lineTo(x, this.scrollTop + this.height);
     }
     ctx.stroke();
   }
 
   private drawOctaveLines() {
     const { ctx } = this;
+    const [rowStart, rowEnd] = this.visibleRowRange;
 
     ctx.strokeStyle = COLORS.octaveLine;
     ctx.lineWidth = 2;
 
     ctx.beginPath();
-    for (let row = 0; row < TOTAL_NOTES; row++) {
+    for (let row = rowStart; row < rowEnd; row++) {
       const noteName = noteIndexToName(row);
       if (isOctaveStart(noteName)) {
         const y = (row + 1) * NOTE_ROW_HEIGHT - 1;
-        ctx.moveTo(0, y);
-        ctx.lineTo(this.width, y);
+        ctx.moveTo(this.scrollLeft, y);
+        ctx.lineTo(this.scrollLeft + this.width, y);
       }
     }
     ctx.stroke();
   }
 
+  // Une ligne à chaque temps (TICKS_PER_BEAT ticks), en rose clair sur le
+  // premier temps de chaque mesure (ticksPerBar selon la signature rythmique).
   private drawMeasureLines() {
     const { ctx, config } = this;
 
-    ctx.strokeStyle = COLORS.measureLine;
+    const barLength = ticksPerBar(config.timeSignature);
+    const [tickStart, tickEnd] = this.visibleTickRange;
+    const beatStart = Math.max(0, Math.floor(tickStart / TICKS_PER_BEAT));
+    const beatEnd = Math.min(
+      Math.ceil(config.cols / TICKS_PER_BEAT),
+      Math.ceil(tickEnd / TICKS_PER_BEAT),
+    );
+
     ctx.lineWidth = 1;
 
+    // Un beginPath/stroke par couleur (2 au total) plutôt que par ligne : à
+    // fort zoom, le nombre de temps visibles reste modeste mais chaque
+    // stroke() séparé a un coût fixe non négligeable répété à chaque redraw.
     ctx.beginPath();
-    for (let measure = 0; measure <= Math.ceil(config.cols / 4); measure++) {
-      const x = measure * 4 * config.colWidth - 0.5;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, this.height);
+    ctx.strokeStyle = COLORS.measureLine;
+    for (let beat = beatStart; beat <= beatEnd; beat++) {
+      const tick = beat * TICKS_PER_BEAT;
+      if (tick % barLength === 0) continue;
+      const x = tickToGridLineX(tick, config.colWidth);
+      ctx.moveTo(x, this.scrollTop);
+      ctx.lineTo(x, this.scrollTop + this.height);
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = COLORS.metronomeBeatLine;
+    for (let beat = beatStart; beat <= beatEnd; beat++) {
+      const tick = beat * TICKS_PER_BEAT;
+      if (tick % barLength !== 0) continue;
+      const x = tickToGridLineX(tick, config.colWidth);
+      ctx.moveTo(x, this.scrollTop);
+      ctx.lineTo(x, this.scrollTop + this.height);
     }
     ctx.stroke();
   }
 
   private drawNotes(notes: NoteRenderData[]) {
+    const [tickStart, tickEnd] = this.visibleTickRange;
+    const [rowStart, rowEnd] = this.visibleRowRange;
+
     for (const note of notes) {
+      const noteX = note.previewX ?? note.x;
+      const noteY = note.previewY ?? note.y;
+      const noteW = note.previewW ?? note.w;
+
+      if (noteX + noteW < tickStart || noteX > tickEnd) continue;
+      if (noteY < rowStart || noteY >= rowEnd) continue;
+
       this.drawNote(note);
     }
   }

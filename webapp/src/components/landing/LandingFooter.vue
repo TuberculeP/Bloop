@@ -8,27 +8,32 @@
         <!-- Brand section -->
         <div class="footer-brand">
           <div class="brand-logo">
-            <img
-              src="../../assets/logo/logo_background_yellow.svg"
-              alt="BLOOP"
-              class="logo"
-            />
+            <a href="/">
+              <img
+                src="../../assets/logo/logo_background_yellow.svg"
+                alt="BLOOP"
+                class="logo"
+              />
+            </a>
           </div>
           <p class="brand-description">
             Créez, mixez et produisez vos beats en ligne avec notre studio
             professionnel. La musique sans limites.
           </p>
           <div class="social-links">
-            <a
-              href="#"
-              class="social-link"
+            <BaseTooltip
               v-for="social in socials"
               :key="social.name"
-              :aria-label="social.name"
+              :text="social.name"
             >
-              <component :is="social.icon" />
-              <span class="social-tooltip">{{ social.name }}</span>
-            </a>
+              <a
+                :href="social.link"
+                class="social-link"
+                :aria-label="social.name"
+              >
+                <component :is="social.icon" />
+              </a>
+            </BaseTooltip>
           </div>
         </div>
 
@@ -136,11 +141,11 @@
         </div>
         <div class="bottom-right">
           <a
-            href="#"
+            :href="link.link"
             class="legal-link"
             v-for="link in legalLinks"
-            :key="link"
-            >{{ link }}</a
+            :key="link.id"
+            >{{ link.title }}</a
           >
         </div>
       </div>
@@ -169,6 +174,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, h, inject } from "vue";
+import BaseTooltip from "../ui/BaseTooltip.vue";
 
 const footerRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
@@ -231,10 +237,14 @@ const YoutubeIcon = () =>
   );
 
 const socials = [
-  { name: "Twitter", icon: TwitterIcon },
-  { name: "Discord", icon: DiscordIcon },
-  { name: "Instagram", icon: InstagramIcon },
-  { name: "YouTube", icon: YoutubeIcon },
+  { name: "Twitter", icon: TwitterIcon, link: "/" },
+  { name: "Discord", icon: DiscordIcon, link: "/" },
+  {
+    name: "Instagram",
+    icon: InstagramIcon,
+    link: "https://www.instagram.com/bloop_music/",
+  },
+  { name: "YouTube", icon: YoutubeIcon, link: "/" },
 ];
 
 const footerLinks = [
@@ -267,7 +277,23 @@ const footerLinks = [
   },
 ];
 
-const legalLinks = ["Confidentialité", "CGU", "Cookies", "Mentions légales"];
+const legalLinks = [
+  {
+    id: 1,
+    title: "Confidentialité",
+    link: "#",
+  },
+  {
+    id: 2,
+    title: "CGU",
+    link: "/cgu",
+  },
+  {
+    id: 3,
+    title: "CGV",
+    link: "/cgv",
+  },
+];
 
 // Scroll handler
 const handleScroll = () => {
@@ -282,9 +308,11 @@ const scrollToTop = () => {
     );
 
   if (scrollTo) {
-    scrollTo("#hero", { duration: 1.2 });
+    scrollTo("#main-header", { duration: 1.2 });
   } else {
-    document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .getElementById("main-header")
+      ?.scrollIntoView({ behavior: "smooth" });
   }
 };
 
@@ -437,28 +465,6 @@ onUnmounted(() => {
   transform: translateY(-3px);
 }
 
-.social-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.9);
-  padding: 0.4rem 0.75rem;
-  background: rgba(6, 11, 23, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  color: var(--color-white);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.2s ease;
-}
-
-.social-link:hover .social-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
-}
-
 /* Footer links */
 .footer-links {
   display: grid;
@@ -490,7 +496,6 @@ onUnmounted(() => {
 
 .column-title {
   font-size: 0.9rem;
-  font-weight: 600;
   color: var(--color-white);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -576,7 +581,6 @@ onUnmounted(() => {
 
 .newsletter-title {
   font-size: 1.25rem;
-  font-weight: 600;
   color: var(--color-white);
   margin-bottom: 0.5rem;
 }
@@ -745,7 +749,7 @@ onUnmounted(() => {
   justify-content: center;
   background: var(--color-accent);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-black);
   cursor: pointer;
   transform: translateY(20px);

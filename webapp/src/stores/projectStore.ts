@@ -29,6 +29,9 @@ export const useProjectStore = defineStore("project", () => {
     firstName: string;
     lastName: string;
   } | null>(null);
+  const lastSavedAt = ref<number | null>(null);
+  const lastExportedAt = ref<number | null>(null);
+  const lastPlaybackLoopedAt = ref<number | null>(null);
 
   const saveProjectOnline = async (
     project: TimelineProject,
@@ -45,8 +48,8 @@ export const useProjectStore = defineStore("project", () => {
 
     try {
       const projectData = {
-        version: "4.0",
-        format: "timeline-v2",
+        version: "5.0",
+        format: "timeline-v3",
         data: project,
       };
 
@@ -83,6 +86,7 @@ export const useProjectStore = defineStore("project", () => {
 
       hasUnsavedChanges.value = false;
       lastSavedState.value = JSON.stringify(stripTimestamps(project));
+      lastSavedAt.value = Date.now();
 
       return {
         success: true,
@@ -317,7 +321,10 @@ export const useProjectStore = defineStore("project", () => {
       if (result.success && result.data) {
         const projectWrapper = result.data.data;
 
-        if (projectWrapper?.format === "timeline-v2" && projectWrapper?.data) {
+        const isCompatibleFormat =
+          projectWrapper?.format === "timeline-v3" ||
+          projectWrapper?.format === "timeline-v2";
+        if (isCompatibleFormat && projectWrapper?.data) {
           const timelineData = projectWrapper.data as TimelineProject;
           timelineStore.loadProjectData(timelineData);
           currentProjectId.value = projectId;
@@ -334,7 +341,7 @@ export const useProjectStore = defineStore("project", () => {
         isLoading.value = false;
         return {
           success: false,
-          error: "Format de projet non compatible (attendu: timeline-v2)",
+          error: "Format de projet non compatible (attendu: timeline-v3)",
         };
       }
 
@@ -373,6 +380,14 @@ export const useProjectStore = defineStore("project", () => {
     currentProjectId.value = id;
   };
 
+  const markExportSuccess = () => {
+    lastExportedAt.value = Date.now();
+  };
+
+  const markPlaybackLooped = () => {
+    lastPlaybackLoopedAt.value = Date.now();
+  };
+
   return {
     isSaving,
     isLoading,
@@ -380,7 +395,12 @@ export const useProjectStore = defineStore("project", () => {
     hasUnsavedChanges,
     isReadOnly,
     currentProjectOwner,
+    lastSavedAt,
+    lastExportedAt,
+    lastPlaybackLoopedAt,
     saveProjectOnline,
+    markExportSuccess,
+    markPlaybackLooped,
     getProjects,
     getProject,
     getPublicProjects,

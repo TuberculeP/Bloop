@@ -25,6 +25,12 @@
   --color-white-active: #f7f1e3;
   --color-white-light: #f2efe8;
 
+  /* Texte secondaire/atténué (sous-titres, descriptions, séparateurs) -
+     référencé dans 7 fichiers sans jamais être défini ; valeur reprise du
+     fallback CSS déjà utilisé dans SessionExpiredModal.vue
+     (var(--color-text-secondary, #888)). */
+  --color-text-secondary: #888;
+
   /* Accent (Default, Hover, Active) */
   --color-accent: #fff7ab;
   --color-accent-hover: #fff16e;
@@ -79,6 +85,68 @@
   --color-bg-validate-dark: #1a1a0a;
   --color-bg-error-dark: #2d0f1a;
   --color-bg-warning-dark: #2a1a08;
+
+  /* RGB triplets (for rgba() usage in box-shadow/backgrounds) */
+  --color-primary-rgb: 68, 3, 25;
+  --color-primary-hover-rgb: 96, 17, 44;
+  --color-secondary-rgb: 255, 178, 174;
+  --color-accent-rgb: 255, 247, 171;
+  --color-accent2-rgb: 255, 63, 180;
+  --color-accent3-rgb: 122, 15, 62;
+  --color-error-rgb: 215, 38, 109;
+
+  /* Status indicators (booléens actif/inactif, feedback positif/négatif) :
+     vert/rouge littéraux, distincts de --color-success/--color-error qui
+     sont des teintes de la palette de marque (violet/rose), pas des couleurs
+     de statut. Valeurs reprises telles quelles depuis leur usage déjà répété
+     (admin, DAW, profil) plutôt que réinventées. */
+  --color-status-success: #22c55e;
+  --color-status-error: #ef4444;
+  --color-status-error-rgb: 239, 68, 68;
+
+  /* Rouge "erreur de formulaire"/danger léger, distinct de --color-error
+     (rose de marque) et --color-status-error (vert/rouge statut) - repris
+     tel quel depuis son usage identique dans LoginForm et le menu contextuel
+     TrackHeader. */
+  --color-error-light: #ff6b6b;
+  --color-error-light-rgb: 255, 107, 107;
+
+  /* Rouge "danger" utilisé pour les états favori/suppression (icon-toggle),
+     repris tel quel depuis son usage répété (6x) dans ProjectSelector.vue. */
+  --color-danger-hover: #e25555;
+  --color-danger-hover-rgb: 226, 85, 85;
+
+  /* Surface sombre partagée (fond des cards/tables/inputs admin, panneau
+     audiothèque du DAW) - distincte de --color-bg-secondary-dark (nuance
+     légèrement différente). */
+  --color-bg-surface-deep: #2a1520;
+
+  /* Surfaces DAW (pistes/dropdowns), reprises telles quelles depuis leur
+     usage répété dans components/app/timeline - distinctes des teintes
+     admin ci-dessus. */
+  --color-bg-daw-active: #3d1528; /* ligne de piste active/expanded */
+  --color-bg-daw-deep: #160b12; /* fond le plus sombre (spacers, lanes) */
+  --color-bg-daw-dropdown: #2a1020; /* menus déroulants (add-lane, etc.) */
+  --color-piano-key-black: #2a2a2a; /* touches noires du piano roll */
+  --color-audio-clip-selected: #fbbf24; /* bordure clip audio sélectionné/survolé */
+
+  /* Fond "navy" de la landing page, distinct de la palette prune de l'app -
+     identité visuelle propre au marketing, répétée telle quelle (hex + rgba)
+     dans LandingLayout/LandingHeader/LandingContain/BaseTooltip. */
+  --color-landing-bg: #060b17;
+  --color-landing-bg-rgb: 6, 11, 23;
+
+  /* Radius tokens */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 50%;
+
+  /* Shadow tokens */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.4);
 }
 
 /* Utility classes for quick usage */
@@ -237,48 +305,3 @@
   background-color: var(--color-bg-success);
 }
 
-/* Button state mixins for hover and active states */
-.btn-primary {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  border: none;
-  transition: background-color 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.btn-primary:active {
-  background-color: var(--color-primary-active);
-}
-
-.btn-secondary {
-  background-color: var(--color-secondary);
-  color: var(--color-white);
-  border: none;
-  transition: background-color 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-secondary-hover);
-}
-
-.btn-secondary:active {
-  background-color: var(--color-secondary-active);
-}
-
-.btn-accent {
-  background-color: var(--color-accent);
-  color: var(--color-black);
-  border: none;
-  transition: background-color 0.2s ease;
-}
-
-.btn-accent:hover {
-  background-color: var(--color-accent-hover);
-}
-
-.btn-accent:active {
-  background-color: var(--color-accent-active);
-}

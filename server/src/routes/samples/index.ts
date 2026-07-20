@@ -91,7 +91,7 @@ samplesRouter.get("/packs/:slug/folders/:folderId", async (req, res) => {
   }
 });
 
-// GET /api/samples/search - Recherche full-text
+// GET /api/samples/search - Recherche full-text (paginée)
 samplesRouter.get("/search", async (req, res) => {
   try {
     const q = req.query.q as string;
@@ -103,8 +103,11 @@ samplesRouter.get("/search", async (req, res) => {
       return;
     }
 
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
     const repo = pg.getRepository(AudioSample);
-    const samples = await repo
+    const [samples, total] = await repo
       .createQueryBuilder("sample")
       .leftJoinAndSelect("sample.folder", "folder")
       .leftJoinAndSelect("folder.pack", "pack")
@@ -114,13 +117,17 @@ samplesRouter.get("/search", async (req, res) => {
       .orWhere("LOWER(pack.name) LIKE :query", {
         query: `%${q.toLowerCase()}%`,
       })
-      .take(50)
-      .getMany();
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     res.status(200).json({
       status: 200,
       message: "Search results retrieved",
-      body: samples,
+      body: {
+        samples,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      },
     });
   } catch (err) {
     console.error("Error searching samples:", err);

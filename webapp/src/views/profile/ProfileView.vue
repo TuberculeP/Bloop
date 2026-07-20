@@ -8,20 +8,35 @@ import TabBar from "../../components/shared/TabBar.vue";
 import type { TabItem } from "../../components/shared/TabBar.vue";
 import ProfileSettingsForm from "../../components/profile/ProfileSettingsForm.vue";
 import ProfilePosts from "../../components/profile/ProfilePosts.vue";
+import UserSamplesPanel from "../../components/profile/UserSamplesPanel.vue";
+import ProfileLearningArticles from "../../components/profile/ProfileLearningArticles.vue";
 
-type Tab = "post" | "settings";
+type Tab = "post" | "settings" | "samples" | "learning";
 
 const activeTab = ref<Tab>("settings");
-
-const profileTabs: TabItem[] = [
-  { id: "settings", label: "Profil", icon: "fas fa-user" },
-  { id: "post", label: "Mes Posts", icon: "fas fa-newspaper" },
-];
 
 const router = useRouter();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
+
+const profileTabs = computed<TabItem[]>(() => {
+  const tabs: TabItem[] = [
+    { id: "settings", label: "Profil", icon: "fas fa-user" },
+    { id: "post", label: "Mes Posts", icon: "fas fa-newspaper" },
+    { id: "samples", label: "Mes Samples", icon: "fas fa-music" },
+  ];
+
+  if (user.value?.role === "ROLE_ADMIN") {
+    tabs.push({
+      id: "learning",
+      label: "Mes Articles",
+      icon: "fas fa-graduation-cap",
+    });
+  }
+
+  return tabs;
+});
 
 /* ───────────────────── Statistiques (alimentées par ProfilePosts) ───────────────────── */
 
@@ -113,6 +128,10 @@ onMounted(() => {
         />
 
         <ProfileSettingsForm v-show="activeTab === 'settings'" />
+
+        <UserSamplesPanel v-show="activeTab === 'samples'" />
+
+        <ProfileLearningArticles v-show="activeTab === 'learning'" />
       </main>
     </div>
   </AppLayout>
@@ -130,7 +149,6 @@ onMounted(() => {
 
 .main-title {
   font-size: 2.5rem;
-  font-weight: 800;
   color: var(--color-white);
   margin: 0;
   letter-spacing: -1px;
@@ -188,7 +206,7 @@ onMounted(() => {
 .stat-card {
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 8px 12px;
   text-align: center;
 }

@@ -16,14 +16,14 @@ async function authGuard(to: any, from: any, next: any) {
   const authStore = useAuthStore();
   const check = await apiClient.get<{ user: User }>("/auth/check");
   if (check.error) {
-    next({ name: "app-login", query: { redirect: to.name } });
+    next({ name: "app-login", query: { redirect: to.fullPath } });
     return;
   }
   if (check.data && check.data.user) {
     authStore.user = check.data.user;
     next();
   } else {
-    next({ name: "app-login", query: { redirect: to.name } });
+    next({ name: "app-login", query: { redirect: to.fullPath } });
   }
 }
 
@@ -32,7 +32,7 @@ async function adminGuard(to: any, from: any, next: any) {
   const check = await apiClient.get<{ user: User }>("/auth/check");
 
   if (check.error || !check.data?.user) {
-    next({ name: "app-login", query: { redirect: to.name } });
+    next({ name: "app-login", query: { redirect: to.fullPath } });
     return;
   }
 
@@ -48,11 +48,21 @@ async function adminGuard(to: any, from: any, next: any) {
 import BlogApp from "./views/blog/BlogApp.vue";
 import BlogSearchResults from "./views/blog/BlogSearchResults.vue";
 import BlogPostDetail from "./views/blog/BlogPostDetail.vue";
+import LearningApp from "./views/learning/LearningApp.vue";
+import LearningArticleDetail from "./views/learning/LearningArticleDetail.vue";
 import ProfileView from "./views/profile/ProfileView.vue";
 import MessagesView from "./views/messages/MessagesView.vue";
+import LandingCgu from "./views/landing/LandingCgu.vue";
+import LandingCgv from "./views/landing/LandingCgv.vue";
+import LandingAbout from "./views/landing/LandingAbout.vue";
+import LandingSupport from "./views/landing/LandingSupport.vue";
 
 const routes = [
   { path: "/", component: LandingIndex, name: "landing-main" },
+  { path: "/cgu", component: LandingCgu, name: "landing-cgu" },
+  { path: "/cgv", component: LandingCgv, name: "landing-cgv" },
+  { path: "/about", component: LandingAbout, name: "landing-about" },
+  { path: "/support", component: LandingSupport, name: "landing-support" },
   { path: "/app", component: ProjectSelectorView, name: "app-main" },
   { path: "/app/sequencer", component: BloopApp, name: "app-sequencer" },
   { path: "/login", component: LoginView, name: "app-login" },
@@ -77,6 +87,24 @@ const routes = [
     path: "/blog/post/:id",
     component: BlogPostDetail,
     name: "blog-post-detail",
+  },
+  { path: "/learning", component: LearningApp, name: "learning-list" },
+  {
+    path: "/learning/editor/new",
+    component: () => import("./views/learning/LearningArticleEditor.vue"),
+    name: "learning-new",
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: "/learning/editor/:id",
+    component: () => import("./views/learning/LearningArticleEditor.vue"),
+    name: "learning-edit",
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: "/learning/:slug",
+    component: LearningArticleDetail,
+    name: "learning-detail",
   },
   { path: "/profile", component: ProfileView, name: "profile" },
   { path: "/messages", component: MessagesView, name: "messages" },
@@ -111,10 +139,23 @@ const routes = [
     name: "admin-folder-detail",
     meta: { requiresAdmin: true },
   },
+  {
+    path: "/admin/projects",
+    component: () => import("./views/admin/AdminProjects.vue"),
+    name: "admin-projects",
+    meta: { requiresAdmin: true },
+  },
 ];
 
 const getGuardedRoutes = () => {
-  const guardedMatches = ["app", "blog", "settings", "profile", "messages"];
+  const guardedMatches = [
+    "app",
+    "blog",
+    "settings",
+    "profile",
+    "messages",
+    "learning",
+  ];
   return routes.map((route: any) => {
     if (route.meta?.requiresAdmin) {
       return {

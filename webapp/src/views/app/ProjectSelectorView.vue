@@ -4,10 +4,12 @@ import { useRouter } from "vue-router";
 import AppLayout from "../../layouts/AppLayout.vue";
 import ProjectSelector from "../../components/app/ProjectSelector.vue";
 import { useMainStore } from "../../stores/mainStore";
+import { useOnboardingStore } from "../../stores/onboardingStore";
 import { storeToRefs } from "pinia";
 
 const router = useRouter();
 const mainStore = useMainStore();
+const onboardingStore = useOnboardingStore();
 const { isLoaded, loadPercentage } = storeToRefs(mainStore);
 const { loadAll } = mainStore;
 
@@ -15,6 +17,10 @@ const { loadAll } = mainStore;
 onMounted(() => {
   if (!isLoaded.value) {
     loadAll();
+  }
+  if (!onboardingStore.hasSeen()) {
+    onboardingStore.markSeen();
+    onboardingStore.start();
   }
 });
 
@@ -72,14 +78,14 @@ const handleSelectPublicProject = (projectId: string) => {
   width: 300px;
   height: 8px;
   background: var(--color-bg-primary-dark);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: var(--color-primary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: width 0.3s ease;
 }
 </style>

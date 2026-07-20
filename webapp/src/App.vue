@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, onBeforeUnmount } from "vue";
 import { onSocketConnected } from "./lib/utils/websocket";
 import { useAuthStore } from "./stores/authStore";
 import apiClient from "./lib/utils/apiClient";
 import type { User } from "./lib/utils/types";
 import SessionExpiredModal from "./components/ui/SessionExpiredModal.vue";
+import ToastContainer from "./components/ui/ToastContainer.vue";
+import { useOnboardingTour } from "./composables/useOnboardingTour";
 
 const authStore = useAuthStore();
+
+const { cleanup: cleanupOnboardingTour } = useOnboardingTour();
+onBeforeUnmount(cleanupOnboardingTour);
 
 onMounted(async () => {
   const check = await apiClient.get<{ user: User }>("/auth/check");
@@ -22,6 +27,7 @@ onSocketConnected((socket) => {
 
 <template>
   <SessionExpiredModal />
+  <ToastContainer />
   <RouterView />
 </template>
 

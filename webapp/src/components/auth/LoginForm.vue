@@ -3,35 +3,36 @@
     <h2 v-if="showTitle">{{ title }}</h2>
     <p v-if="description" class="form-description">{{ description }}</p>
 
-    <div class="form-group">
-      <label for="login-email">Email</label>
-      <input
+    <FormField label="Email" html-for="login-email">
+      <BaseInput
         id="login-email"
-        type="email"
         v-model="form.email"
+        type="email"
         placeholder="Entrez votre email"
-        class="form-input"
         required
       />
-    </div>
+    </FormField>
 
-    <div class="form-group">
-      <label for="login-password">Mot de passe</label>
-      <input
+    <FormField label="Mot de passe" html-for="login-password">
+      <BaseInput
         id="login-password"
-        type="password"
         v-model="form.password"
+        type="password"
         placeholder="Entrez votre mot de passe"
-        class="form-input"
         required
       />
-    </div>
+    </FormField>
 
     <div v-if="error" class="error-message">{{ error }}</div>
 
-    <button type="submit" class="submit-button" :disabled="isLoading">
-      {{ isLoading ? "Connexion..." : "Se connecter" }}
-    </button>
+    <BaseButton
+      type="submit"
+      class="submit-button"
+      :disabled="isLoading"
+      :loading="isLoading"
+    >
+      Se connecter
+    </BaseButton>
 
     <div v-if="googleAuthEnabled" class="google-login">
       <div class="separator">
@@ -76,6 +77,9 @@ import { reactive, ref, computed } from "vue";
 import apiClient from "../../lib/utils/apiClient";
 import { useAuthStore } from "../../stores/authStore";
 import type { User } from "../../lib/utils/types";
+import FormField from "../ui/FormField.vue";
+import BaseInput from "../ui/BaseInput.vue";
+import BaseButton from "../ui/BaseButton.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -153,21 +157,14 @@ async function submitForm() {
 
 .submit-button {
   width: 100%;
-  padding: 12px 20px;
-  border-radius: 8px;
-}
-
-.submit-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .error-message {
-  color: #ff6b6b;
+  color: var(--color-error-light);
   font-size: 0.9rem;
   margin-bottom: 12px;
   padding: 8px 12px;
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(var(--color-error-light-rgb), 0.1);
   border-radius: 6px;
 }
 
@@ -221,6 +218,7 @@ async function submitForm() {
   font-size: 0.85rem;
 }
 
+/* stylelint-disable color-no-hex -- charte officielle du bouton "Se connecter avec Google", ne pas retokeniser */
 .google-button {
   display: flex;
   align-items: center;
@@ -231,7 +229,7 @@ async function submitForm() {
   background-color: #1f1f1f;
   color: #fff;
   border: 1px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 500;
   text-decoration: none;
@@ -245,6 +243,7 @@ async function submitForm() {
   background-color: #2d2d2d;
   border-color: #555;
 }
+/* stylelint-enable color-no-hex */
 
 .google-icon {
   width: 20px;

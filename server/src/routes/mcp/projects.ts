@@ -3,6 +3,7 @@ import pg from "../../config/db.config";
 import { Project } from "../../config/entities/Project";
 import { User } from "../../config/entities/User";
 import { bearerAuth } from "../../middleware/auth.middleware";
+import { syncSampleLinksForProject } from "../../services/sampleProjectLinks.service";
 
 const mcpProjectsRouter = Router();
 
@@ -30,7 +31,7 @@ mcpProjectsRouter.get("/:id", bearerAuth, async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: user.id } },
+      where: { id: req.params.id as string, user: { id: user.id } },
     });
 
     if (!project) {
@@ -81,6 +82,7 @@ mcpProjectsRouter.post("/", bearerAuth, async (req, res) => {
     });
 
     const savedProject = await projectRepository.save(project);
+    await syncSampleLinksForProject(savedProject.id, savedProject.data?.data);
 
     res.status(201).json({
       body: {
@@ -102,7 +104,7 @@ mcpProjectsRouter.put("/:id", bearerAuth, async (req, res) => {
     const projectRepository = pg.getRepository(Project);
 
     const project = await projectRepository.findOne({
-      where: { id: req.params.id, user: { id: user.id } },
+      where: { id: req.params.id as string, user: { id: user.id } },
     });
 
     if (!project) {
@@ -121,6 +123,10 @@ mcpProjectsRouter.put("/:id", bearerAuth, async (req, res) => {
     if (data !== undefined) project.data = data;
 
     const savedProject = await projectRepository.save(project);
+
+    if (data !== undefined) {
+      await syncSampleLinksForProject(savedProject.id, savedProject.data?.data);
+    }
 
     res.json({
       body: {

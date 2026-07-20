@@ -41,8 +41,7 @@ export const useSampleCacheStore = defineStore("sampleCache", {
       if (!this.db) return null;
 
       const cached = (await this.db.get(STORE_NAME, sampleId)) as
-        | CachedSample
-        | undefined;
+        CachedSample | undefined;
       if (cached) {
         cached.cachedAt = Date.now();
         await this.db.put(STORE_NAME, cached);

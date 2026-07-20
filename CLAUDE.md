@@ -35,6 +35,8 @@ pie-poc-2/
 | DAW Timeline | `webapp/src/components/app/CLAUDE.md` | Piano roll, pistes, engines audio |
 | Piano Roll | `webapp/src/components/app/timeline/PianoRoll/CLAUDE.md` | Éditeur de notes |
 | Admin | `webapp/src/views/admin/CLAUDE.md` | Gestion users + samples |
+| Onboarding | `webapp/src/lib/onboarding/CLAUDE.md` | Tour guidé driver.js, gotchas de ciblage dynamique |
+| Design System | `webapp/src/styles/CLAUDE.md` | Tokens couleur/radius/shadow, composants UI partagés, garde-fous stylelint |
 
 ## Commandes
 
@@ -79,6 +81,9 @@ RESEND_API_KEY=xxx
 # Admin initial
 DEFAULT_ADMIN_EMAIL=xxx
 DEFAULT_ADMIN_PASSWORD=xxx
+
+# Quota d'upload de samples utilisateur (en Mo, défaut 250)
+USER_SAMPLE_QUOTA_MB=250
 ```
 
 ## Conventions
@@ -86,8 +91,13 @@ DEFAULT_ADMIN_PASSWORD=xxx
 - **Stores** : Pinia Composition API
 - **Composants** : Vue 3 `<script setup>` + TypeScript
 - **Audio** : Classes TypeScript pures (pas de dépendance Vue)
-- **CSS** : SCSS scoped avec variables CSS (`--color-*`)
+- **CSS** : SCSS scoped avec variables CSS (`--color-*`) — voir `webapp/src/styles/CLAUDE.md` pour la liste des tokens et des composants partagés
 - **API** : REST avec réponses `{ status, message, body }`
+- **Icônes** : pas d'emoji dans le code (UI, commits, logs) — utiliser FontAwesome (`fas fa-*`, déjà chargé dans `webapp/index.html`)
+
+## Vérification
+
+L'utilisateur teste systématiquement les changements manuellement dans son navigateur. Ne pas lancer le dev server, écrire des scripts e2e (Playwright) ou faire de captures d'écran pour vérifier une fonctionnalité, sauf demande explicite. Se limiter à `lint`/`vue-tsc`/`build` comme vérification automatisée.
 
 ## Domaines
 

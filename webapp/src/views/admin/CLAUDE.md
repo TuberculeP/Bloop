@@ -17,11 +17,12 @@ views/admin/
 ├── AdminUsers.vue        # Liste + gestion users
 ├── AdminSamples.vue      # Liste des packs
 ├── AdminPackDetail.vue   # Détail pack + folders
-├── AdminFolderDetail.vue # Détail folder + samples + upload
+├── AdminFolderDetail.vue # Détail folder + samples (édition/suppression, pas d'upload individuel)
+├── AdminProjects.vue     # Export/import brut de projets (voyage entre environnements)
 └── CLAUDE.md
 
 components/admin/
-└── SampleUploader.vue    # Drag & drop upload vers R2
+└── ZipPackImporter.vue   # Import bulk d'un pack complet via ZIP (seul chemin d'upload actuel)
 
 layouts/
 └── AdminLayout.vue       # Sidebar + header admin
@@ -29,6 +30,8 @@ layouts/
 stores/
 └── adminStore.ts         # État + actions CRUD
 ```
+
+> Note : un composant `SampleUploader.vue` (upload individuel drag & drop vers R2, décrit plus bas) était documenté ici mais n'existe pas dans le code — seul l'import bulk via `ZipPackImporter.vue` est implémenté.
 
 ## Store `adminStore`
 
@@ -103,6 +106,14 @@ Base: `/api/admin`
   - `multipart/form-data` avec `file`, `packSlug`, `folderName?`
   - Retourne `{ filename, key, url, size, mimetype }`
 
+### Projects
+- `GET /projects` - Liste paginée (recherche par nom de projet ou email owner)
+- `GET /projects/:id/export` - Dump brut du projet en JSON téléchargeable (`data`, `name`, `description`, `mcpEnabled`, `isPublic`, métadonnées owner/date d'export)
+- `POST /projects/import` - Recrée un projet à partir d'un fichier d'export
+  - `multipart/form-data` avec `file` (JSON) et `ownerId` (utilisateur cible dans l'environnement courant)
+  - Le projet importé est toujours créé `isPublic: false` / `mcpEnabled: false` par sécurité
+  - Les `sampleId` référencés dans `data.data.tracks[].clips[]` ne sont pas remappés : si le sample (UserSample) référencé n'existe pas dans l'environnement cible, le lien est simplement ignoré (voir `syncSampleLinksForProject`). Les samples de la bibliothèque admin (AudioSample) fonctionnent tels quels s'ils sont seedés à l'identique.
+
 ## Stockage R2 (Cloudflare)
 
 ### Configuration (.env)
@@ -174,9 +185,9 @@ Le champ `fullUrl` de chaque sample contient l'URL complète.
 }
 ```
 
-## SampleUploader
+## SampleUploader (non implémenté)
 
-Composant drag & drop pour l'upload de samples.
+Composant drag & drop pour l'upload de samples individuels — décrit ci-dessous à titre de spec, mais n'existe pas dans le code actuel. Aujourd'hui, l'unique chemin d'upload est l'import bulk d'un pack complet via `ZipPackImporter.vue` (route `POST /upload` ci-dessus).
 
 ### Props
 ```typescript
@@ -218,7 +229,7 @@ Le bucket R2 doit autoriser les origins :
 
 ## Conventions
 
-- Couleurs admin : rose `#ff3fb4`, fond sombre `#2a1520`, `#1a0e15`
-- Modals avec overlay semi-transparent
-- Confirmation avant suppression (alert natif pour l'instant)
-- Toast/notifications non implémentés (à faire)
+- Couleurs : tokens CSS de `webapp/src/styles/colors.css` (`--color-accent2` pour le rose admin, `--color-bg-surface-deep` pour le fond des cards/tables/inputs, `--color-status-success`/`--color-status-error` pour les statuts actif/inactif) — pas de hex en dur, cf. `components/ui/`
+- Composants partagés (`webapp/src/components/ui/`) : `BaseButton`, `BaseModal`, `BaseBadge`, `BaseSpinner`, `EmptyState`, `FormField`/`BaseInput`/`BaseSelect`
+- Confirmation avant suppression/désactivation : `BaseModal`, plus de `confirm()` natif
+- Toast/notifications : `useToast()` + `ToastContainer.vue` (monté dans `App.vue`)

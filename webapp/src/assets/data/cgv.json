@@ -1,0 +1,103 @@
+{
+  "documentTitle": "Conditions Générales de Vente",
+  "shortName": "CGV",
+  "lastUpdated": "15 juillet 2026",
+  "intro": "",
+  "sections": [
+    {
+      "id": "1",
+      "title": "Objet",
+      "paragraphs": [
+        "Les présentes Conditions Générales de Vente (CGV) ont pour objet de définir les conditions dans lesquelles les utilisateurs peuvent souscrire aux offres payantes proposées par Bloop."
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Offres et services",
+      "paragraphs": [
+        "Bloop propose plusieurs formules d’abonnement permettant d’accéder à différents niveaux de fonctionnalités :"
+      ],
+      "list": [
+        "L’offre Freemium permet un accès limité aux fonctionnalités essentielles, notamment la consultation et la publication restreinte de contenus.",
+        "L’offre Medium offre des fonctionnalités étendues, telles qu’une capacité de publication plus importante, des outils de collaboration avancés et une meilleure visibilité des contenus.",
+        "L’offre Premium donne accès à l’ensemble des fonctionnalités, incluant des outils professionnels, une mise en avant des créations et un support prioritaire."
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Prix",
+      "paragraphs": [
+        "Les prix des abonnements sont indiqués en euros toutes taxes comprises. Bloop se réserve le droit de modifier ses tarifs à tout moment, étant précisé que les prix applicables sont ceux en vigueur au moment de la souscription."
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Souscription et abonnement",
+      "paragraphs": [
+        "L’utilisateur peut souscrire à une offre directement depuis Bloop.",
+        "Les abonnements sont conclus pour une durée déterminée (mensuelle ou annuelle) et sont renouvelés automatiquement, sauf résiliation par l’utilisateur dans les conditions prévues."
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Modalités de paiement",
+      "paragraphs": [
+        "Le paiement s’effectue en ligne via un système sécurisé.",
+        "En cas de défaut de paiement ou d’incident, Bloop se réserve le droit de suspendre l’accès aux services jusqu’à régularisation de la situation."
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Accès aux services",
+      "paragraphs": [
+        "L’accès aux fonctionnalités dépend de l’offre souscrite. L’utilisateur reconnaît que certaines fonctionnalités ne sont accessibles que dans le cadre d’un abonnement payant."
+        ]
+    },
+    {
+      "id": "7",
+      "title": "Licences des contenus",
+      "paragraphs": [
+        "Les contenus musicaux proposés sur Bloop sont accessibles sous licence gratuite, sauf indication contraire.",
+        "L’utilisateur reconnaît que cette licence ne constitue pas un transfert de propriété et qu’elle limite l’utilisation des contenus à un cadre défini, excluant notamment toute exploitation commerciale sans autorisation."
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Droit de rétractation",
+      "paragraphs": [
+        "Conformément aux dispositions du Code de la consommation, le droit de rétractation peut ne pas s’appliquer lorsque l’exécution du service a commencé avec l’accord de l’utilisateur avant la fin du délai légal."
+      ]
+    },
+    {
+      "id": "9",
+      "title": "Responsabilité",
+      "paragraphs": [
+        "Bloop est tenue à une obligation de moyens dans la fourniture des services.",
+        "Bloop ne saurait être tenue responsable des interruptions de service, des pertes de données ou des dommages indirects liés à l’utilisation du service."
+      ]
+    },
+    {
+      "id": "10",
+      "title": "Résiliation",
+      "paragraphs": [
+        "L’utilisateur peut résilier son abonnement à tout moment depuis son espace personnel.",
+        "La résiliation prendra effet à la fin de la période d’abonnement en cours, sans remboursement des sommes déjà versées."
+      ]
+    },
+    {
+      "id": "11",
+      "title": "Modification des CGV",
+      "paragraphs": [
+        "Bloop se réserve le droit de modifier les présentes CGV à tout moment. Les utilisateurs seront informés des modifications."
+      ]
+    },
+    {
+      "id": "12",
+      "title": "Droit applicable et litiges",
+      "paragraphs": [
+        "Les présentes CGV sont soumises au droit français.",
+        "En cas de litige, les parties s’engagent à rechercher une solution amiable avant toute action judiciaire."
+      ]
+    }
+  ]
+}

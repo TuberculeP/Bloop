@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { vOnClickOutside } from "@vueuse/components";
 import type { InstrumentType } from "../../../lib/utils/types";
 import BaseButton from "../../ui/BaseButton.vue";
+import { useDropdown } from "../../../composables/useDropdown";
 
 const emit = defineEmits<{
   (e: "add-track", type: InstrumentType): void;
 }>();
 
-const showMenu = ref(false);
+const {
+  isOpen: showMenu,
+  toggle: toggleMenu,
+  close: closeMenu,
+} = useDropdown();
 
 const instruments = [
   {
@@ -45,19 +49,16 @@ const instruments = [
 
 const handleSelect = (type: InstrumentType) => {
   emit("add-track", type);
-  showMenu.value = false;
-};
-
-const handleClickOutside = () => {
-  showMenu.value = false;
+  closeMenu();
 };
 </script>
 
 <template>
-  <div class="add-track-wrapper" v-on-click-outside="handleClickOutside">
+  <div class="add-track-wrapper" v-on-click-outside="closeMenu">
     <BaseButton
+      class="add-track-btn"
       variant="error"
-      @click="showMenu = !showMenu"
+      @click="toggleMenu"
       title="Ajouter une piste"
     >
       <span class="label">Nouvelle piste</span>
@@ -95,9 +96,9 @@ const handleClickOutside = () => {
   top: calc(100% + 8px);
   left: 0;
   min-width: 280px;
-  background: #2d0f20;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 8px;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   z-index: 100;
@@ -110,8 +111,8 @@ const handleClickOutside = () => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
-  background: #1a0e15;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .instrument-option {
@@ -127,11 +128,11 @@ const handleClickOutside = () => {
   transition: background 0.15s ease;
 
   &:hover {
-    background: #3d1528;
+    background: var(--color-bg-daw-active);
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid rgba(122, 15, 62, 0.3);
+    border-bottom: 1px solid rgba(var(--color-accent3-rgb), 0.3);
   }
 }
 
@@ -142,8 +143,8 @@ const handleClickOutside = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1a0e15;
-  border-radius: 8px;
+  background: var(--color-bg-primary-dark);
+  border-radius: var(--radius-md);
 }
 
 .inst-info {
@@ -155,7 +156,7 @@ const handleClickOutside = () => {
 .inst-name {
   font-size: 14px;
   font-weight: 500;
-  color: #f2efe8;
+  color: var(--color-white);
 }
 
 .inst-desc {

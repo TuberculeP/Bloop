@@ -4,6 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import { getAllPosts } from "../../services/posts";
 import BlogPost from "../../components/blog/BlogPost.vue";
 import BaseButton from "../../components/ui/BaseButton.vue";
+import BaseSpinner from "../../components/ui/BaseSpinner.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
 import type { Post } from "../../lib/utils/types";
 import AppLayout from "../../layouts/AppLayout.vue";
 
@@ -118,7 +120,7 @@ onMounted(() => {
       <!-- Statistiques et état -->
       <div class="search-stats">
         <div v-if="loading" class="loading">
-          <div class="loading-spinner"></div>
+          <BaseSpinner size="large" color="primary" />
           <p>Recherche en cours...</p>
         </div>
 
@@ -129,23 +131,19 @@ onMounted(() => {
           </BaseButton>
         </div>
 
-        <div v-else-if="searchStats.isEmpty" class="empty-query">
-          <div class="empty-icon">🔍</div>
-          <h3>Aucune recherche</h3>
-          <p>Utilisez la barre de recherche pour trouver des posts.</p>
-        </div>
+        <EmptyState
+          v-else-if="searchStats.isEmpty"
+          icon="fas fa-search"
+          title="Aucune recherche"
+          message="Utilisez la barre de recherche pour trouver des posts."
+        />
 
-        <div v-else-if="!searchStats.hasResults" class="no-results">
-          <div class="empty-icon">
-            <i class="fas fa-search"></i>
-          </div>
-          <h3>Aucun résultat trouvé</h3>
-          <p>
-            Aucun post ne correspond à votre recherche "<strong>{{
-              searchStats.query
-            }}</strong
-            >".
-          </p>
+        <EmptyState
+          v-else-if="!searchStats.hasResults"
+          icon="fas fa-search"
+          title="Aucun résultat trouvé"
+          :message="`Aucun post ne correspond à votre recherche « ${searchStats.query} ».`"
+        >
           <div class="suggestions">
             <h4>Suggestions :</h4>
             <ul>
@@ -154,7 +152,7 @@ onMounted(() => {
               <li>Utilisez des mots-clés différents</li>
             </ul>
           </div>
-        </div>
+        </EmptyState>
 
         <div v-else class="results-count">
           <p>
@@ -217,54 +215,10 @@ onMounted(() => {
   color: var(--color-secondary);
 }
 
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-secondary);
-  border-top: 3px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .error {
   text-align: center;
   padding: 40px 20px;
   color: var(--color-error);
-}
-
-.empty-query,
-.no-results {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--color-secondary);
-}
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
-}
-
-.empty-query h3,
-.no-results h3 {
-  color: var(--color-white);
-  margin: 0 0 8px 0;
-  font-size: 1.3rem;
-}
-
-.empty-query p,
-.no-results p {
-  margin: 0 0 16px 0;
-  opacity: 0.8;
 }
 
 .suggestions {
@@ -296,7 +250,7 @@ onMounted(() => {
   text-align: center;
   padding: 16px;
   background-color: var(--color-bg-secondary-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border-secondary);
 }
 
@@ -333,11 +287,6 @@ onMounted(() => {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
-  }
-
-  .empty-query,
-  .no-results {
-    padding: 40px 16px;
   }
 }
 </style>

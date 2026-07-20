@@ -31,10 +31,26 @@ interface ApiSample {
   name: string;
   filename: string;
   duration: number;
-  waveform: number[] | null;
   folderId: string;
   previewUrl: string | null;
   fullUrl: string | null;
+}
+
+interface ApiSearchSample {
+  id: string;
+  name: string;
+  filename: string;
+  duration: number;
+  fullUrl: string | null;
+  folder?: {
+    id: string;
+    name: string;
+    pack?: {
+      id: string;
+      slug: string;
+      name: string;
+    };
+  };
 }
 
 interface ApiResponse<T> {
@@ -43,14 +59,21 @@ interface ApiResponse<T> {
   body: T;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
 interface PaginatedPacksResponse {
   packs: ApiPack[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  pagination: PaginationInfo;
+}
+
+interface PaginatedSearchResponse {
+  samples: ApiSearchSample[];
+  pagination: PaginationInfo;
 }
 
 export const useAudioLibraryStore = defineStore("audioLibrary", () => {
@@ -66,6 +89,15 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
   const currentPackSlug = ref<string | null>(null);
   const currentFolderId = ref<string | null>(null);
   const pagination = ref({ page: 1, limit: 20, total: 0, pages: 0 });
+
+  const searchResults = ref<AudioSample[]>([]);
+  const isSearching = ref(false);
+  const searchPagination = ref<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  });
 
   const getSample = (sampleId: string): AudioSample | undefined => {
     return samples.value.get(sampleId);
@@ -97,7 +129,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
 
   const generateWaveformData = (
     buffer: AudioBuffer,
-    points: number = 128,
+    points: number = 1000,
   ): number[] => {
     const channelData = buffer.getChannelData(0);
     const blockSize = Math.floor(channelData.length / points);
@@ -306,7 +338,6 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
       folder: folderId,
       filename: as.filename,
       duration: as.duration,
-      waveformData: as.waveform ?? undefined,
       fullUrl: as.fullUrl ?? "",
     }));
 
@@ -326,6 +357,51 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     }
 
     return fetchedSamples;
+  };
+
+  let latestSearchQuery = "";
+
+  const searchSamples = async (query: string, page = 1): Promise<void> => {
+    latestSearchQuery = query;
+
+    if (query.trim().length < 2) {
+      searchResults.value = [];
+      searchPagination.value = { page: 1, limit: 20, total: 0, pages: 0 };
+      return;
+    }
+
+    isSearching.value = true;
+    const result = await apiClient.get<ApiResponse<PaginatedSearchResponse>>(
+      `/samples/search?q=${encodeURIComponent(query)}&page=${page}&limit=20`,
+    );
+
+    // Une recherche plus récente a été lancée entre-temps : cette réponse
+    // (potentiellement arrivée dans le désordre) ne doit pas écraser la sienne.
+    if (latestSearchQuery !== query) return;
+
+    isSearching.value = false;
+
+    if (result.error || !result.data?.body) {
+      if (page === 1) searchResults.value = [];
+      return;
+    }
+
+    const { samples: apiSamples, pagination: pag } = result.data.body;
+    searchPagination.value = pag;
+
+    const mapped: AudioSample[] = apiSamples.map((as) => ({
+      id: as.id,
+      name: as.name,
+      packId: as.folder?.pack?.slug ?? "",
+      folder: as.folder?.name ?? "",
+      filename: as.filename,
+      duration: as.duration,
+      fullUrl: as.fullUrl ?? "",
+    }));
+
+    restoreSamples(Object.fromEntries(mapped.map((s) => [s.id, s])));
+    searchResults.value =
+      page === 1 ? mapped : [...searchResults.value, ...mapped];
   };
 
   const initializeFromApi = async (): Promise<boolean> => {
@@ -357,6 +433,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
   };
 
   const previewingId = ref<string | null>(null);
+  const previewStartedAt = ref<number | null>(null);
   let previewSource: AudioBufferSourceNode | null = null;
 
   const stopPreview = (): void => {
@@ -369,6 +446,7 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
       }
       previewSource = null;
       previewingId.value = null;
+      previewStartedAt.value = null;
     }
   };
 
@@ -383,12 +461,19 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     source.onended = () => {
       if (previewingId.value === sample.id) {
         previewingId.value = null;
+        previewStartedAt.value = null;
         previewSource = null;
       }
     };
     source.start();
     previewingId.value = sample.id;
+    previewStartedAt.value = audioBusStore.audioContext.currentTime;
     previewSource = source;
+  };
+
+  const getPreviewElapsed = (): number => {
+    if (previewStartedAt.value === null) return 0;
+    return audioBusStore.audioContext.currentTime - previewStartedAt.value;
   };
 
   return {
@@ -399,6 +484,9 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     currentPackSlug,
     currentFolderId,
     previewingId,
+    searchResults,
+    isSearching,
+    searchPagination,
 
     getSample,
     getSampleBuffer,
@@ -414,10 +502,12 @@ export const useAudioLibraryStore = defineStore("audioLibrary", () => {
     initialize,
     startPreview,
     stopPreview,
+    getPreviewElapsed,
 
     fetchPacksFromApi,
     fetchPackDetails,
     fetchFolderSamples,
+    searchSamples,
     restoreSamples,
   };
 });

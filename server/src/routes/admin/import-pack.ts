@@ -2,7 +2,6 @@ import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
 import AdmZip from "adm-zip";
 import path from "path";
-import FileType from "file-type";
 import {
   uploadToR2,
   deleteFromR2,
@@ -99,6 +98,7 @@ interface SampleMeta {
 }
 
 async function parseZipStructure(zipBuffer: Buffer): Promise<ParsedStructure> {
+  const { fileTypeFromBuffer } = await import("file-type");
   const zip = new AdmZip(zipBuffer);
   const entries = zip.getEntries();
 
@@ -169,7 +169,7 @@ async function parseZipStructure(zipBuffer: Buffer): Promise<ParsedStructure> {
     }
 
     const buffer = entry.getData();
-    const fileType = await FileType.fromBuffer(buffer);
+    const fileType = await fileTypeFromBuffer(buffer);
 
     if (IMAGE_EXTENSIONS.includes(ext)) {
       if (!fileType || !ALLOWED_IMAGE_MIMES.includes(fileType.mime)) {

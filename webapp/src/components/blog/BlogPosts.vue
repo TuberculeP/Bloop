@@ -106,7 +106,7 @@ onMounted(() => {
 .filter-indicator {
   background: var(--color-bg-primary-dark);
   border: 1px solid var(--color-accent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   margin-bottom: 16px;
   color: var(--color-white);
@@ -120,7 +120,7 @@ onMounted(() => {
   background: var(--color-accent);
   color: var(--color-black);
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.85em;
   font-weight: 500;
 }

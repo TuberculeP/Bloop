@@ -4,6 +4,7 @@ import { useProjectStore } from "../../stores/projectStore";
 import apiClient from "../../lib/utils/apiClient";
 import LoadingCard from "../shared/LoadingCard.vue";
 import BaseButton from "../ui/BaseButton.vue";
+import BaseModal from "../ui/BaseModal.vue";
 import type {
   ProjectListItem,
   PublicProjectListItem,
@@ -242,7 +243,7 @@ onMounted(() => loadProjects());
         </h1>
         <p class="tagline">Votre bibliothèque de compositions</p>
       </div>
-      <BaseButton @click="emit('new-project')">
+      <BaseButton class="new-project-btn" @click="emit('new-project')">
         <i class="fas fa-plus" />Nouveau projet
       </BaseButton>
     </header>
@@ -270,9 +271,9 @@ onMounted(() => loadProjects());
           <div class="music-note">♪</div>
           <h3>Bibliothèque vide</h3>
           <p>Commencez votre première composition musicale dès maintenant.</p>
-          <button @click="emit('new-project')" class="btn-outline">
+          <BaseButton variant="ghost" @click="emit('new-project')">
             Créer mon premier projet
-          </button>
+          </BaseButton>
         </div>
 
         <div v-else class="projects-grid">
@@ -362,13 +363,13 @@ onMounted(() => loadProjects());
           class="state-container empty"
         >
           <div class="music-note">
-            <i class="far fa-heart"></i>
+            <i class="far fa-heart" />
           </div>
           <h3>Aucun favori</h3>
           <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
-          <button @click="activeTab = 'discover'" class="btn-outline">
+          <BaseButton variant="ghost" @click="activeTab = 'discover'">
             Explorer les projets
-          </button>
+          </BaseButton>
         </div>
 
         <div v-else class="projects-grid">
@@ -576,33 +577,27 @@ onMounted(() => loadProjects());
     </main>
   </div>
 
-  <Teleport to="body">
-    <div v-if="pendingDeleteId" class="modal-overlay" @click="cancelDelete">
-      <div class="modal" @click.stop>
-        <h3>Supprimer le projet ?</h3>
-        <p>
-          Il sera dans la corbeille pendant 30 jours, puis supprimé
-          définitivement.
-        </p>
-        <div class="modal-actions">
-          <BaseButton
-            variant="secondary"
-            :disabled="isDeleting"
-            @click="cancelDelete"
-          >
-            Annuler
-          </BaseButton>
-          <BaseButton
-            variant="error"
-            :loading="isDeleting"
-            @click="executeDelete"
-          >
-            Supprimer
-          </BaseButton>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  <BaseModal
+    :model-value="!!pendingDeleteId"
+    @update:model-value="cancelDelete"
+  >
+    <h3 class="delete-confirm-title">Supprimer le projet ?</h3>
+    <p class="delete-confirm-text">
+      Il sera dans la corbeille pendant 30 jours, puis supprimé définitivement.
+    </p>
+    <template #footer>
+      <BaseButton
+        variant="secondary"
+        :disabled="isDeleting"
+        @click="cancelDelete"
+      >
+        Annuler
+      </BaseButton>
+      <BaseButton variant="error" :loading="isDeleting" @click="executeDelete">
+        Supprimer
+      </BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <style scoped>
@@ -617,7 +612,6 @@ onMounted(() => loadProjects());
 
 .main-title {
   font-size: 2.5rem;
-  font-weight: 800;
   color: var(--color-white);
   margin: 0;
   letter-spacing: -1px;
@@ -645,7 +639,7 @@ onMounted(() => loadProjects());
 .project-card {
   background: var(--color-bg-secondary-dark);
   border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -657,7 +651,7 @@ onMounted(() => loadProjects());
 .project-card:hover {
   transform: translateY(-8px);
   border-color: var(--color-accent3-hover);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
   background: linear-gradient(
     180deg,
     var(--color-bg-accent3-dark) 0%,
@@ -689,7 +683,7 @@ onMounted(() => loadProjects());
   display: block;
   width: 6px;
   background: var(--color-accent3);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   animation: wave 1.5s ease-in-out infinite;
   opacity: 0.6;
 }
@@ -730,10 +724,10 @@ onMounted(() => loadProjects());
 }
 
 .badge {
-  background: rgba(122, 15, 62, 0.3);
+  background: rgba(var(--color-accent3-rgb), 0.3);
   color: var(--color-secondary);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
 }
 
@@ -813,7 +807,7 @@ onMounted(() => loadProjects());
     opacity: 1;
     border-color: var(--color-accent3-hover);
     color: var(--color-accent3-hover);
-    background: rgba(122, 15, 62, 0.2);
+    background: rgba(var(--color-accent3-rgb), 0.2);
   }
 
   &:disabled {
@@ -823,14 +817,14 @@ onMounted(() => loadProjects());
 }
 
 .favorite-btn.active {
-  border-color: #e25555;
-  color: #e25555;
-  background: rgba(226, 85, 85, 0.15);
+  border-color: var(--color-danger-hover);
+  color: var(--color-danger-hover);
+  background: rgba(var(--color-danger-hover-rgb), 0.15);
 }
 
 .favorite-btn:hover {
-  border-color: #e25555 !important;
-  color: #e25555 !important;
+  border-color: var(--color-danger-hover);
+  color: var(--color-danger-hover);
 }
 
 .state-container {
@@ -859,22 +853,6 @@ onMounted(() => loadProjects());
   margin-right: auto;
 }
 
-.btn-outline {
-  background: transparent;
-  border: 2px solid var(--color-accent3);
-  color: var(--color-accent3-hover);
-  padding: 12px 32px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background: var(--color-accent3);
-  color: var(--color-white);
-}
-
 .btn-text-accent {
   background: none;
   border: none;
@@ -897,8 +875,8 @@ onMounted(() => loadProjects());
 }
 
 .delete-btn:hover {
-  border-color: #e25555 !important;
-  color: #e25555 !important;
+  border-color: var(--color-danger-hover);
+  color: var(--color-danger-hover);
 }
 
 .trash-card {
@@ -920,46 +898,21 @@ onMounted(() => loadProjects());
 }
 
 .days-badge {
-  background: rgba(226, 85, 85, 0.2);
+  background: rgba(var(--color-danger-hover-rgb), 0.2);
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.delete-confirm-title {
+  color: var(--color-white);
+  font-size: 1.25rem;
+  margin: 0 0 12px;
 }
 
-.modal {
-  background: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 420px;
-  width: 90%;
-
-  h3 {
-    color: var(--color-white);
-    font-size: 1.25rem;
-    margin: 0 0 12px;
-  }
-
-  p {
-    color: var(--color-white-light);
-    opacity: 0.75;
-    margin: 0 0 24px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+.delete-confirm-text {
+  color: var(--color-white-light);
+  opacity: 0.75;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {

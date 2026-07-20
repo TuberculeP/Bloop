@@ -104,8 +104,8 @@ function statusIcon(status: string): string {
   background: rgba(26, 14, 21, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 16px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-xl);
   padding: 40px;
   min-width: 360px;
   max-width: 90vw;
@@ -122,7 +122,8 @@ function statusIcon(status: string): string {
 .logo-text {
   font-size: 32px;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff3fb4 0%, #ff6f91 100%);
+  /* stylelint-disable-next-line color-no-hex -- teinte de dégradé décorative, propre à ce logo */
+  background: linear-gradient(135deg, var(--color-accent2) 0%, #ff6f91 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -149,14 +150,15 @@ function statusIcon(status: string): string {
   flex: 1;
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff3fb4, #ff6f91);
-  border-radius: 4px;
+  /* stylelint-disable-next-line color-no-hex -- teinte de dégradé décorative, propre à cette barre de progression */
+  background: linear-gradient(90deg, var(--color-accent2), #ff6f91);
+  border-radius: var(--radius-sm);
   transition: width 0.3s ease;
 }
 
@@ -203,7 +205,7 @@ function statusIcon(status: string): string {
 .debug-section {
   margin-top: 8px;
   padding-top: 16px;
-  border-top: 1px solid rgba(122, 15, 62, 0.3);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
 
   summary {
     cursor: pointer;
@@ -233,15 +235,15 @@ function statusIcon(status: string): string {
   color: rgba(255, 255, 255, 0.5);
 
   &.complete {
-    color: #22c55e;
+    color: var(--color-status-success);
   }
 
   &.loading {
-    color: #ff3fb4;
+    color: var(--color-accent2);
   }
 
   &.error {
-    color: #ef4444;
+    color: var(--color-status-error);
   }
 }
 
@@ -259,14 +261,14 @@ function statusIcon(status: string): string {
 
 .error-section {
   padding: 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
+  background: rgba(var(--color-status-error-rgb), 0.1);
+  border: 1px solid rgba(var(--color-status-error-rgb), 0.3);
+  border-radius: var(--radius-md);
 }
 
 .error-text {
   font-size: 13px;
-  color: #ef4444;
+  color: var(--color-status-error);
 }
 
 // Transitions

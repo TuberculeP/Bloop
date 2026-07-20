@@ -24,8 +24,8 @@ const emit = defineEmits<{
 <style scoped lang="scss">
 .master-header {
   padding: 8px 12px;
-  background: #3d1528;
-  border-left: 4px solid #ff3fb4;
+  background: var(--color-bg-daw-active);
+  border-left: 4px solid var(--color-accent2);
   display: flex;
   align-items: center;
   height: 75px;
@@ -45,7 +45,7 @@ const emit = defineEmits<{
 .master-name {
   font-size: 14px;
   font-weight: 700;
-  color: #f2efe8;
+  color: var(--color-white);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

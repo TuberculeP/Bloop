@@ -88,7 +88,6 @@ async function importManifest() {
           name: ms.name,
           filename: ms.filename,
           duration: 0,
-          waveform: [],
           folderId: folder.id,
           previewUrl: null,
           fullUrl: null,

@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import type { AutomatableParam } from "../../../lib/utils/types";
+import { computed } from "vue";
 import { useTimelineStore } from "../../../stores/timelineStore";
-import { AUTOMATABLE_PARAMS } from "../../../lib/audio/automation";
 import MasterTrackHeader from "./MasterTrackHeader.vue";
 import AutomationLaneComponent from "./AutomationLane.vue";
 
@@ -12,6 +10,7 @@ const props = defineProps<{
   cols: number;
   colWidth: number;
   scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
@@ -20,54 +19,35 @@ const emit = defineEmits<{
 
 const timelineStore = useTimelineStore();
 
-const showAddLaneMenu = ref(false);
-
 const isAutomationExpanded = computed(
   () => timelineStore.automationExpandedMaster,
 );
 
-const usedParams = computed(
-  () => new Set(timelineStore.masterAutomationLanes.map((l) => l.parameter)),
+// Le bouton "Auto" n'a plus d'utilité sans lane à afficher/masquer (la
+// création se fait désormais depuis le menu de chaque effet) — sauf si le
+// drawer est déjà ouvert (ex: dernière lane retirée), pour garder un moyen
+// de le refermer.
+const showAutomationToggle = computed(
+  () =>
+    timelineStore.masterAutomationLanes.length > 0 ||
+    isAutomationExpanded.value,
 );
-
-const availableParams = computed(() =>
-  (Object.keys(AUTOMATABLE_PARAMS) as AutomatableParam[]).filter(
-    (p) => !usedParams.value.has(p),
-  ),
-);
-
-const handleAddLane = (param: AutomatableParam) => {
-  timelineStore.addMasterAutomationLane(param);
-  showAddLaneMenu.value = false;
-};
 
 const handleRemoveLane = (laneId: string) => {
-  timelineStore.removeMasterAutomationLane(laneId);
+  timelineStore.removeAutomationLane("master", laneId);
 };
 
 const handleToggleAutomation = () => {
   timelineStore.toggleMasterAutomationExpanded();
-  showAddLaneMenu.value = false;
 };
-
-const closeMenuOnOutsideClick = (e: MouseEvent) => {
-  if (!(e.target as Element).closest(".add-lane-wrapper")) {
-    showAddLaneMenu.value = false;
-  }
-};
-
-onMounted(() => document.addEventListener("click", closeMenuOnOutsideClick));
-onBeforeUnmount(() =>
-  document.removeEventListener("click", closeMenuOnOutsideClick),
-);
 </script>
 
 <template>
-  <div>
-    <div
-      class="master-track-row"
-      :style="{ minWidth: `${180 + props.cols * props.colWidth}px` }"
-    >
+  <div
+    class="master-track-row-wrapper"
+    :style="{ minWidth: `${180 + props.cols * props.colWidth}px` }"
+  >
+    <div class="master-track-row">
       <MasterTrackHeader @open-settings="emit('open-settings')" />
       <div class="master-track-zone" />
     </div>
@@ -82,50 +62,13 @@ onBeforeUnmount(() =>
         :col-width="props.colWidth"
         :track-color="MASTER_COLOR"
         :scroll-left="props.scrollLeft"
+        :viewport-width="props.viewportWidth"
         @remove="handleRemoveLane(lane.id)"
       />
-      <div class="drawer-add-bar">
-        <div class="add-lane-wrapper">
-          <button
-            class="add-lane-btn"
-            :disabled="availableParams.length === 0"
-            title="Ajouter un paramètre"
-            @click.stop="showAddLaneMenu = !showAddLaneMenu"
-          >
-            +
-            <svg
-              width="12"
-              height="10"
-              viewBox="0 0 12 10"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M0 8 C2 8 2 2 4 2 C6 2 6 6 8 5 C10 4 10 2 12 2"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                fill="none"
-              />
-            </svg>
-          </button>
-          <div v-if="showAddLaneMenu" class="add-lane-menu">
-            <button
-              v-for="param in availableParams"
-              :key="param"
-              class="add-lane-menu-item"
-              @click="handleAddLane(param)"
-            >
-              {{ AUTOMATABLE_PARAMS[param].label }}
-            </button>
-          </div>
-        </div>
-        <div class="drawer-add-spacer" />
-      </div>
     </div>
 
     <!-- Toggle automation button -->
-    <div class="automation-toggle-row">
+    <div v-if="showAutomationToggle" class="automation-toggle-row">
       <button
         class="automation-toggle-btn"
         :class="{ active: isAutomationExpanded }"
@@ -166,37 +109,22 @@ onBeforeUnmount(() =>
   position: sticky;
   top: 0;
   z-index: 60;
-  border-bottom: 2px solid #ff3fb4;
+  border-bottom: 2px solid var(--color-accent2);
 }
 
 .master-track-zone {
+  /* stylelint-disable-next-line color-no-hex -- teinte de fond propre à cette zone, usage unique */
   background: #241019;
 }
 
 .automation-drawer {
-  border-top: 1px solid rgba(122, 15, 62, 0.3);
-}
-
-.drawer-add-bar {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.15);
-}
-
-.drawer-add-bar > :first-child {
-  padding: 4px 8px;
-  display: flex;
-  align-items: center;
-}
-
-.drawer-add-spacer {
-  background: #1a0e15;
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.3);
 }
 
 .automation-toggle-row {
   display: grid;
   grid-template-columns: 180px 1fr;
-  border-top: 1px solid rgba(122, 15, 62, 0.15);
+  border-top: 1px solid rgba(var(--color-accent3-rgb), 0.15);
 }
 
 .automation-toggle-btn {
@@ -205,8 +133,8 @@ onBeforeUnmount(() =>
   gap: 5px;
   margin: 3px 8px;
   padding: 2px 7px;
-  border: 1px solid rgba(122, 15, 62, 0.3);
-  border-radius: 4px;
+  border: 1px solid rgba(var(--color-accent3-rgb), 0.3);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.3);
   font-size: 10px;
@@ -221,7 +149,7 @@ onBeforeUnmount(() =>
   }
 
   &.active {
-    color: #ff3fb4;
+    color: var(--color-accent2);
     border-color: rgba(255, 63, 180, 0.6);
     background: rgba(255, 63, 180, 0.08);
   }
@@ -236,73 +164,11 @@ onBeforeUnmount(() =>
   padding: 0 3px;
   border-radius: 7px;
   background: rgba(255, 63, 180, 0.25);
-  color: #ff3fb4;
+  color: var(--color-accent2);
   font-size: 9px;
 }
 
 .automation-toggle-spacer {
-  background: #160b12;
-}
-
-.add-lane-wrapper {
-  position: relative;
-}
-
-.add-lane-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 7px;
-  border: 1px solid rgba(122, 15, 62, 0.4);
-  border-radius: 4px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.35);
-  cursor: pointer;
-  transition: all 0.1s;
-  line-height: 1;
-
-  &:hover:not(:disabled) {
-    color: rgba(255, 255, 255, 0.7);
-    border-color: rgba(255, 63, 180, 0.5);
-    background: rgba(255, 63, 180, 0.05);
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: default;
-  }
-}
-
-.add-lane-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 100;
-  background: #2a1020;
-  border: 1px solid rgba(122, 15, 62, 0.5);
-  border-radius: 6px;
-  padding: 4px 0;
-  min-width: 140px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
-.add-lane-menu-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 6px 12px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background 0.1s;
-
-  &:hover {
-    background: rgba(255, 63, 180, 0.1);
-    color: #fff;
-  }
+  background: var(--color-bg-daw-deep);
 }
 </style>

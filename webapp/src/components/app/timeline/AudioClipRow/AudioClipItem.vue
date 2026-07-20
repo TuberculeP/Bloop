@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import type { AudioClip } from "../../../../lib/utils/types";
 import { useAudioLibraryStore } from "../../../../stores/audioLibraryStore";
+import { useTimelineStore } from "../../../../stores/timelineStore";
+import { snapToGrid, ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import WaveformCanvas from "./WaveformCanvas.vue";
 
 const props = defineProps<{
@@ -27,12 +29,19 @@ const emit = defineEmits<{
 }>();
 
 const audioLibraryStore = useAudioLibraryStore();
+const timelineStore = useTimelineStore();
 
 const isDragging = ref(false);
 const isResizing = ref(false);
 const resizeSide = ref<"left" | "right">("right");
 const dragStartX = ref(0);
 const initialClipState = ref({ x: 0, w: 0, startOffset: 0 });
+// Aperçu local pendant le drag/resize : le store n'est committé qu'une seule
+// fois au mouseup (voir handleMouseUp) pour éviter un JSON.stringify +
+// localStorage.setItem de tout le projet à chaque pixel de déplacement.
+const previewClip = ref<{ x: number; w: number; startOffset: number } | null>(
+  null,
+);
 
 onMounted(() => {
   audioLibraryStore.loadSample(props.clip.sampleId);
@@ -40,9 +49,11 @@ onMounted(() => {
 
 const sample = computed(() => audioLibraryStore.getSample(props.clip.sampleId));
 
+const displayClip = computed(() => previewClip.value ?? props.clip);
+
 const clipStyle = computed(() => ({
-  left: `${props.clip.x * props.colWidth}px`,
-  width: `${Math.max(props.clip.w * props.colWidth, 20)}px`,
+  left: `${displayClip.value.x * props.colWidth}px`,
+  width: `${Math.max(displayClip.value.w * props.colWidth, 20)}px`,
   height: `${props.rowHeight - 16}px`,
   top: "8px",
   backgroundColor: props.color,
@@ -52,6 +63,7 @@ const sampleName = computed(() => sample.value?.name ?? "Loading...");
 
 const handleMouseDown = (event: MouseEvent): void => {
   if (event.button !== 0) return;
+  event.preventDefault();
   event.stopPropagation();
 
   emit("select", event);
@@ -95,38 +107,75 @@ const startResize = (side: "left" | "right", event: MouseEvent): void => {
 
 const handleMouseMove = (event: MouseEvent): void => {
   const deltaX = event.clientX - dragStartX.value;
-  const deltaCols = Math.round(deltaX / props.colWidth);
+  const deltaTicks = deltaX / props.colWidth;
+  const subdivision = timelineStore.subdivision;
 
   if (isDragging.value) {
-    const newX = Math.max(0, initialClipState.value.x + deltaCols);
-    emit("move", newX);
+    // Snap la position ABSOLUE (pas le delta) : un clip déposé hors-grille
+    // (drop non snappé) se réaligne dès qu'on le déplace, au lieu de
+    // conserver son décalage d'origine.
+    const rawX = initialClipState.value.x + deltaTicks;
+    const newX = Math.max(0, snapToGrid(rawX, subdivision));
+    previewClip.value = {
+      x: newX,
+      w: initialClipState.value.w,
+      startOffset: initialClipState.value.startOffset,
+    };
   } else if (isResizing.value) {
     if (resizeSide.value === "right") {
-      const newW = Math.max(1, initialClipState.value.w + deltaCols);
-      emit(
-        "resize",
-        "right",
-        initialClipState.value.x,
-        newW,
-        initialClipState.value.startOffset,
-      );
+      const rawRightEdge =
+        initialClipState.value.x + initialClipState.value.w + deltaTicks;
+      const snappedRightEdge = snapToGrid(rawRightEdge, subdivision);
+      const newW = Math.max(1, snappedRightEdge - initialClipState.value.x);
+      previewClip.value = {
+        x: initialClipState.value.x,
+        w: newW,
+        startOffset: initialClipState.value.startOffset,
+      };
     } else {
-      const effectiveDelta = Math.min(deltaCols, initialClipState.value.w - 1);
-      const newX = initialClipState.value.x + effectiveDelta;
-      const newW = initialClipState.value.w - effectiveDelta;
+      const rightEdge = initialClipState.value.x + initialClipState.value.w;
+      const rawX = initialClipState.value.x + deltaTicks;
+      const newX = Math.max(
+        0,
+        Math.min(snapToGrid(rawX, subdivision), rightEdge - 1),
+      );
+      const newW = rightEdge - newX;
       const newStartOffset =
-        initialClipState.value.startOffset + effectiveDelta;
+        initialClipState.value.startOffset + (newX - initialClipState.value.x);
 
       if (newX >= 0 && newW >= 1 && newStartOffset >= 0) {
-        emit("resize", "left", newX, newW, newStartOffset);
+        previewClip.value = { x: newX, w: newW, startOffset: newStartOffset };
       }
     }
   }
 };
 
 const handleMouseUp = (): void => {
+  const preview = previewClip.value;
+  const initial = initialClipState.value;
+  const hasChanged =
+    preview !== null &&
+    (preview.x !== initial.x ||
+      preview.w !== initial.w ||
+      preview.startOffset !== initial.startOffset);
+
+  if (hasChanged && preview) {
+    if (isDragging.value) {
+      emit("move", preview.x);
+    } else if (isResizing.value) {
+      emit(
+        "resize",
+        resizeSide.value,
+        preview.x,
+        preview.w,
+        preview.startOffset,
+      );
+    }
+  }
+
   isDragging.value = false;
   isResizing.value = false;
+  previewClip.value = null;
 
   document.removeEventListener("mousemove", handleMouseMove);
   document.removeEventListener("mouseup", handleMouseUp);
@@ -167,10 +216,13 @@ onBeforeUnmount(() => {
       <WaveformCanvas
         v-if="sample?.waveformData"
         :waveform-data="sample.waveformData"
-        :start-offset="clip.startOffset"
-        :clip-width="clip.w"
-        :sample-duration-cols="Math.ceil(sample.duration * (tempo / 60) * 4)"
+        :start-offset="displayClip.startOffset"
+        :clip-width="displayClip.w"
+        :sample-duration-cols="
+          Math.ceil(sample.duration * ticksPerSecond(tempo))
+        "
         :color="color"
+        :col-width="colWidth"
       />
       <div v-else class="loading-placeholder" />
     </div>
@@ -181,14 +233,19 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .audio-clip-item {
   position: absolute;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: grab;
   overflow: hidden;
-  border: 2px solid transparent;
-  transition: border-color 0.1s;
+  // box-shadow inset plutôt que border : un border (même transparent) est
+  // inclus dans la largeur (box-sizing: border-box) et décale le contenu —
+  // waveform, nom — de 2px par rapport aux bords réels du clip, ce qui gêne
+  // l'alignement de précision. Le box-shadow ne consomme aucun espace de
+  // layout : le contenu colle exactement aux bords tick-à-pixel du clip.
+  box-shadow: inset 0 0 0 2px transparent;
+  transition: box-shadow 0.1s;
 
   &.selected {
-    border-color: #fbbf24;
+    box-shadow: inset 0 0 0 2px var(--color-audio-clip-selected);
   }
 
   &.dragging {
@@ -252,7 +309,7 @@ onBeforeUnmount(() => {
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: 4px 8px;
+  padding: 4px 0;
   overflow: hidden;
 }
 
@@ -264,6 +321,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 4px;
+  padding: 0 8px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 

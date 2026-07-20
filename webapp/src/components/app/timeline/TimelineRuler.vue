@@ -1,30 +1,92 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed, onBeforeUnmount } from "vue";
+import { useTimelineStore } from "../../../stores/timelineStore";
+import { useVisibleGrid } from "../../../composables/useVisibleGrid";
+import { snapToGrid } from "../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   cols: number;
   colWidth: number;
   scrollLeft: number;
+  viewportWidth: number;
 }>();
 
 const emit = defineEmits<{
   (e: "seek", position: number): void;
 }>();
 
+const timelineStore = useTimelineStore();
+const rulerRef = ref<HTMLElement | null>(null);
+const isSeeking = ref(false);
+const lastSeekPosition = ref<number | null>(null);
+
+// Même composable que pour les pistes de clips audio (AudioClipRow.vue) —
+// garantit que le ruler et le contenu des pistes restent toujours alignés
+// sur les mêmes traits.
+const {
+  barLength,
+  visibleMeasureRange,
+  visibleSubdivisionTicks: subdivisionTicks,
+} = useVisibleGrid(
+  () => props.scrollLeft,
+  () => props.viewportWidth,
+  () => props.colWidth,
+  () => props.cols,
+);
+
 const measures = computed(() => {
-  const measureCount = Math.ceil(props.cols / 4);
-  return Array.from({ length: measureCount }, (_, i) => ({
-    number: i + 1,
-    position: i * 4 * props.colWidth,
-  }));
+  const [firstBar, lastBar] = visibleMeasureRange.value;
+  const result = [];
+  for (let i = firstBar; i <= lastBar; i++) {
+    result.push({
+      number: i + 1,
+      position: i * barLength.value * props.colWidth,
+    });
+  }
+  return result;
 });
 
-const handleClick = (event: MouseEvent) => {
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+const positionFromEvent = (event: MouseEvent): number => {
+  const rect = rulerRef.value!.getBoundingClientRect();
   const x = event.clientX - rect.left;
-  const position = Math.floor(x / props.colWidth);
-  emit("seek", Math.max(0, Math.min(position, props.cols - 1)));
+  const rawPosition = Math.max(
+    0,
+    Math.min(Math.floor(x / props.colWidth), props.cols - 1),
+  );
+  const snapped = snapToGrid(rawPosition, timelineStore.subdivision);
+  return Math.max(0, Math.min(snapped, props.cols - 1));
 };
+
+const emitSeek = (position: number): void => {
+  if (lastSeekPosition.value === position) return;
+  lastSeekPosition.value = position;
+  emit("seek", position);
+};
+
+const handleMouseMove = (event: MouseEvent): void => {
+  emitSeek(positionFromEvent(event));
+};
+
+const handleMouseUp = (): void => {
+  isSeeking.value = false;
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+};
+
+const handleMouseDown = (event: MouseEvent): void => {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  isSeeking.value = true;
+  emitSeek(positionFromEvent(event));
+
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
+};
+
+onBeforeUnmount(() => {
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+});
 </script>
 
 <template>
@@ -33,8 +95,19 @@ const handleClick = (event: MouseEvent) => {
     :style="{ minWidth: `${180 + cols * colWidth}px` }"
   >
     <div class="ruler-header">Pistes</div>
-    <div class="ruler-measures" @click="handleClick">
+    <div
+      ref="rulerRef"
+      class="ruler-measures"
+      :class="{ seeking: isSeeking }"
+      @mousedown="handleMouseDown"
+    >
       <div class="ruler-content" :style="{ width: `${cols * colWidth}px` }">
+        <div
+          v-for="tick in subdivisionTicks"
+          :key="`sub-${tick}`"
+          class="subdivision-line"
+          :style="{ left: `${tick * colWidth}px` }"
+        />
         <div
           v-for="measure in measures"
           :key="measure.number"
@@ -52,8 +125,8 @@ const handleClick = (event: MouseEvent) => {
 .timeline-ruler {
   height: 30px;
   display: flex;
-  background: #1a0e15;
-  border-bottom: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-primary-dark);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .ruler-header {
@@ -67,8 +140,8 @@ const handleClick = (event: MouseEvent) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.6);
-  background: #2d0f20;
-  border-right: 1px solid rgba(122, 15, 62, 0.5);
+  background: var(--color-bg-secondary-dark);
+  border-right: 1px solid var(--color-border-secondary);
   position: sticky;
   left: 0;
   z-index: 10;
@@ -79,10 +152,10 @@ const handleClick = (event: MouseEvent) => {
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  background: #2d0f20;
+  background: var(--color-bg-secondary-dark);
 
-  &:hover {
-    background: #3d1528;
+  &.seeking {
+    cursor: grabbing;
   }
 }
 
@@ -91,11 +164,19 @@ const handleClick = (event: MouseEvent) => {
   height: 100%;
 }
 
+.subdivision-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--color-accent3-rgb), 0.12);
+}
+
 .measure-marker {
   position: absolute;
   top: 0;
   height: 100%;
-  border-left: 1px solid rgba(122, 15, 62, 0.5);
+  border-left: 1px solid var(--color-border-secondary);
   padding-left: 6px;
   display: flex;
   align-items: center;

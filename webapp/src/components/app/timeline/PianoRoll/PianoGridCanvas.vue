@@ -13,6 +13,8 @@ import {
   usePianoGridClipboard,
   usePianoGridKeyboard,
 } from "../../../../composables/pianoGrid";
+import { useTimelineStore } from "../../../../stores/timelineStore";
+import { snapTicks } from "../../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -21,10 +23,14 @@ const props = defineProps<{
   color: string;
   activeNotes: Set<NoteName>;
   trackId: string;
+  scrollLeft: number;
+  scrollTop: number;
+  viewportWidth: number;
+  viewportHeight: number;
 }>();
 
 const emit = defineEmits<{
-  (e: "add-note", x: number, y: number): void;
+  (e: "add-note", x: number, y: number, useGridSize: boolean): void;
   (e: "remove-note", noteId: string): void;
   (
     e: "update-notes",
@@ -36,6 +42,8 @@ const emit = defineEmits<{
   (e: "redo"): void;
 }>();
 
+const timelineStore = useTimelineStore();
+
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const mouseGridPos = ref<{ col: number; row: number }>({ col: 0, row: 0 });
@@ -43,8 +51,12 @@ const justFinishedInteracting = ref(false);
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
+const subdivision = computed(() => timelineStore.subdivision);
+const snapStep = computed(() => snapTicks(subdivision.value));
 
-// Selection composable with containerRef
+// Selection composable : le canvas ne couvre plus que le viewport visible,
+// on lui passe donc le scroll courant pour convertir les coordonnées
+// souris (canvas-local) en coordonnées monde.
 const {
   selectedNotes,
   selectionRect,
@@ -56,11 +68,13 @@ const {
   removeFromSelection,
   cleanup: cleanupSelection,
 } = usePianoGridSelection(
-  containerRef,
+  canvasRef,
   () => props.notes,
   () => props.colWidth,
   () => gridWidth.value,
   () => gridHeight.value,
+  () => props.scrollLeft,
+  () => props.scrollTop,
 );
 
 // Resize composable
@@ -79,6 +93,8 @@ const {
   () => {
     justFinishedInteracting.value = true;
   },
+  () => snapStep.value,
+  (width) => timelineStore.setLastResizedNoteWidth(width),
 );
 
 // Drag composable
@@ -97,6 +113,7 @@ const {
   () => {
     justFinishedInteracting.value = true;
   },
+  () => snapStep.value,
 );
 
 // Clipboard composable
@@ -107,6 +124,7 @@ const { copySelectedNotes, pasteNotes, duplicateSelectedNotes } =
     () => props.cols,
     mouseGridPos,
     (notes) => emit("paste-notes", notes),
+    () => snapStep.value,
   );
 
 // Delete selected notes
@@ -128,13 +146,14 @@ usePianoGridKeyboard(selectedNotes, {
 });
 
 // Canvas composable
-const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
-  canvasRef,
-  {
+const { initCanvas, getNoteAtPosition, isOnResizeHandle, containerSize } =
+  usePianoGridCanvas(canvasRef, {
     cols: () => props.cols,
     colWidth: () => props.colWidth,
     notes: () => props.notes,
     trackColor: () => props.color,
+    timeSignature: () => timelineStore.timeSignature,
+    subdivision: () => subdivision.value,
     activeNotes: () => props.activeNotes,
     selectedNotes,
     dragState,
@@ -142,29 +161,43 @@ const { initCanvas, getNoteAtPosition, isOnResizeHandle } = usePianoGridCanvas(
     resizingState,
     resizePreviewDelta,
     selectionRect,
-  },
-);
+    scrollLeft: () => props.scrollLeft,
+    scrollTop: () => props.scrollTop,
+    viewportWidth: () => props.viewportWidth,
+    viewportHeight: () => props.viewportHeight,
+  });
 
 // Event handlers adapted for Canvas
-const handleMouseMove = (event: MouseEvent) => {
+//
+// Le canvas ne couvre plus que le viewport visible (voir usePianoGridCanvas.ts) :
+// les coordonnées canvas-local (via getBoundingClientRect) doivent être
+// recalées en coordonnées monde en ajoutant le scroll courant avant toute
+// conversion col/row ou hit-test — c'est la seule frontière où cette
+// correction est appliquée, tout le reste (renderer, hit-testing) continue
+// de travailler en coordonnées monde pures.
+const toWorldPos = (event: MouseEvent): { x: number; y: number } => {
   const rect = canvasRef.value!.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  return {
+    x: props.scrollLeft + (event.clientX - rect.left),
+    y: props.scrollTop + (event.clientY - rect.top),
+  };
+};
+
+const handleMouseMove = (event: MouseEvent) => {
+  const { x: worldX, y: worldY } = toWorldPos(event);
   mouseGridPos.value = {
-    col: Math.floor(x / props.colWidth),
-    row: Math.floor(y / NOTE_ROW_HEIGHT),
+    col: Math.floor(worldX / props.colWidth),
+    row: Math.floor(worldY / NOTE_ROW_HEIGHT),
   };
 };
 
 const handleMouseDown = (event: MouseEvent) => {
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  const { x: worldX, y: worldY } = toWorldPos(event);
 
-  const note = getNoteAtPosition(x, y);
+  const note = getNoteAtPosition(worldX, worldY);
 
   if (note) {
-    if (isOnResizeHandle(x, note)) {
+    if (isOnResizeHandle(worldX, note)) {
       handleResizeStart(event, note);
     } else if (event.ctrlKey || event.metaKey) {
       toggleNoteSelection(note.i);
@@ -184,19 +217,21 @@ const handleClick = (event: MouseEvent) => {
     return;
   }
 
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  const { x: worldX, y: worldY } = toWorldPos(event);
 
-  const note = getNoteAtPosition(x, y);
+  const note = getNoteAtPosition(worldX, worldY);
 
   if (!note) {
-    const col = Math.floor(x / props.colWidth);
-    const row = Math.floor(y / NOTE_ROW_HEIGHT);
+    // Floor (pas round) : on veut la cellule de grille qui contient le clic,
+    // pas la ligne de grille la plus proche — sinon un clic dans la moitié
+    // droite d'une cellule crée la note sur la cellule suivante.
+    const col =
+      Math.floor(worldX / props.colWidth / snapStep.value) * snapStep.value;
+    const row = Math.floor(worldY / NOTE_ROW_HEIGHT);
 
     if (col >= 0 && col < props.cols && row >= 0 && row < TOTAL_NOTES) {
       clearSelection();
-      emit("add-note", col, row);
+      emit("add-note", col, row, event.shiftKey);
     }
   }
 };
@@ -204,11 +239,9 @@ const handleClick = (event: MouseEvent) => {
 const handleRightClick = (event: MouseEvent) => {
   event.preventDefault();
 
-  const rect = canvasRef.value!.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  const { x: worldX, y: worldY } = toWorldPos(event);
 
-  const note = getNoteAtPosition(x, y);
+  const note = getNoteAtPosition(worldX, worldY);
 
   if (note) {
     emit("remove-note", note.i);
@@ -238,7 +271,10 @@ onBeforeUnmount(() => {
       dragging: isDragging,
       selecting: isSelecting,
     }"
-    :style="{ width: `${gridWidth}px`, height: `${gridHeight}px` }"
+    :style="{
+      width: `${containerSize.width}px`,
+      height: `${containerSize.height}px`,
+    }"
   >
     <canvas
       ref="canvasRef"
@@ -269,6 +305,12 @@ onBeforeUnmount(() => {
 
   canvas {
     display: block;
+    // Le wrapper (.piano-grid-canvas) est le "spacer" qui donne au conteneur
+    // parent (.piano-grid-container, overflow-y: auto) sa vraie plage de
+    // scroll vertical ; le canvas lui-même ne fait que la taille du viewport
+    // visible et reste épinglé en haut de cette plage pendant le scroll.
+    position: sticky;
+    top: 0;
   }
 }
 </style>
