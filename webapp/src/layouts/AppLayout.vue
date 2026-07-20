@@ -1,7 +1,7 @@
 <template>
   <div class="app-layout">
     <main class="app-main">
-      <AppHeader v-if="!isSequencerPage" />
+      <AppHeader v-if="!isSequencerPage || isErrorPage" />
       <slot />
 
       <div class="parallax-layer" ref="layer1">
@@ -20,6 +20,8 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const currentPath = route.path;
 const isSequencerPage = currentPath.startsWith("/app/sequencer");
+const isErrorPage =
+  currentPath.startsWith("/403") || currentPath.startsWith("/404");
 </script>
 
 <style scoped>

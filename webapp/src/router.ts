@@ -152,6 +152,16 @@ const routes = [
     name: "admin-buttons",
     meta: { requiresAdmin: true },
   },
+  {
+    path: "/403",
+    name: "forbidden",
+    component: () => import("./views/error/Forbidden.vue"),
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: () => import("./views/error/NotFound.vue"),
+  },
 ];
 
 const getGuardedRoutes = () => {
