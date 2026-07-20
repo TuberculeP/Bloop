@@ -71,9 +71,8 @@ defineExpose({ clearFilters, selectedTags });
         variant="lightghost"
         size="small"
         @click="clearFilters"
-      >
-        Réinitialiser
-      </BaseButton>
+        label="Réinitialiser"
+      />
     </div>
 
     <div v-if="loading" class="trends-loading">Chargement...</div>

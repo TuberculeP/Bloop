@@ -69,12 +69,19 @@ onMounted(() => {
     <div class="page-container">
       <!-- Navigation -->
       <div class="post-navigation">
-        <BaseButton variant="ghost" size="small" @click="goBack">
-          ← Retour
-        </BaseButton>
-        <BaseButton variant="ghost" size="small" @click="goToBlog">
-          Voir tous les posts
-        </BaseButton>
+        <BaseButton
+          variant="ghost"
+          size="small"
+          @click="goBack"
+          label="Retour"
+          left-icon="fas fa-arrow-left"
+        />
+        <BaseButton
+          variant="ghost"
+          size="small"
+          @click="goToBlog"
+          label="Voir tous les posts"
+        />
       </div>
 
       <!-- État de chargement -->
@@ -87,12 +94,12 @@ onMounted(() => {
       <EmptyState v-else-if="error" title="Erreur" :message="error">
         <template #action>
           <div class="error-actions">
-            <BaseButton variant="primary" @click="loadPost">
-              Réessayer
-            </BaseButton>
-            <BaseButton variant="ghost" @click="goToBlog">
-              Retour au blog
-            </BaseButton>
+            <BaseButton variant="primary" @click="loadPost" label="Réessayer" />
+            <BaseButton
+              variant="ghost"
+              @click="goToBlog"
+              label="Retour au blog"
+            />
           </div>
         </template>
       </EmptyState>

@@ -30,10 +30,8 @@
       class="submit-button"
       :disabled="isLoading"
       :loading="isLoading"
-    >
-      Se connecter
-    </BaseButton>
-
+      label="Se connecter"
+    />
     <div v-if="googleAuthEnabled" class="google-login">
       <div class="separator">
         <span>ou</span>

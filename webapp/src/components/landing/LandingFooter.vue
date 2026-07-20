@@ -103,27 +103,12 @@
                 required
               />
             </div>
-            <button
+            <BaseButton
+              color="gradient"
               type="submit"
-              class="newsletter-btn"
-              :class="{ loading: isSubscribing }"
-            >
-              <span class="btn-text">{{
-                isSubscribing ? "Envoi..." : "S'abonner"
-              }}</span>
-              <svg
-                class="btn-icon"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
-            </button>
+              :label="isSubscribing ? 'Envoi...' : 'S\'abonner'"
+              right-icon="far fa-paper-plane"
+            />
           </form>
         </div>
         <div class="newsletter-decoration">
@@ -175,6 +160,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, h, inject } from "vue";
 import BaseTooltip from "../ui/BaseTooltip.vue";
+import BaseButton from "../ui/BaseButton.vue";
 
 const footerRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);

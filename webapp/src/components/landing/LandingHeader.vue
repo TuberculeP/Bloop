@@ -5,9 +5,8 @@
     :class="{ scrolled: isScrolled, 'menu-open': isMobileMenuOpen }"
   >
     <div class="header-container">
-      <!-- Logo avec animation -->
       <router-link to="/" class="logo-wrapper">
-        <div class="logo-glow"></div>
+        <div class="logo-glow" />
         <img
           src="../../assets/logo/logo_background_yellow.svg"
           alt="BLOOP"
@@ -115,12 +114,17 @@
 
           <!-- Si non connecté -->
           <div v-else class="auth-buttons">
-            <router-link to="/login" class="btn-login">
-              <span>Connexion</span>
-            </router-link>
-            <LandingCtaButton to="/register" size="compact">
-              Inscription
-            </LandingCtaButton>
+            <BaseButton
+              @click="goToLoginPage"
+              variant="outline"
+              color="white"
+              label="Connexion"
+            />
+            <BaseButton
+              @click="goToRegisterPage"
+              color="gradient"
+              label="Inscription"
+            />
           </div>
         </div>
       </nav>
@@ -146,9 +150,9 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/authStore";
 import apiClient from "../../lib/utils/apiClient";
 import gsap from "gsap";
-import LandingCtaButton from "./LandingCtaButton.vue";
 import { useDropdown } from "../../composables/useDropdown";
 import ProfileAvatar from "../shared/ProfileAvatar.vue";
+import BaseButton from "../ui/BaseButton.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -160,6 +164,13 @@ const navLinks = [
   { name: "À propos", href: "/about" },
   { name: "Support", href: "/support" },
 ];
+
+const goToLoginPage = () => {
+  router.push("/login");
+};
+const goToRegisterPage = () => {
+  router.push("/register");
+};
 
 // State
 const isScrolled = ref(false);
@@ -431,41 +442,6 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
-.btn-login {
-  position: relative;
-  padding: 0.6rem 1.25rem;
-  color: var(--color-white);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.btn-login::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 50%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.btn-login:hover {
-  border-color: rgba(255, 210, 105, 0.5);
-  color: var(--color-accent);
-}
-
-.btn-login:hover::before {
-  opacity: 1;
-}
-
 /* Profile menu */
 .profile-wrapper {
   position: relative;
@@ -500,14 +476,6 @@ onUnmounted(() => {
 .profile-name {
   font-weight: 500;
   font-size: 0.9rem;
-}
-
-.dropdown-icon {
-  transition: transform 0.3s ease;
-}
-
-.dropdown-icon.rotated {
-  transform: rotate(180deg);
 }
 
 /* Profile dropdown */
@@ -567,18 +535,6 @@ onUnmounted(() => {
 
 .dropdown-item.admin:hover {
   background: rgba(255, 63, 180, 0.1);
-}
-
-/* Dropdown animation */
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-10px) scale(0.95);
 }
 
 /* Mobile toggle */
@@ -678,12 +634,6 @@ onUnmounted(() => {
   .auth-buttons {
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .btn-login,
-  :deep(.landing-cta-button) {
-    padding: 1rem 2rem;
-    font-size: 1rem;
   }
 
   .profile-name {

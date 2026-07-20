@@ -37,9 +37,12 @@
     <div v-else-if="!isUploading" class="step-preview">
       <div class="preview-header">
         <h3>{{ zipFile.name }}</h3>
-        <BaseButton variant="link" size="small" @click="reset">
-          Change file
-        </BaseButton>
+        <BaseButton
+          variant="link"
+          size="small"
+          @click="reset"
+          label="Change file"
+        />
       </div>
 
       <div v-if="isParsing" class="parsing-state">
@@ -112,12 +115,17 @@
           </div>
 
           <div class="form-actions">
-            <BaseButton variant="outline" @click="$emit('cancel')">
-              Cancel
-            </BaseButton>
-            <BaseButton variant="accent2" type="submit" :disabled="!canImport">
-              Import Pack
-            </BaseButton>
+            <BaseButton
+              variant="outline"
+              @click="$emit('cancel')"
+              label="Cancel"
+            />
+            <BaseButton
+              variant="accent2"
+              type="submit"
+              :disabled="!canImport"
+              label="Import Pack"
+            />
           </div>
         </form>
       </template>

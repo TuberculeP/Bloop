@@ -88,28 +88,23 @@ onMounted(loadArticle);
       <div class="article-navigation">
         <BaseButton
           variant="ghost"
-          size="small"
           @click="router.push('/learning')"
-        >
-          ← Tous les articles
-        </BaseButton>
+          label="Tous les articles"
+          left-icon="fas fa-arrow-left"
+        />
         <div v-if="isAdmin && article" class="admin-actions">
           <BaseButton
             variant="outline"
-            size="small"
             @click="router.push(`/learning/editor/${article.id}`)"
-          >
-            <i class="fas fa-pencil-alt"></i>
-            Modifier
-          </BaseButton>
+            left-icon="fas fa-pencil-alt"
+            label="Modifier"
+          />
           <BaseButton
-            variant="danger"
-            size="small"
+            color="error"
             @click="showDeleteConfirm = true"
-          >
-            <i class="fas fa-trash-alt"></i>
-            Supprimer
-          </BaseButton>
+            left-icon="fas fa-trash-alt"
+            label="Supprimer"
+          />
         </div>
       </div>
 
@@ -174,12 +169,12 @@ onMounted(loadArticle);
     </template>
     <p>Cette action est irréversible.</p>
     <template #footer>
-      <BaseButton variant="secondary" @click="showDeleteConfirm = false">
-        Annuler
-      </BaseButton>
-      <BaseButton variant="danger" @click="confirmDelete">
-        Supprimer
-      </BaseButton>
+      <BaseButton
+        variant="secondary"
+        @click="showDeleteConfirm = false"
+        label="Annuler"
+      />
+      <BaseButton variant="danger" @click="confirmDelete" label="Supprimer" />
     </template>
   </BaseModal>
 </template>

@@ -56,10 +56,9 @@ onMounted(loadArticles);
           v-if="isAdmin"
           variant="accent"
           @click="router.push('/learning/editor/new')"
-        >
-          <i class="fas fa-plus"></i>
-          Nouvel article
-        </BaseButton>
+          label="Nouvel article"
+          left-icon="fas fa-plus"
+        />
       </header>
 
       <div class="learning-toolbar">
@@ -201,19 +200,20 @@ onMounted(loadArticles);
 
 .article-body {
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .article-title {
   font-size: 1.25rem;
   color: var(--color-white);
-  margin: 0 0 8px;
 }
 
 .article-excerpt {
   color: var(--color-white-light);
   opacity: 0.8;
   font-size: 0.9rem;
-  margin: 0 0 16px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;

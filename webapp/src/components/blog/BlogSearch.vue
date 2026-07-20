@@ -90,10 +90,9 @@ const toggleShowTags = () => {
           :loading="isSearching"
           :disabled="!searchQuery.trim() || isSearching"
           class="search-button"
-        >
-          <span v-if="!isSearching"> <i class="fas fa-search" /></span>
-          Rechercher
-        </BaseButton>
+          label="Rechercher"
+          left-icon="fas fa-search"
+        />
       </div>
 
       <!-- Bouton pour afficher les tags -->

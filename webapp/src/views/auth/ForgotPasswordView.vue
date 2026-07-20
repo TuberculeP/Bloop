@@ -21,9 +21,8 @@
         class="submit-button"
         :disabled="isLoading"
         :loading="isLoading"
-      >
-        Envoyer le lien
-      </BaseButton>
+        label="Envoyer le lien"
+      />
 
       <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>

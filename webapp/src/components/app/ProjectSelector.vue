@@ -243,9 +243,12 @@ onMounted(() => loadProjects());
         </h1>
         <p class="tagline">Votre bibliothèque de compositions</p>
       </div>
-      <BaseButton class="new-project-btn" @click="emit('new-project')">
-        <i class="fas fa-plus" />Nouveau projet
-      </BaseButton>
+      <BaseButton
+        color="accent"
+        label="Nouveau projet"
+        right-icon="fas fa-plus"
+        @click="emit('new-project')"
+      />
     </header>
 
     <TabBar v-model="activeTab" :tabs="tabs" />
@@ -271,9 +274,11 @@ onMounted(() => loadProjects());
           <div class="music-note">♪</div>
           <h3>Bibliothèque vide</h3>
           <p>Commencez votre première composition musicale dès maintenant.</p>
-          <BaseButton variant="ghost" @click="emit('new-project')">
-            Créer mon premier projet
-          </BaseButton>
+          <BaseButton
+            variant="ghost"
+            @click="emit('new-project')"
+            label="Créer mon premier projet"
+          />
         </div>
 
         <div v-else class="projects-grid">
@@ -304,33 +309,33 @@ onMounted(() => loadProjects());
               <h3 class="card-title">{{ project.name }}</h3>
               <div class="card-footer">
                 <div class="card-toggles">
-                  <button
-                    class="icon-toggle"
-                    :class="{ active: project.mcpEnabled }"
+                  <BaseButton
+                    size="small"
+                    variant="outline"
+                    :active="project.mcpEnabled"
                     :disabled="togglingMcp === project.id"
-                    @click="toggleMcp(project, $event)"
-                    title="Contrôle MCP"
-                  >
-                    <i class="fas fa-robot" />
-                  </button>
-                  <button
-                    class="icon-toggle"
-                    :class="{ active: project.isPublic }"
+                    @click="(e) => toggleMcp(project, e)"
+                    tooltip="Contrôle MCP"
+                    right-icon="fas fa-robot"
+                  />
+                  <BaseButton
+                    size="small"
+                    variant="outline"
+                    :active="project.isPublic"
                     :disabled="togglingVisibility === project.id"
-                    @click="toggleVisibility(project, $event)"
-                    :title="
+                    @click="(e) => toggleVisibility(project, e)"
+                    :tooltip="
                       project.isPublic ? 'Projet public' : 'Rendre public'
                     "
-                  >
-                    <i class="fas fa-globe" />
-                  </button>
-                  <button
-                    class="icon-toggle delete-btn"
-                    @click="handleDeleteClick(project.id, $event)"
-                    title="Supprimer"
-                  >
-                    <i class="fas fa-trash" />
-                  </button>
+                    left-icon="fas fa-globe"
+                  />
+                  <BaseButton
+                    size="small"
+                    variant="outline"
+                    @click="(e) => handleDeleteClick(project.id, e)"
+                    tooltip="Supprimer"
+                    left-icon="fas fa-trash"
+                  />
                 </div>
                 <div class="open-hint">
                   <span class="click-hint">Ouvrir</span>
@@ -367,9 +372,11 @@ onMounted(() => loadProjects());
           </div>
           <h3>Aucun favori</h3>
           <p>Explorez les projets publics et ajoutez-en à vos favoris.</p>
-          <BaseButton variant="ghost" @click="activeTab = 'discover'">
-            Explorer les projets
-          </BaseButton>
+          <BaseButton
+            variant="ghost"
+            @click="activeTab = 'discover'"
+            label="Explorer les projets"
+          />
         </div>
 
         <div v-else class="projects-grid">
@@ -401,14 +408,13 @@ onMounted(() => loadProjects());
               </div>
               <h3 class="card-title">{{ project.name }}</h3>
               <div class="card-footer">
-                <button
-                  class="icon-toggle active favorite-btn"
-                  :disabled="togglingFavorite === project.id"
+                <BaseButton
+                  size="small"
+                  tooltip="Retirer des favoris"
                   @click="toggleFavorite(project.id, $event)"
-                  title="Retirer des favoris"
-                >
-                  <i class="fas fa-heart" />
-                </button>
+                  left-icon="fas fa-heart"
+                  :disabled="togglingFavorite === project.id"
+                />
                 <div class="open-hint">
                   <span class="click-hint">Ouvrir</span>
                   <i class="fas fa-arrow-right click-hint"></i>
@@ -478,25 +484,23 @@ onMounted(() => loadProjects());
               </div>
               <h3 class="card-title">{{ project.name }}</h3>
               <div class="card-footer">
-                <button
-                  class="icon-toggle favorite-btn"
-                  :class="{ active: isProjectFavorited(project.id) }"
+                <BaseButton
+                  size="small"
+                  variant="outline"
+                  :active="isProjectFavorited(project.id)"
+                  :left-icon="
+                    isProjectFavorited(project.id)
+                      ? 'fas fa-heart'
+                      : 'far fa-heart'
+                  "
                   :disabled="togglingFavorite === project.id"
-                  @click="toggleFavorite(project.id, $event)"
-                  :title="
+                  :tooltip="
                     isProjectFavorited(project.id)
                       ? 'Retirer des favoris'
                       : 'Ajouter aux favoris'
                   "
-                >
-                  <i
-                    :class="
-                      isProjectFavorited(project.id)
-                        ? 'fas fa-heart'
-                        : 'far fa-heart'
-                    "
-                  />
-                </button>
+                  @click="toggleFavorite(project.id, $event)"
+                />
                 <div class="open-hint">
                   <span class="click-hint">Ouvrir</span>
                   <i class="fas fa-arrow-right click-hint"></i>
@@ -566,9 +570,9 @@ onMounted(() => loadProjects());
                   :loading="restoringProject === project.id"
                   :disabled="!!restoringProject"
                   @click="handleRestore(project.id, $event)"
-                >
-                  <i class="fas fa-undo" /> Restaurer
-                </BaseButton>
+                  label="Restaurer"
+                  left-icon="fas fa-undo"
+                />
               </div>
             </div>
           </div>
@@ -590,12 +594,14 @@ onMounted(() => loadProjects());
         variant="secondary"
         :disabled="isDeleting"
         @click="cancelDelete"
-      >
-        Annuler
-      </BaseButton>
-      <BaseButton variant="error" :loading="isDeleting" @click="executeDelete">
-        Supprimer
-      </BaseButton>
+        label="Annuler"
+      />
+      <BaseButton
+        variant="error"
+        :loading="isDeleting"
+        @click="executeDelete"
+        label="Supprimer"
+      />
     </template>
   </BaseModal>
 </template>

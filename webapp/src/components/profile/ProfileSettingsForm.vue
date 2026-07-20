@@ -98,9 +98,12 @@ onMounted(resetForm);
           {{ user?.firstName?.charAt(0) }}{{ user?.lastName?.charAt(0) }}
         </span>
       </div>
-      <BaseButton type="button" variant="ghost" @click="photoInputRef?.click()">
-        Changer la photo
-      </BaseButton>
+      <BaseButton
+        type="button"
+        variant="ghost"
+        @click="photoInputRef?.click()"
+        label="Changer la photo"
+      />
       <input
         ref="photoInputRef"
         type="file"
@@ -134,12 +137,14 @@ onMounted(resetForm);
           type="button"
           @click="resetForm"
           :disabled="isSaving"
-        >
-          Annuler
-        </BaseButton>
-        <BaseButton variant="primary" type="submit" :loading="isSaving">
-          Enregistrer
-        </BaseButton>
+          label="Annuler"
+        />
+        <BaseButton
+          variant="primary"
+          type="submit"
+          :loading="isSaving"
+          label="Enregistrer"
+        />
       </div>
     </form>
 
@@ -148,9 +153,12 @@ onMounted(resetForm);
         <h3>Tutoriels</h3>
         <p>Revoyez le parcours guidé de découverte de l'application.</p>
       </div>
-      <BaseButton variant="ghost" type="button" @click="replayOnboarding">
-        Revoir le tutoriel de bienvenue
-      </BaseButton>
+      <BaseButton
+        variant="outline"
+        type="button"
+        @click="replayOnboarding"
+        label="Revoir le tutoriel de bienvenue"
+      />
     </div>
   </div>
 </template>

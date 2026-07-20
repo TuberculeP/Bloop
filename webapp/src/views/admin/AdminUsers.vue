@@ -51,17 +51,15 @@
                   variant="danger"
                   size="small"
                   @click="deactivateUser(user.id)"
-                >
-                  Deactivate
-                </BaseButton>
+                  label="Deactivate"
+                />
                 <BaseButton
                   v-else
                   variant="success"
                   size="small"
                   @click="activateUser(user.id)"
-                >
-                  Activate
-                </BaseButton>
+                  label="Activate"
+                />
               </td>
             </tr>
           </tbody>
@@ -84,12 +82,16 @@
       </template>
       <p>This user will no longer be able to log in.</p>
       <template #footer>
-        <BaseButton variant="outline" @click="cancelDeactivate"
-          >Cancel</BaseButton
-        >
-        <BaseButton variant="danger" @click="confirmDeactivate">
-          Deactivate
-        </BaseButton>
+        <BaseButton
+          variant="outline"
+          @click="cancelDeactivate"
+          label="Cancel"
+        />
+        <BaseButton
+          variant="danger"
+          @click="confirmDeactivate"
+          label="Deactivate"
+        />
       </template>
     </BaseModal>
   </AdminLayout>
@@ -183,7 +185,6 @@ function formatDate(dateStr: string) {
   h1 {
     margin: 0;
     font-size: 24px;
-    font-weight: 600;
     color: var(--color-white);
   }
 }

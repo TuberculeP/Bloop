@@ -355,7 +355,7 @@ fetchComments();
     </div>
 
     <div class="post-footer" @click.stop>
-      <div>
+      <div class="post-footer-action">
         <BaseButton
           variant="lightlink"
           size="small"
@@ -366,12 +366,12 @@ fetchComments();
               ? 'Masquer les commentaires'
               : 'Afficher les commentaires'
           "
-        >
-          {{ showComments ? "Masquer" : "Voir" }} commentaires ({{
-            commentsCount
-          }})
-        </BaseButton>
-
+          :label="
+            showComments
+              ? 'Masquer'
+              : 'Voir' + ' commentaires (' + commentsCount + ')'
+          "
+        />
         <!-- Bouton pour ajouter un commentaire (uniquement si connecté) -->
         <BaseButton
           v-if="authStore.isAuthenticated"
@@ -380,9 +380,8 @@ fetchComments();
           @click="toggleCommentForm"
           :title="showCommentForm ? 'Annuler' : 'Ajouter un commentaire'"
           color="primary"
-        >
-          {{ showCommentForm ? "Réduire" : "Commenter" }}
-        </BaseButton>
+          :label="showCommentForm ? 'Réduire' : 'Commenter'"
+        />
       </div>
       <div class="date">{{ formatFullDate(props.post.createdAt) }}</div>
     </div>
@@ -423,18 +422,16 @@ fetchComments();
               size="small"
               @click="toggleCommentForm"
               :disabled="isSubmittingComment"
-            >
-              Annuler
-            </BaseButton>
+              label="Annuler"
+            />
             <BaseButton
               type="submit"
               variant="secondary"
               size="small"
               :disabled="loadingComments"
               :loading="loadingComments"
-            >
-              Poster
-            </BaseButton>
+              label="Poster"
+            />
           </div>
         </div>
       </form>
@@ -452,9 +449,8 @@ fetchComments();
             size="small"
             @click="fetchComments"
             class="retry-button"
-          >
-            Réessayer
-          </BaseButton>
+            label="Réessayer"
+          />
         </div>
 
         <div v-else-if="comments.length === 0" class="comments-empty">
@@ -493,12 +489,16 @@ fetchComments();
       </template>
       <p>Cette action est irréversible.</p>
       <template #footer>
-        <BaseButton variant="secondary" @click.stop="cancelDelete">
-          Annuler
-        </BaseButton>
-        <BaseButton variant="danger" @click.stop="confirmDelete">
-          Supprimer
-        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          @click.stop="cancelDelete"
+          label="Annuler"
+        />
+        <BaseButton
+          color="error"
+          @click.stop="confirmDelete"
+          label="Supprimer"
+        />
       </template>
     </BaseModal>
   </div>

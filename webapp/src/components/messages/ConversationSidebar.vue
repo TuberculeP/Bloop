@@ -4,6 +4,7 @@ import type { Conversation, MessageUser } from "../../services/messages";
 import ConversationItem from "./ConversationItem.vue";
 import UserSearchList from "./UserSearchList.vue";
 import BaseSpinner from "../ui/BaseSpinner.vue";
+import BaseButton from "../ui/BaseButton.vue";
 
 const props = defineProps<{
   conversations: Conversation[];
@@ -50,12 +51,7 @@ const handleStartNewConversation = (user: MessageUser) => {
   <aside class="conversations-sidebar">
     <div class="sidebar-header">
       <h2 class="main-title">Messages</h2>
-      <button
-        class="btn-create btn-create--small"
-        @click="toggleNewConversation"
-      >
-        <i class="fas fa-plus" />
-      </button>
+      <BaseButton @click="toggleNewConversation" right-icon="fas fa-plus" />
     </div>
 
     <UserSearchList
@@ -112,32 +108,6 @@ const handleStartNewConversation = (user: MessageUser) => {
   color: var(--color-white);
   margin: 0;
   letter-spacing: -1px;
-}
-
-.btn-create {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-accent3);
-  color: var(--color-white);
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(var(--color-accent3-rgb), 0.4);
-}
-
-.btn-create--small {
-  width: 34px;
-  height: 34px;
-  font-size: 1rem;
-}
-
-.btn-create:hover {
-  background: var(--color-accent3-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(155, 36, 88, 0.6);
 }
 
 .conversations-list {

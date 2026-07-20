@@ -10,9 +10,11 @@
             placeholder="Search by project name or owner email..."
             class="search-input"
           />
-          <BaseButton variant="primary" @click="openImportModal">
-            Import project
-          </BaseButton>
+          <BaseButton
+            size="large"
+            @click="openImportModal"
+            label="Import project"
+          />
         </div>
       </div>
 
@@ -46,9 +48,8 @@
                   variant="outline"
                   size="small"
                   @click="adminStore.exportProject(project.id)"
-                >
-                  Export
-                </BaseButton>
+                  label="Export"
+                />
               </td>
             </tr>
           </tbody>
@@ -207,7 +208,6 @@ async function submitImport() {
   h1 {
     margin: 0;
     font-size: 24px;
-    font-weight: 600;
     color: var(--color-white);
   }
 }
