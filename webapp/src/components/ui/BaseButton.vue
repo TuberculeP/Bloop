@@ -16,7 +16,13 @@
     @click="handleClick"
     :title="tooltip"
   >
-    <span v-if="loading" class="base-button__spinner">⟳</span>
+    <img
+      v-if="loading"
+      src="../../assets/stan_waiting.svg"
+      class="base-button__spinner"
+      alt=""
+      aria-hidden="true"
+    />
     <i v-if="leftIcon && !loading" :class="leftIcon" />
     <span v-if="label">{{ label }}</span>
     <i v-if="rightIcon && !loading" :class="rightIcon" />
@@ -341,17 +347,10 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .base-button__spinner {
-  animation: spin 1s linear infinite;
   display: inline-block;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  width: 1.2em;
+  height: 1.2em;
+  object-fit: contain;
 }
 
 .base-button:focus-visible {
