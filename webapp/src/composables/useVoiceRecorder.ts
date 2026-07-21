@@ -1,6 +1,8 @@
-import { ref, onBeforeUnmount } from "vue";
+import { ref, watch, onBeforeUnmount } from "vue";
 
 export type RecorderState = "idle" | "recording" | "error";
+
+const RAW_MODE_KEY = "bloop-mic-raw-mode";
 
 const PREFERRED_MIME_TYPES = [
   "audio/webm;codecs=opus",
@@ -28,6 +30,10 @@ export function useVoiceRecorder() {
   const error = ref<string | null>(null);
   const devices = ref<MediaDeviceInfo[]>([]);
   const selectedDeviceId = ref<string | null>(null);
+  const rawMode = ref(localStorage.getItem(RAW_MODE_KEY) === "true");
+  watch(rawMode, (value) => {
+    localStorage.setItem(RAW_MODE_KEY, value ? "true" : "false");
+  });
 
   let permissionPrimed = false;
   let stream: MediaStream | null = null;
@@ -110,11 +116,25 @@ export function useVoiceRecorder() {
     navigator.mediaDevices.addEventListener?.("devicechange", loadDevices);
   }
 
-  const buildAudioConstraints = (): MediaStreamConstraints => ({
-    audio: selectedDeviceId.value
-      ? { deviceId: { exact: selectedDeviceId.value } }
-      : true,
-  });
+  const buildAudioConstraints = (): MediaStreamConstraints => {
+    if (!rawMode.value) {
+      return {
+        audio: selectedDeviceId.value
+          ? { deviceId: { exact: selectedDeviceId.value } }
+          : true,
+      };
+    }
+
+    const constraints: MediaTrackConstraints = {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+    };
+    if (selectedDeviceId.value) {
+      constraints.deviceId = { exact: selectedDeviceId.value };
+    }
+    return { audio: constraints };
+  };
 
   const start = async (): Promise<void> => {
     if (!isSupported) {
@@ -204,6 +224,7 @@ export function useVoiceRecorder() {
     error,
     devices,
     selectedDeviceId,
+    rawMode,
     start,
     stop,
     requestPermission,
