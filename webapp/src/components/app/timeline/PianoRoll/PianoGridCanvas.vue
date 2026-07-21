@@ -14,7 +14,7 @@ import {
   usePianoGridKeyboard,
 } from "../../../../composables/pianoGrid";
 import { useTimelineStore } from "../../../../stores/timelineStore";
-import { snapTicks } from "../../../../lib/audio/timeGrid";
+import { snapTicks, ticksPerBar } from "../../../../lib/audio/timeGrid";
 
 const props = defineProps<{
   notes: MidiNote[];
@@ -48,6 +48,7 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const mouseGridPos = ref<{ col: number; row: number }>({ col: 0, row: 0 });
 const justFinishedInteracting = ref(false);
+const hoverTarget = ref<"note" | "resize" | null>(null);
 
 const gridWidth = computed(() => props.cols * props.colWidth);
 const gridHeight = computed(() => TOTAL_NOTES * NOTE_ROW_HEIGHT);
@@ -134,6 +135,48 @@ const deleteSelectedNotes = () => {
   selectedNotes.value.clear();
 };
 
+// Move selected notes via arrow keys : clamp rigide du groupe (comme
+// usePianoGridDrag) plutôt qu'un skip par-note, pour ne pas casser
+// l'espacement relatif d'un accord sélectionné en butant sur un bord — ce
+// même clamp fait aussi que la sélection vient se coller au début/à la fin
+// de la piste dès qu'un saut (mesure ou pas) la dépasserait, plutôt que de
+// ne rien faire ou de sortir des bornes.
+const moveSelectedNotes = (
+  dxDirection: number,
+  dy: number,
+  horizontalUnit: "step" | "bar" = "step",
+) => {
+  const selected = props.notes.filter((n) => selectedNotes.value.has(n.i));
+  if (selected.length === 0) return;
+
+  const horizontalStep =
+    horizontalUnit === "bar"
+      ? ticksPerBar(timelineStore.timeSignature)
+      : snapStep.value;
+  const requestedDx = dxDirection * horizontalStep;
+
+  let minDx = -Infinity;
+  let maxDx = Infinity;
+  let minDy = -Infinity;
+  let maxDy = Infinity;
+  for (const note of selected) {
+    minDx = Math.max(minDx, -note.x);
+    maxDx = Math.min(maxDx, props.cols - note.w - note.x);
+    minDy = Math.max(minDy, -note.y);
+    maxDy = Math.min(maxDy, TOTAL_NOTES - 1 - note.y);
+  }
+
+  const clampedDx = Math.max(minDx, Math.min(maxDx, requestedDx));
+  const clampedDy = Math.max(minDy, Math.min(maxDy, dy));
+  if (clampedDx === 0 && clampedDy === 0) return;
+
+  const updates = selected.map((note) => ({
+    noteId: note.i,
+    updates: { x: note.x + clampedDx, y: note.y + clampedDy },
+  }));
+  emit("update-notes", updates);
+};
+
 // Keyboard composable
 usePianoGridKeyboard(selectedNotes, {
   onUndo: () => emit("undo"),
@@ -143,6 +186,7 @@ usePianoGridKeyboard(selectedNotes, {
   onCopy: copySelectedNotes,
   onPaste: pasteNotes,
   onDuplicate: duplicateSelectedNotes,
+  onMoveSelection: moveSelectedNotes,
 });
 
 // Canvas composable
@@ -189,7 +233,31 @@ const handleMouseMove = (event: MouseEvent) => {
     col: Math.floor(worldX / props.colWidth),
     row: Math.floor(worldY / NOTE_ROW_HEIGHT),
   };
+
+  if (isDragging.value || isResizing.value || isSelecting.value) return;
+
+  const note = getNoteAtPosition(worldX, worldY);
+  if (!note) {
+    hoverTarget.value = null;
+  } else if (isOnResizeHandle(worldX, note)) {
+    hoverTarget.value = "resize";
+  } else {
+    hoverTarget.value = "note";
+  }
 };
+
+const handleMouseLeave = () => {
+  hoverTarget.value = null;
+};
+
+const cursorStyle = computed(() => {
+  if (isDragging.value) return "grabbing";
+  if (isResizing.value) return "ew-resize";
+  if (isSelecting.value) return "crosshair";
+  if (hoverTarget.value === "resize") return "ew-resize";
+  if (hoverTarget.value === "note") return "grab";
+  return "default";
+});
 
 const handleMouseDown = (event: MouseEvent) => {
   const { x: worldX, y: worldY } = toWorldPos(event);
@@ -266,20 +334,17 @@ onBeforeUnmount(() => {
   <div
     ref="containerRef"
     class="piano-grid-canvas"
-    :class="{
-      resizing: isResizing,
-      dragging: isDragging,
-      selecting: isSelecting,
-    }"
     :style="{
       width: `${containerSize.width}px`,
       height: `${containerSize.height}px`,
+      cursor: cursorStyle,
     }"
   >
     <canvas
       ref="canvasRef"
       @mousemove="handleMouseMove"
       @mousedown="handleMouseDown"
+      @mouseleave="handleMouseLeave"
       @click="handleClick"
       @contextmenu="handleRightClick"
     />
@@ -289,19 +354,6 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .piano-grid-canvas {
   position: relative;
-  cursor: crosshair;
-
-  &.resizing {
-    cursor: ew-resize;
-  }
-
-  &.dragging {
-    cursor: grabbing;
-  }
-
-  &.selecting {
-    cursor: crosshair;
-  }
 
   canvas {
     display: block;

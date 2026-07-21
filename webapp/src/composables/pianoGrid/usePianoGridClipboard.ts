@@ -9,6 +9,13 @@ export interface ClipboardNote {
   w: number;
 }
 
+// Scope module (pas function-scope) : un seul piano roll est jamais monté à
+// la fois (v-if="isExpanded" dans TrackRow.vue), donc chaque changement de
+// piste démonte/remonte PianoGridCanvas.vue et recréerait un ref vide ici,
+// perdant le presse-papier. Le singleton survit au remount et permet un
+// copier/coller entre pistes.
+const clipboard = ref<ClipboardNote[]>([]);
+
 export function usePianoGridClipboard(
   notes: () => MidiNote[],
   selectedNotes: Ref<Set<string>>,
@@ -17,8 +24,6 @@ export function usePianoGridClipboard(
   onPaste: (notes: Array<{ x: number; y: number; w: number }>) => void,
   snapStep: () => number = () => 1,
 ) {
-  const clipboard = ref<ClipboardNote[]>([]);
-
   const copySelectedNotes = () => {
     if (selectedNotes.value.size === 0) return;
 
