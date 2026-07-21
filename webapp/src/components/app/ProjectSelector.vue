@@ -271,7 +271,7 @@ onMounted(() => loadProjects());
         </div>
 
         <div v-else-if="projects.length === 0" class="state-container empty">
-          <div class="music-note">♪</div>
+          <div class="music-note"><i class="fas fa-music" /></div>
           <h3>Bibliothèque vide</h3>
           <p>Commencez votre première composition musicale dès maintenant.</p>
           <BaseButton
@@ -445,9 +445,7 @@ onMounted(() => loadProjects());
           v-else-if="publicProjects.length === 0"
           class="state-container empty"
         >
-          <div class="music-note">
-            <i class="fas fa-globe"></i>
-          </div>
+          <div class="music-note"><i class="fas fa-globe" /></div>
           <h3>Aucun projet public</h3>
           <p>
             Soyez le premier à partager un projet ! Rendez l'un de vos projets
@@ -841,8 +839,8 @@ onMounted(() => loadProjects());
 .music-note {
   font-size: 4rem;
   margin-bottom: 20px;
-  color: var(--color-accent3);
-  opacity: 0.5;
+  color: var(--color-white);
+  opacity: 0.4;
 }
 
 .state-container h3 {

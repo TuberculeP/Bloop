@@ -660,7 +660,7 @@ defineExpose({
           @click="showAudioLibrary = !showAudioLibrary"
           title="Audio Library"
           :variant="showAudioLibrary ? 'secondary' : 'primary'"
-          label="Audio Library"
+          label="Audio Lib."
         />
         <input
           v-if="isEditingProjectName"
@@ -1043,12 +1043,16 @@ defineExpose({
         Supprimer la piste "{{ pendingDeleteTrack?.name }}" ?
       </p>
       <template #footer>
-        <BaseButton variant="secondary" @click="cancelDeleteTrack">
-          Annuler
-        </BaseButton>
-        <BaseButton variant="danger" @click="confirmDeleteTrack">
-          Supprimer
-        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          @click="cancelDeleteTrack"
+          label="Annuler"
+        />
+        <BaseButton
+          variant="danger"
+          @click="confirmDeleteTrack"
+          label="Supprimer"
+        />
       </template>
     </BaseModal>
 

@@ -124,7 +124,6 @@ defineEmits<{
 
 .gate-title {
   font-size: 2rem;
-  font-weight: 800;
   color: var(--color-white);
   line-height: 1.15;
   letter-spacing: -0.5px;
