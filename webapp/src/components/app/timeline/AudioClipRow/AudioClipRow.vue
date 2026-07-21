@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import type { Track, AudioClip } from "../../../../lib/utils/types";
 import { useTimelineStore } from "../../../../stores/timelineStore";
 import { useTrackHistoryStore } from "../../../../stores/trackHistoryStore";
@@ -8,11 +8,12 @@ import {
   useAudioClipSelection,
   useAudioClipClipboard,
   useAudioClipKeyboard,
+  useAudioClipDrag,
+  useAudioClipResize,
+  useAudioClipCanvas,
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
-import { useVisibleGrid } from "../../../../composables/useVisibleGrid";
 import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
-import AudioClipItem from "./AudioClipItem.vue";
 
 const props = defineProps<{
   track: Track;
@@ -30,59 +31,47 @@ const audioLibraryStore = useAudioLibraryStore();
 const { placeFilesOnTrack } = useSampleFileDrop();
 
 const containerRef = ref<HTMLElement | null>(null);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 const isContainerFocused = ref(false);
 const mouseGridCol = ref(0);
+const justFinishedInteracting = ref(false);
 
 const ROW_HEIGHT = 75;
 
-onMounted(() => {
-  audioLibraryStore.initialize();
-});
-
-const gridWidth = computed(() => props.cols * props.colWidth);
 const clips = computed(() => props.track.clips ?? []);
+const gridWidth = computed(() => props.cols * props.colWidth);
+const subdivision = computed(() => timelineStore.subdivision);
 
-const {
-  barLength,
-  visibleTickRange,
-  visibleMeasureRange,
-  visibleSubdivisionTicks,
-} = useVisibleGrid(
-  () => props.scrollLeft,
-  () => props.viewportWidth,
-  () => props.colWidth,
-  () => props.cols,
+// Charge le sample de chaque clip de la piste (waveform + durée) : remplace
+// l'ancien onMounted par-clip de AudioClipItem.vue, un seul watcher pour
+// toute la piste. loadSample() est idempotent (cache par sampleId dans
+// audioLibraryStore), donc rappeler pour un sample déjà chargé est un no-op.
+watch(
+  clips,
+  (currentClips) => {
+    for (const clip of currentClips) {
+      audioLibraryStore.loadSample(clip.sampleId);
+    }
+  },
+  { immediate: true, deep: true },
 );
-
-const visibleMeasureIndices = computed(() => {
-  const [firstBar, lastBar] = visibleMeasureRange.value;
-  const result: number[] = [];
-  for (let i = firstBar; i <= lastBar; i++) result.push(i);
-  return result;
-});
-
-const visibleClips = computed(() => {
-  const [tickStart, tickEnd] = visibleTickRange.value;
-  return clips.value.filter(
-    (clip) => clip.x < tickEnd && clip.x + clip.w > tickStart,
-  );
-});
 
 const {
   selectedClipIds,
   selectionRect,
-  isSelecting,
-  selectionRectStyle,
   justFinishedSelecting,
   handleSelectionStart,
   selectClip,
   clearSelection,
   removeFromSelection,
+  cleanup: cleanupSelection,
 } = useAudioClipSelection(
+  containerRef,
   () => clips.value,
   () => props.colWidth,
   () => gridWidth.value,
   () => ROW_HEIGHT,
+  () => props.scrollLeft,
 );
 
 const handlePasteClips = (clipsToPaste: Array<Omit<AudioClip, "id">>) => {
@@ -155,44 +144,170 @@ useAudioClipKeyboard(
   isContainerFocused,
 );
 
-const handleClipSelect = (clipId: string, event: MouseEvent): void => {
+const handleDragEnd = (updates: Array<{ clipId: string; x: number }>): void => {
+  trackHistoryStore.startBatch(props.track.id, "Move clip");
+  for (const { clipId, x } of updates) {
+    timelineStore.updateClipInTrack(props.track.id, clipId, {
+      x: Math.max(0, x),
+    });
+  }
+  trackHistoryStore.endBatch();
+};
+
+const {
+  dragState,
+  dragPreviewDeltaTicks,
+  handleDragStart,
+  cleanup: cleanupDrag,
+} = useAudioClipDrag(
+  () => clips.value,
+  selectedClipIds,
+  () => props.colWidth,
+  () => subdivision.value,
+  handleDragEnd,
+  () => {
+    justFinishedInteracting.value = true;
+  },
+);
+
+const handleResizeEnd = (
+  updates: Array<{ clipId: string; x: number; w: number; startOffset: number }>,
+): void => {
+  trackHistoryStore.startBatch(props.track.id, "Resize clip");
+  for (const { clipId, x, w, startOffset } of updates) {
+    timelineStore.updateClipInTrack(props.track.id, clipId, {
+      x: Math.max(0, x),
+      w: Math.max(1, w),
+      startOffset: Math.max(0, startOffset),
+    });
+  }
+  trackHistoryStore.endBatch();
+};
+
+const {
+  resizingState,
+  resizePreviewDeltaTicks,
+  handleResizeStart,
+  cleanup: cleanupResize,
+} = useAudioClipResize(
+  () => clips.value,
+  selectedClipIds,
+  () => props.colWidth,
+  () => subdivision.value,
+  handleResizeEnd,
+  () => {
+    justFinishedInteracting.value = true;
+  },
+);
+
+const { initCanvas, getClipAtPosition, isOnResizeHandle, containerSize } =
+  useAudioClipCanvas(canvasRef, {
+    cols: () => props.cols,
+    colWidth: () => props.colWidth,
+    rowHeight: () => ROW_HEIGHT,
+    timeSignature: () => timelineStore.timeSignature,
+    subdivision: () => subdivision.value,
+    clips: () => clips.value,
+    trackColor: () => props.track.color,
+    tempo: () => timelineStore.tempo,
+    selectedClipIds,
+    dragState,
+    dragPreviewDeltaTicks,
+    resizingState,
+    resizePreviewDeltaTicks,
+    selectionRect,
+    scrollLeft: () => props.scrollLeft,
+    viewportWidth: () => props.viewportWidth,
+    playbackPosition: () => props.playbackPosition,
+    isPlaying: () => props.isPlaying,
+  });
+
+const toWorldPos = (event: MouseEvent): { x: number; y: number } => {
+  const rect = canvasRef.value!.getBoundingClientRect();
+  return {
+    x: props.scrollLeft + (event.clientX - rect.left),
+    y: event.clientY - rect.top,
+  };
+};
+
+const selectClipAndFocus = (clipId: string, event: MouseEvent): void => {
   selectClip(clipId, event);
-  // preventDefault() sur le mousedown de l'item (voir AudioClipItem.vue) coupe
-  // la mise au focus native du navigateur : on la redéclenche explicitement
-  // pour que les raccourcis clavier scoped (delete/copy/split...) restent actifs.
+  // preventDefault() sur le mousedown coupe la mise au focus native du
+  // navigateur : on la redéclenche explicitement pour que les raccourcis
+  // clavier scoped (delete/copy/split...) restent actifs.
   containerRef.value?.focus();
 };
 
-const handleClipDelete = (clipId: string): void => {
-  trackHistoryStore.recordRemoveClip(props.track.id, clipId);
-  removeFromSelection(clipId);
+const handleMouseDown = (event: MouseEvent): void => {
+  if (event.button !== 0) return;
+  event.preventDefault();
+
+  const { x: worldX, y: worldY } = toWorldPos(event);
+  const clip = getClipAtPosition(worldX, worldY);
+
+  if (clip) {
+    selectClipAndFocus(clip.id, event);
+    const handle = isOnResizeHandle(worldX, clip);
+    if (handle) {
+      handleResizeStart(handle, event, clip);
+    } else {
+      handleDragStart(event, clip);
+    }
+    return;
+  }
+
+  containerRef.value?.focus();
+  if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
+    clearSelection();
+  }
+  handleSelectionStart(event);
 };
 
-const handleClipMove = (clipId: string, newX: number): void => {
-  const clip = clips.value.find((c) => c.id === clipId);
+const handleMouseMove = (event: MouseEvent): void => {
+  const { x: worldX, y: worldY } = toWorldPos(event);
+  mouseGridCol.value = Math.floor(worldX / props.colWidth);
+
+  if (!canvasRef.value) return;
+  if (dragState.value) {
+    canvasRef.value.style.cursor = "grabbing";
+    return;
+  }
+  if (resizingState.value) {
+    canvasRef.value.style.cursor = "ew-resize";
+    return;
+  }
+
+  const clip = getClipAtPosition(worldX, worldY);
+  if (!clip) {
+    canvasRef.value.style.cursor = "";
+    return;
+  }
+  canvasRef.value.style.cursor = isOnResizeHandle(worldX, clip)
+    ? "ew-resize"
+    : "grab";
+};
+
+const handleClick = (event: MouseEvent): void => {
+  if (justFinishedInteracting.value || justFinishedSelecting.value) {
+    justFinishedInteracting.value = false;
+    justFinishedSelecting.value = false;
+    return;
+  }
+
+  const { x: worldX, y: worldY } = toWorldPos(event);
+  if (!getClipAtPosition(worldX, worldY)) {
+    clearSelection();
+  }
+};
+
+const handleContextMenu = (event: MouseEvent): void => {
+  const { x: worldX, y: worldY } = toWorldPos(event);
+  const clip = getClipAtPosition(worldX, worldY);
   if (!clip) return;
 
-  trackHistoryStore.startBatch(props.track.id, "Move clip");
-  timelineStore.updateClipInTrack(props.track.id, clipId, {
-    x: Math.max(0, newX),
-  });
-  trackHistoryStore.endBatch();
-};
-
-const handleClipResize = (
-  clipId: string,
-  _side: "left" | "right",
-  newX: number,
-  newW: number,
-  newStartOffset: number,
-): void => {
-  trackHistoryStore.startBatch(props.track.id, "Resize clip");
-  timelineStore.updateClipInTrack(props.track.id, clipId, {
-    x: Math.max(0, newX),
-    w: Math.max(1, newW),
-    startOffset: Math.max(0, newStartOffset),
-  });
-  trackHistoryStore.endBatch();
+  event.preventDefault();
+  trackHistoryStore.recordRemoveClip(props.track.id, clip.id);
+  removeFromSelection(clip.id);
 };
 
 const handleDrop = async (event: DragEvent): Promise<void> => {
@@ -202,7 +317,9 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
   const rect = containerRef.value?.getBoundingClientRect();
   if (!rect) return;
 
-  const x = Math.floor((event.clientX - rect.left) / props.colWidth);
+  const x = Math.floor(
+    (props.scrollLeft + event.clientX - rect.left) / props.colWidth,
+  );
 
   const files = event.dataTransfer?.files;
   if (files && files.length > 0) {
@@ -242,35 +359,6 @@ const handleDragOver = (event: DragEvent): void => {
   }
 };
 
-const handleContainerMouseDown = (event: MouseEvent): void => {
-  if (event.target !== containerRef.value) return;
-  if (event.button !== 0) return;
-  event.preventDefault();
-  containerRef.value?.focus();
-
-  if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
-    clearSelection();
-  }
-
-  if (containerRef.value) {
-    handleSelectionStart(event, containerRef.value);
-  }
-};
-
-const handleContainerClick = (event: MouseEvent): void => {
-  if (event.target === containerRef.value && !justFinishedSelecting.value) {
-    clearSelection();
-  }
-  justFinishedSelecting.value = false;
-};
-
-const handleMouseMove = (event: MouseEvent): void => {
-  if (!containerRef.value) return;
-  const rect = containerRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  mouseGridCol.value = Math.floor(x / props.colWidth);
-};
-
 const handleFocus = (): void => {
   isContainerFocused.value = true;
 };
@@ -279,87 +367,55 @@ const handleBlur = (): void => {
   isContainerFocused.value = false;
 };
 
+onMounted(() => {
+  audioLibraryStore.initialize();
+  initCanvas();
+});
+
 onBeforeUnmount(() => {
   selectedClipIds.value.clear();
+  cleanupSelection();
+  cleanupDrag();
+  cleanupResize();
 });
 </script>
 
 <template>
-  <div class="audio-clip-row-wrapper">
-    <div
-      ref="containerRef"
-      class="audio-clip-container"
-      tabindex="0"
-      :style="{ width: `${gridWidth}px`, height: `${ROW_HEIGHT}px` }"
-      @drop="handleDrop"
-      @dragover="handleDragOver"
-      @mousedown="handleContainerMouseDown"
-      @click="handleContainerClick"
+  <div
+    ref="containerRef"
+    class="audio-clip-container"
+    tabindex="0"
+    :style="{ width: `${containerSize.width}px` }"
+    @drop="handleDrop"
+    @dragover="handleDragOver"
+    @focus="handleFocus"
+    @blur="handleBlur"
+  >
+    <canvas
+      ref="canvasRef"
+      class="audio-clip-canvas"
+      @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
-      @focus="handleFocus"
-      @blur="handleBlur"
-    >
-      <div class="grid-lines">
-        <div
-          v-for="tick in visibleSubdivisionTicks"
-          :key="`sub-${tick}`"
-          class="subdivision-line"
-          :style="{ left: `${tick * colWidth}px` }"
-        />
-        <div
-          v-for="i in visibleMeasureIndices"
-          :key="i"
-          class="measure-line"
-          :style="{ left: `${i * barLength * colWidth}px` }"
-        />
-      </div>
+      @click="handleClick"
+      @contextmenu="handleContextMenu"
+    />
 
-      <div
-        v-if="isPlaying"
-        class="playback-cursor"
-        :style="{ transform: `translateX(${playbackPosition * colWidth}px)` }"
-      />
-
-      <AudioClipItem
-        v-for="clip in visibleClips"
-        :key="clip.id"
-        :clip="clip"
-        :col-width="colWidth"
-        :row-height="ROW_HEIGHT"
-        :color="track.color"
-        :is-selected="selectedClipIds.has(clip.id)"
-        :tempo="timelineStore.tempo"
-        @select="handleClipSelect(clip.id, $event)"
-        @delete="handleClipDelete(clip.id)"
-        @move="handleClipMove(clip.id, $event)"
-        @resize="
-          (side, x, w, offset) => handleClipResize(clip.id, side, x, w, offset)
-        "
-      />
-
-      <div
-        v-if="isSelecting && selectionRectStyle"
-        class="selection-rect"
-        :style="selectionRectStyle"
-      />
-
-      <div v-if="clips.length === 0 && !isSelecting" class="drop-hint">
-        Drag samples here from the library
-      </div>
+    <div v-if="clips.length === 0" class="drop-hint">
+      Drag samples here from the library
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-.audio-clip-row-wrapper {
-  display: flex;
-  background: var(--color-bg-primary-dark);
-  overflow: visible;
-}
-
 .audio-clip-container {
-  position: relative;
-  background: var(--color-bg-primary-dark);
+  // Bornée à la largeur du viewport visible (pas cols*colWidth) et épinglée
+  // juste après la colonne de header, comme TrackHeader.vue et
+  // .piano-grid-container (PianoRoll.vue) : rien entre cet élément et
+  // .timeline-scroll ne définit d'overflow, donc `sticky` se résout bien
+  // contre lui.
+  position: sticky;
+  left: 180px;
+  z-index: 5;
   outline: none;
 
   &:focus {
@@ -367,46 +423,8 @@ onBeforeUnmount(() => {
   }
 }
 
-.grid-lines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.subdivision-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(var(--color-accent3-rgb), 0.12);
-}
-
-.measure-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(var(--color-accent3-rgb), 0.3);
-}
-
-.playback-cursor {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 2px;
-  background: var(--color-status-error);
-  z-index: 100;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.selection-rect {
-  position: absolute;
-  border: 1px solid var(--color-audio-clip-selected);
-  background: rgba(251, 191, 36, 0.1);
-  pointer-events: none;
-  z-index: 50;
+.audio-clip-canvas {
+  display: block;
 }
 
 .drop-hint {
