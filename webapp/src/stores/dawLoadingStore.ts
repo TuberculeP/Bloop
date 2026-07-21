@@ -115,22 +115,34 @@ export const useDawLoadingStore = defineStore("dawLoading", () => {
 
     // Phase 3: Samples audio
     const sampleTasks: LoadingTask[] = [];
+    const seenSamples = new Set<string>();
     const audioLibraryStore = useAudioLibraryStore();
+
+    const pushSampleTask = (sampleId: string): void => {
+      if (seenSamples.has(sampleId)) return;
+      seenSamples.add(sampleId);
+      const sample = audioLibraryStore.getSample(sampleId);
+      const label = sample?.name || sample?.filename || sampleId;
+      sampleTasks.push({
+        id: sampleId,
+        type: "sample",
+        label,
+        status: "pending",
+      });
+    };
 
     for (const track of project.tracks) {
       if (track.instrument.type === "audioTrack" && track.clips) {
         for (const clip of track.clips) {
-          if (!sampleTasks.some((t) => t.id === clip.sampleId)) {
-            const sample = audioLibraryStore.getSample(clip.sampleId);
-            const label = sample?.name || sample?.filename || clip.sampleId;
-            sampleTasks.push({
-              id: clip.sampleId,
-              type: "sample",
-              label,
-              status: "pending",
-            });
-          }
+          pushSampleTask(clip.sampleId);
         }
+      }
+
+      if (
+        track.instrument.type === "samplePlayer" &&
+        track.instrument.sampleId
+      ) {
+        pushSampleTask(track.instrument.sampleId);
       }
     }
 

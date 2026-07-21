@@ -15,6 +15,17 @@ import type {
   AudioSample,
 } from "../../../lib/utils/types";
 
+withDefaults(
+  defineProps<{
+    selectable?: boolean;
+  }>(),
+  { selectable: false },
+);
+
+const emit = defineEmits<{
+  (e: "select", sample: AudioSample): void;
+}>();
+
 const audioLibraryStore = useAudioLibraryStore();
 const userSamplesStore = useUserSamplesStore();
 const { previewingId } = storeToRefs(audioLibraryStore);
@@ -190,6 +201,10 @@ const handlePreview = (sample: AudioSample): void => {
   }
 };
 
+const handleSelect = (sample: AudioSample): void => {
+  emit("select", sample);
+};
+
 const getSampleCount = (pack: SamplePack): number => {
   return pack.folders.reduce((acc, f) => acc + f.samples.length, 0);
 };
@@ -309,6 +324,15 @@ const getSampleCount = (pack: SamplePack): number => {
             <div class="sample-info">
               <span class="sample-name">{{ sample.name }}</span>
             </div>
+            <button
+              v-if="selectable"
+              type="button"
+              class="sample-select-btn"
+              title="Utiliser ce sample"
+              @click.stop="handleSelect(sample)"
+            >
+              <i class="fas fa-check" />
+            </button>
             <div class="drag-hint">⋮⋮</div>
           </div>
         </div>
@@ -337,6 +361,15 @@ const getSampleCount = (pack: SamplePack): number => {
           <div class="sample-info">
             <span class="sample-name">{{ sample.name }}</span>
           </div>
+          <button
+            v-if="selectable"
+            type="button"
+            class="sample-select-btn"
+            title="Utiliser ce sample"
+            @click.stop="handleSelect(sample)"
+          >
+            <i class="fas fa-check" />
+          </button>
           <div class="drag-hint">⋮⋮</div>
         </div>
       </div>
@@ -390,6 +423,15 @@ const getSampleCount = (pack: SamplePack): number => {
             <span class="sample-name">{{ item.sample.name }}</span>
             <span class="sample-origin">{{ item.origin }}</span>
           </div>
+          <button
+            v-if="selectable"
+            type="button"
+            class="sample-select-btn"
+            title="Utiliser ce sample"
+            @click.stop="handleSelect(item.sample)"
+          >
+            <i class="fas fa-check" />
+          </button>
           <div class="drag-hint">⋮⋮</div>
         </div>
 
@@ -749,6 +791,28 @@ const getSampleCount = (pack: SamplePack): number => {
   color: rgba(255, 255, 255, 0.3);
   opacity: 0;
   transition: opacity 0.15s;
+}
+
+.sample-select-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--color-accent2);
+    border-color: var(--color-accent2);
+    color: var(--color-bg-primary-dark);
+  }
 }
 
 .load-more-btn {

@@ -13,12 +13,12 @@ const NOTE_OFFSETS: Record<string, number> = {
 const A4_MIDI_NOTE = 69;
 const A4_FREQUENCY = 440;
 
-export function noteNameToFrequency(noteName: NoteName): number {
+export function noteNameToMidi(noteName: NoteName): number {
   const noteRegex = /^([A-G])(#?)(\d+)$/;
   const match = noteName.match(noteRegex);
 
   if (!match) {
-    return A4_FREQUENCY;
+    return A4_MIDI_NOTE;
   }
 
   const [, note, sharp, octaveStr] = match;
@@ -29,6 +29,10 @@ export function noteNameToFrequency(noteName: NoteName): number {
     semitone += 1;
   }
 
-  const midiNote = octave * 12 + semitone + 12;
+  return octave * 12 + semitone + 12;
+}
+
+export function noteNameToFrequency(noteName: NoteName): number {
+  const midiNote = noteNameToMidi(noteName);
   return A4_FREQUENCY * Math.pow(2, (midiNote - A4_MIDI_NOTE) / 12);
 }

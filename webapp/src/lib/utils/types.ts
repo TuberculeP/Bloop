@@ -107,7 +107,12 @@ export interface LegacySequenceData {
 // ============================================
 
 export type InstrumentType =
-  "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack";
+  | "basicSynth"
+  | "elementarySynth"
+  | "smplr"
+  | "undertale"
+  | "audioTrack"
+  | "samplePlayer";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -148,12 +153,27 @@ export interface AudioTrackConfig {
   gain?: number;
 }
 
+export type SamplePlaybackMode = "normal" | "stretch";
+
+export interface SamplePlayerConfig {
+  type: "samplePlayer";
+  sampleId: string | null;
+  rootNote: NoteName;
+  mode: SamplePlaybackMode;
+  gain?: number;
+  attack?: number;
+  decay?: number;
+  sustain?: number;
+  release?: number;
+}
+
 export type InstrumentConfig =
   | BasicSynthConfig
   | SmplrConfig
   | ElementarySynthConfig
   | UndertaleConfig
-  | AudioTrackConfig;
+  | AudioTrackConfig
+  | SamplePlayerConfig;
 
 export interface InstrumentConfigUpdate {
   oscillatorType?: OscillatorType;
@@ -165,6 +185,9 @@ export interface InstrumentConfigUpdate {
   decay?: number;
   sustain?: number;
   release?: number;
+  sampleId?: string | null;
+  rootNote?: NoteName;
+  mode?: SamplePlaybackMode;
 }
 
 export interface AudioClip {
