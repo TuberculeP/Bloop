@@ -121,6 +121,10 @@ export interface SmplrConfig {
   type: "smplr";
   soundfont: string;
   gain?: number;
+  attack?: number;
+  decay?: number;
+  sustain?: number;
+  release?: number;
 }
 
 export interface ElementarySynthConfig {
