@@ -69,7 +69,6 @@ const BAR_WIDTH = 2;
 const BAR_GAP = 1;
 const MIN_BAR_HEIGHT = 2;
 const CLIP_PADDING_Y = 8;
-const CLIP_MIN_WIDTH = 20;
 const RESIZE_HANDLE_WIDTH = 8;
 
 export class AudioClipRenderer {
@@ -186,7 +185,7 @@ export class AudioClipRenderer {
     const clipStartOffset = clip.previewStartOffset ?? clip.startOffset;
 
     const px = clipX * config.colWidth;
-    const pw = Math.max(clipW * config.colWidth, CLIP_MIN_WIDTH);
+    const pw = clipW * config.colWidth;
     const py = CLIP_PADDING_Y;
     const ph = config.rowHeight - CLIP_PADDING_Y * 2;
 
