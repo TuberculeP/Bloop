@@ -13,6 +13,7 @@ import { snapTicks } from "../../../../lib/audio/timeGrid";
 import PianoKeys from "./PianoKeys.vue";
 import PianoKeysCanvas from "./PianoKeysCanvas.vue";
 import PianoGridCanvas from "./PianoGridCanvas.vue";
+import { usePianoRollComputerKeyboard } from "../../../../composables/pianoGrid";
 
 const USE_CANVAS = true;
 
@@ -130,6 +131,13 @@ const handleAllNotesStop = (): void => {
   });
   activePreviewNotes.value.clear();
 };
+
+// Preview au clavier physique de l'ordinateur, actif tant que le piano roll
+// de cette piste est monté (voir TrackRow.vue: v-if="isExpanded").
+usePianoRollComputerKeyboard({
+  onNoteStart: handleNoteStart,
+  onNoteStop: handleNoteStop,
+});
 
 const handleAddNote = (x: number, y: number, useGridSize: boolean): void => {
   const gridSize = snapTicks(timelineStore.subdivision);
