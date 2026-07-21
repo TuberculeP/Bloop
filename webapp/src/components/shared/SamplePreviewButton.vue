@@ -71,7 +71,13 @@ function toggle(event: MouseEvent) {
     :disabled="isLoading"
     @click="toggle"
   >
-    <i v-if="isLoading" class="fas fa-spinner fa-spin" />
+    <img
+      v-if="isLoading"
+      src="../../assets/stan_waiting.svg"
+      class="stan-spinner"
+      alt=""
+      aria-hidden="true"
+    />
     <i v-else-if="isPlaying" class="fas fa-stop stop-icon" />
     <i v-else class="fas fa-play" />
     <span class="time-label">{{ timeLabel }}</span>
@@ -110,6 +116,12 @@ function toggle(event: MouseEvent) {
   .stop-icon {
     color: var(--color-accent3-hover);
   }
+}
+
+.stan-spinner {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .time-label {
