@@ -235,6 +235,7 @@ const {
   voiceRecorderError,
   voiceDevices,
   selectedMicId,
+  rawMicEnabled,
   isRecordingVoice,
   showMicPicker,
   voiceRecordedTime,
@@ -1154,6 +1155,13 @@ defineExpose({
           ></i>
           {{ item.label }}
         </li>
+        <li class="dropdown-divider"></li>
+        <li class="dropdown-item">
+          <label class="raw-mic-toggle">
+            <input type="checkbox" v-model="rawMicEnabled" />
+            Micro raw (sans traitement)
+          </label>
+        </li>
       </ul>
     </div>
   </Teleport>
@@ -1662,6 +1670,21 @@ defineExpose({
     color: var(--color-accent2);
     font-weight: 600;
   }
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--color-accent2);
+  opacity: 0.25;
+}
+
+.raw-mic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  width: 100%;
 }
 
 .fade-enter-active,
