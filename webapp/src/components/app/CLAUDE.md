@@ -78,7 +78,7 @@ InstrumentType = "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "aud
 
 // Discriminated unions pour type safety
 BasicSynthConfig { type: "basicSynth", oscillatorType: OscillatorType, gain? }
-SmplrConfig { type: "smplr", soundfont: string, gain? }
+SmplrConfig { type: "smplr", soundfont: string, gain?, attack?, decay?, sustain?, release? }
 ElementarySynthConfig { type: "elementarySynth", preset?, gain? }
 UndertaleConfig { type: "undertale", instrument: string, gain?, attack?, decay?, sustain?, release? }
 AudioTrackConfig { type: "audioTrack", gain? }
@@ -178,18 +178,30 @@ engines/
   types.ts              # InstrumentEngine, EngineState, EngineStateCallback
   BaseEngine.ts         # Classe abstraite avec state management
   noteUtils.ts          # noteNameToFrequency() partagé
+  voicePool.ts          # VoicePool<TSampler> - pool de voix pour ADSR polyphonique (smplr/undertale)
   index.ts              # Re-exports publics
 
   basic-synth/
     BasicSynthEngine.ts # Oscillateurs Web Audio (toujours ready)
 
   smplr/
-    SmplrEngine.ts      # Soundfonts via `smplr` (128+ instruments)
+    SmplrEngine.ts      # Soundfonts via `smplr` (128+ instruments), ADSR via VoicePool
     soundfonts.ts       # SOUNDFONT_LIST + SoundfontName
 
   undertale/
-    UndertaleEngine.ts  # Soundfont custom Undertale avec ADSR
+    UndertaleEngine.ts  # Soundfont custom Undertale, ADSR via VoicePool
 ```
+
+`Soundfont`/`Soundfont2Sampler` (lib `smplr`) fixent leur destination audio à la
+construction et la partagent entre toutes les notes jouées par une même
+instance — impossible d'insérer une enveloppe par note en aval de la sortie
+partagée. `VoicePool` contourne cette limite en pré-chargeant N instances de
+sampler (par défaut 8, `VOICE_POOL_SIZE` dans chaque engine), chacune reliée à
+son propre `GainNode` d'enveloppe, et alloue une voix libre (ou la plus
+ancienne, en voice stealing si le pool est saturé) par note jouée — attack,
+decay et sustain sont réellement audibles et indépendants par voix en
+polyphonie (accords). Le `release` s'appuie sur `decayTime`, géré nativement
+par `smplr` (rampe de fondu interne au `stop()`).
 
 Factory : `lib/audio/instrumentFactory.ts` - Crée les instances d'engines selon le type.
 
@@ -394,6 +406,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 ### Bugs résolus
 
 - **SmplrEngine pas de son** : Ne pas utiliser `markRaw()` sur l'objet Soundfont de smplr
+- **ADSR Undertale sans effet audio** : le `GainNode` d'enveloppe n'était connecté qu'en sortie, jamais alimenté par la source réelle (attack/decay/sustain cosmétiques, seul `release` fonctionnait via `decayTime`) — corrigé avec `VoicePool` (voir plus haut)
 - **Délai première note** : Système de preload implémenté
 - **Fuites mémoire engines** : Cleanup complet dans `dispose()` (clear des Maps, stateCallbacks)
 - **Watchers accumulation** : trackAudioStore stocke et cleanup les watchers dans `dispose()`
@@ -410,7 +423,8 @@ cloneEQBands()                // Clone profond des bandes EQ
 - [x] Pile d'effets réordonnable (EQ/Reverb/Compressor/Limiter/Overdrive) par piste et master
 - [ ] Zoom timeline
 - [ ] ADSR pour ElementarySynth
-- [x] Undertale soundfont engine avec ADSR
+- [x] Undertale soundfont engine avec ADSR polyphonique (VoicePool)
+- [x] ADSR polyphonique pour smplr (VoicePool)
 - [ ] Audio tracks (pistes samples) - en cours
 - [x] Bibliothèque de samples connectée à R2/CDN
 - [x] Cache IndexedDB pour samples (500MB, LRU)

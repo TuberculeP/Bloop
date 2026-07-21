@@ -61,30 +61,40 @@ const undertaleEngineState = computed(() => {
   return trackAudioStore.getTrackEngineState(props.track.id);
 });
 
-const undertaleAttack = computed(() => {
-  if (props.track.instrument.type === "undertale") {
-    return props.track.instrument.attack ?? 0;
+const hasAdsrControls = computed(
+  () =>
+    props.track.instrument.type === "smplr" ||
+    props.track.instrument.type === "undertale",
+);
+
+const adsrAttack = computed(() => {
+  const instrument = props.track.instrument;
+  if (instrument.type === "smplr" || instrument.type === "undertale") {
+    return instrument.attack ?? 0;
   }
   return 0;
 });
 
-const undertaleDecay = computed(() => {
-  if (props.track.instrument.type === "undertale") {
-    return props.track.instrument.decay ?? 0;
+const adsrDecay = computed(() => {
+  const instrument = props.track.instrument;
+  if (instrument.type === "smplr" || instrument.type === "undertale") {
+    return instrument.decay ?? 0;
   }
   return 0;
 });
 
-const undertaleSustain = computed(() => {
-  if (props.track.instrument.type === "undertale") {
-    return props.track.instrument.sustain ?? 1;
+const adsrSustain = computed(() => {
+  const instrument = props.track.instrument;
+  if (instrument.type === "smplr" || instrument.type === "undertale") {
+    return instrument.sustain ?? 1;
   }
   return 1;
 });
 
-const undertaleRelease = computed(() => {
-  if (props.track.instrument.type === "undertale") {
-    return props.track.instrument.release ?? 0.3;
+const adsrRelease = computed(() => {
+  const instrument = props.track.instrument;
+  if (instrument.type === "smplr" || instrument.type === "undertale") {
+    return instrument.release ?? 0.3;
   }
   return 0.3;
 });
@@ -227,19 +237,27 @@ const handleClose = () => {
                   <p class="coming-soon">Aucun preset disponible</p>
                 </template>
               </div>
+            </template>
 
+            <template v-else-if="instrumentType === 'elementarySynth'">
+              <div class="setting-group">
+                <p class="coming-soon">Paramètres ADSR à venir...</p>
+              </div>
+            </template>
+
+            <template v-if="hasAdsrControls">
               <div class="setting-group">
                 <label class="setting-label">Enveloppe ADSR</label>
                 <div class="adsr-controls">
                   <div class="adsr-slider">
                     <span class="adsr-label">A</span>
                     <RangeSlider
-                      :model-value="undertaleAttack"
+                      :model-value="adsrAttack"
                       :min="0"
                       :max="2"
                       :step="0.01"
                       thumb-size="small"
-                      :display-value="`${undertaleAttack.toFixed(2)}s`"
+                      :display-value="`${adsrAttack.toFixed(2)}s`"
                       @update:model-value="
                         (value) => handleADSRChange('attack', value)
                       "
@@ -248,12 +266,12 @@ const handleClose = () => {
                   <div class="adsr-slider">
                     <span class="adsr-label">D</span>
                     <RangeSlider
-                      :model-value="undertaleDecay"
+                      :model-value="adsrDecay"
                       :min="0"
                       :max="2"
                       :step="0.01"
                       thumb-size="small"
-                      :display-value="`${undertaleDecay.toFixed(2)}s`"
+                      :display-value="`${adsrDecay.toFixed(2)}s`"
                       @update:model-value="
                         (value) => handleADSRChange('decay', value)
                       "
@@ -262,12 +280,12 @@ const handleClose = () => {
                   <div class="adsr-slider">
                     <span class="adsr-label">S</span>
                     <RangeSlider
-                      :model-value="undertaleSustain"
+                      :model-value="adsrSustain"
                       :min="0"
                       :max="1"
                       :step="0.01"
                       thumb-size="small"
-                      :display-value="`${(undertaleSustain * 100).toFixed(0)}%`"
+                      :display-value="`${(adsrSustain * 100).toFixed(0)}%`"
                       @update:model-value="
                         (value) => handleADSRChange('sustain', value)
                       "
@@ -276,24 +294,18 @@ const handleClose = () => {
                   <div class="adsr-slider">
                     <span class="adsr-label">R</span>
                     <RangeSlider
-                      :model-value="undertaleRelease"
+                      :model-value="adsrRelease"
                       :min="0"
                       :max="3"
                       :step="0.01"
                       thumb-size="small"
-                      :display-value="`${undertaleRelease.toFixed(2)}s`"
+                      :display-value="`${adsrRelease.toFixed(2)}s`"
                       @update:model-value="
                         (value) => handleADSRChange('release', value)
                       "
                     />
                   </div>
                 </div>
-              </div>
-            </template>
-
-            <template v-else-if="instrumentType === 'elementarySynth'">
-              <div class="setting-group">
-                <p class="coming-soon">Paramètres ADSR à venir...</p>
               </div>
             </template>
           </div>
