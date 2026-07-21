@@ -325,6 +325,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       smplr: "Sampler",
       undertale: "Undertale",
       audioTrack: "Audio",
+      samplePlayer: "Sample",
     };
     const baseName = baseNames[instrumentType];
     let counter = 1;
@@ -542,6 +543,17 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // Actions - Audio Clips sur Track
   // ============================================
 
+  // Enregistre les métadonnées d'un sample dans le projet pour qu'il reste
+  // résolvable (nom, fullUrl...) après un reload, peu importe le sample
+  // d'origine (bibliothèque ou perso) — réutilisé par addClipToTrack et par
+  // la sélection de sample pour l'instrument samplePlayer.
+  const registerUsedSample = (sample: AudioSample): void => {
+    if (!project.value.usedSamples) {
+      project.value.usedSamples = {};
+    }
+    project.value.usedSamples[sample.id] = sample;
+  };
+
   const addClipToTrack = (
     trackId: string,
     clip: Omit<AudioClip, "id">,
@@ -564,10 +576,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
     // Stocker les métadonnées du sample pour la persistence
     if (sample) {
-      if (!project.value.usedSamples) {
-        project.value.usedSamples = {};
-      }
-      project.value.usedSamples[sample.id] = sample;
+      registerUsedSample(sample);
     }
 
     track.updatedAt = new Date();
@@ -1106,13 +1115,9 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
     project.value = data;
 
-    // Restaurer les métadonnées des samples utilisés dans audioLibraryStore
-    if (data.usedSamples) {
-      import("./audioLibraryStore").then(({ useAudioLibraryStore }) => {
-        const audioLibraryStore = useAudioLibraryStore();
-        audioLibraryStore.restoreSamples(data.usedSamples!);
-      });
-    }
+    // Restaurer les métadonnées des samples utilisés (usedSamples) est du
+    // ressort de trackAudioStore.initialize(), appelé juste après par le
+    // caller — voir ce fichier pour l'explication de l'ordonnancement.
 
     // Clear all undo/redo history when loading a new project
     import("./trackHistoryStore").then(({ useTrackHistoryStore }) => {
@@ -1243,6 +1248,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     addClipToTrack,
     removeClipFromTrack,
     updateClipInTrack,
+    registerUsedSample,
     splitClipInTrack,
     setTrackClips,
     getTrackClipsAtPosition,
