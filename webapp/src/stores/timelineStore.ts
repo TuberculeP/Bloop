@@ -215,7 +215,13 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // une donnée de projet (non partagée entre collaborateurs).
   const ZOOM_MIN = 0.25;
   const ZOOM_MAX = 4;
-  const zoomLevel = useUiLayoutPreference("timeline-zoom", 1);
+  // zoomLevel pilote le rendu (colWidth) et doit rester réactif à chaque
+  // event wheel. La persistance localStorage est débounce à part (voir
+  // scheduleZoomPersist plus bas) : un event wheel peut arriver à 60-100/s
+  // pendant un pinch trackpad, et useLocalStorage écrirait sinon de façon
+  // synchrone à chaque tick.
+  const persistedZoomLevel = useUiLayoutPreference("timeline-zoom", 1);
+  const zoomLevel = ref(persistedZoomLevel.value);
   // Vitesse du zoom Ctrl+molette/pincement trackpad : le delta d'un geste de
   // pincement macOS est bien plus faible que celui d'un clic de molette, d'où
   // un réglage par utilisateur plutôt qu'une constante unique. 1-20, défaut 5.
@@ -691,6 +697,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
   const setZoomLevel = (value: number): void => {
     zoomLevel.value = clamp(value, ZOOM_MIN, ZOOM_MAX);
+    scheduleZoomPersist();
   };
 
   const setZoomWheelSpeed = (value: number): void => {
@@ -986,8 +993,29 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     saveToLocalStorage();
   };
 
+  // Même logique de debounce que scheduleSaveToLocalStorage ci-dessus,
+  // appliquée à l'écriture localStorage de zoomLevel (voir sa déclaration).
+  let zoomPersistDebounceId: ReturnType<typeof setTimeout> | null = null;
+  const ZOOM_PERSIST_DEBOUNCE_MS = 400;
+
+  const scheduleZoomPersist = (): void => {
+    if (zoomPersistDebounceId) clearTimeout(zoomPersistDebounceId);
+    zoomPersistDebounceId = setTimeout(() => {
+      zoomPersistDebounceId = null;
+      persistedZoomLevel.value = zoomLevel.value;
+    }, ZOOM_PERSIST_DEBOUNCE_MS);
+  };
+
+  const flushZoomPersist = (): void => {
+    if (!zoomPersistDebounceId) return;
+    clearTimeout(zoomPersistDebounceId);
+    zoomPersistDebounceId = null;
+    persistedZoomLevel.value = zoomLevel.value;
+  };
+
   if (typeof window !== "undefined") {
     window.addEventListener("beforeunload", flushSaveToLocalStorage);
+    window.addEventListener("beforeunload", flushZoomPersist);
   }
 
   const loadFromLocalStorage = (): boolean => {

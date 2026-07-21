@@ -12,6 +12,8 @@ const props = defineProps<{
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+let lastDeviceWidth = 0;
+let lastDeviceHeight = 0;
 
 const BAR_WIDTH = 2;
 const BAR_GAP = 1;
@@ -39,9 +41,29 @@ const drawWaveform = (): void => {
   const width = rect.width;
   const height = rect.height;
 
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  // canvas.width/height ne doivent être réassignés que quand la taille réelle
+  // change : le faire à chaque draw force une réallocation complète du
+  // backing-store, coûteuse quand elle est répétée à chaque frame pendant un
+  // zoom continu sur de nombreux clips visibles.
+  const deviceWidth = width * window.devicePixelRatio;
+  const deviceHeight = height * window.devicePixelRatio;
+  if (deviceWidth !== lastDeviceWidth || deviceHeight !== lastDeviceHeight) {
+    canvas.width = deviceWidth;
+    canvas.height = deviceHeight;
+    lastDeviceWidth = deviceWidth;
+    lastDeviceHeight = deviceHeight;
+  }
+  // setTransform (absolu) plutôt que scale (relatif) : sûr à rejouer à
+  // chaque draw même quand le resize ci-dessus est skip, sans accumuler
+  // l'échelle.
+  ctx.setTransform(
+    window.devicePixelRatio,
+    0,
+    0,
+    window.devicePixelRatio,
+    0,
+    0,
+  );
 
   ctx.clearRect(0, 0, width, height);
 
@@ -119,7 +141,6 @@ watch(
     props.colWidth,
   ],
   scheduleDraw,
-  { deep: true },
 );
 </script>
 
