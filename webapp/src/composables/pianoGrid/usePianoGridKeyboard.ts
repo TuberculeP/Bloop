@@ -8,8 +8,23 @@ export interface KeyboardActions {
   onCopy: () => void;
   onPaste: () => void;
   onDuplicate: () => void;
-  onMoveSelection: (dx: number, dy: number) => void;
+  onMoveSelection: (
+    dx: number,
+    dy: number,
+    horizontalUnit?: "step" | "bar",
+  ) => void;
 }
+
+// Contrairement à TimelineView.vue::isTypingTarget (qui exclut exprès
+// type="number" car la barre espace y est inerte), les flèches ne le sont
+// jamais sur un input (Haut/Bas incrémentent, Gauche/Droite déplacent le
+// curseur texte) : tout HTMLInputElement doit être traité comme une cible de
+// saisie ici, quel que soit son type.
+const isTypingTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target instanceof HTMLInputElement) return true;
+  return target.tagName === "TEXTAREA" || target.isContentEditable;
+};
 
 export function usePianoGridKeyboard(
   selectedNotes: Ref<Set<string>>,
@@ -76,7 +91,8 @@ export function usePianoGridKeyboard(
       return;
     }
 
-    // Arrow keys with modifiers for moving selection
+    // Arrow keys move the selection: plain (or Shift) = 1 step,
+    // Ctrl/Cmd + vertical = 1 octave, Ctrl/Cmd + horizontal = 1 mesure
     if (selectedNotes.value.size > 0) {
       const isArrowKey = [
         "ArrowUp",
@@ -85,37 +101,44 @@ export function usePianoGridKeyboard(
         "ArrowRight",
       ].includes(event.key);
 
-      if (isArrowKey && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+      if (isArrowKey && !isTypingTarget(event.target)) {
         event.preventDefault();
 
-        // Ctrl/Cmd + Arrow: move by octave (12 semitones) vertically
+        // Ctrl/Cmd + Arrow: octave verticalement, mesure horizontalement
         if ((event.ctrlKey || event.metaKey) && !event.shiftKey) {
-          if (event.key === "ArrowUp") {
-            actions.onMoveSelection(0, -12);
-          } else if (event.key === "ArrowDown") {
-            actions.onMoveSelection(0, 12);
+          switch (event.key) {
+            case "ArrowUp":
+              actions.onMoveSelection(0, -12);
+              break;
+            case "ArrowDown":
+              actions.onMoveSelection(0, 12);
+              break;
+            case "ArrowLeft":
+              actions.onMoveSelection(-1, 0, "bar");
+              break;
+            case "ArrowRight":
+              actions.onMoveSelection(1, 0, "bar");
+              break;
           }
           return;
         }
 
-        // Shift + Arrow: move by 1 step
-        if (event.shiftKey && !event.ctrlKey && !event.metaKey) {
-          switch (event.key) {
-            case "ArrowUp":
-              actions.onMoveSelection(0, -1);
-              break;
-            case "ArrowDown":
-              actions.onMoveSelection(0, 1);
-              break;
-            case "ArrowLeft":
-              actions.onMoveSelection(-1, 0);
-              break;
-            case "ArrowRight":
-              actions.onMoveSelection(1, 0);
-              break;
-          }
-          return;
+        // Plain Arrow (or Shift + Arrow): move by 1 step
+        switch (event.key) {
+          case "ArrowUp":
+            actions.onMoveSelection(0, -1);
+            break;
+          case "ArrowDown":
+            actions.onMoveSelection(0, 1);
+            break;
+          case "ArrowLeft":
+            actions.onMoveSelection(-1, 0);
+            break;
+          case "ArrowRight":
+            actions.onMoveSelection(1, 0);
+            break;
         }
+        return;
       }
     }
   };

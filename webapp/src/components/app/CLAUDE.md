@@ -342,7 +342,7 @@ Voir [Système d'effets](#système-deffets-libaudioeffects) plus haut. `EffectRa
 5. **Sélection multiple** : Ctrl/Cmd+clic sur les notes ou Ctrl/Cmd+drag pour marquee
 6. **Drag/Resize** : Glisser les notes sélectionnées / handle à droite
 7. **Copy/Paste** : Ctrl+C, Ctrl+V (colle à la position souris), Ctrl+D (duplicate à droite)
-8. **Déplacer notes** : Shift+flèches (1 step), Ctrl/Cmd+↑↓ (1 octave)
+8. **Déplacer notes** : Flèches (1 step), Ctrl/Cmd+↑↓ (1 octave), Ctrl/Cmd+←→ (1 mesure)
 9. **Undo/Redo** : Ctrl+Z / Ctrl+Shift+Z (par piste, persiste même si piano roll fermé)
 10. **Configurer l'instrument** : Clic sur ⚙ d'une piste → Panneau latéral
 11. **Playback** : Toutes les pistes jouent simultanément (respect mute/solo)

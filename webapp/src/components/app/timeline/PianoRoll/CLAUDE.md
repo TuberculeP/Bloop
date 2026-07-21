@@ -133,7 +133,7 @@ usePianoGridKeyboard(selectedNotes, {
   onCopy,          // Ctrl+C
   onPaste,         // Ctrl+V
   onDuplicate,     // Ctrl+D
-  onMoveSelection, // Shift+flèches (1 step) ou Ctrl/Cmd+flèches (1 octave)
+  onMoveSelection, // Flèches (1 step), Ctrl/Cmd+↑↓ (1 octave), Ctrl/Cmd+←→ (1 mesure)
 });
 ```
 
@@ -186,8 +186,9 @@ clearAllHistory()           // Appelé par timelineStore.loadProject/createNew
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Shift+Z ou Ctrl+Y |
 | Supprimer sélection | Delete ou Backspace |
-| Déplacer sélection (1 step) | Shift + ↑↓←→ |
+| Déplacer sélection (1 step) | ↑↓←→ |
 | Déplacer sélection (1 octave) | Ctrl/Cmd + ↑↓ |
+| Déplacer sélection (1 mesure) | Ctrl/Cmd + ←→ (se colle au début/à la fin de la piste si le saut dépasse) |
 | Preview note | Clic/drag sur clavier |
 
 ## Constantes (`lib/audio/pianoRollConstants.ts`)
