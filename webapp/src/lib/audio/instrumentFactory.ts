@@ -56,6 +56,10 @@ export function getDefaultConfigForType(
         type: "smplr",
         soundfont: "acoustic_grand_piano",
         gain: 1,
+        attack: 0,
+        decay: 0,
+        sustain: 1,
+        release: 0.3,
       };
 
     case "elementarySynth":

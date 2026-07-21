@@ -3,16 +3,24 @@ import type {
   InstrumentConfigUpdate,
   NoteName,
 } from "../../../utils/types";
-import { Soundfont } from "smplr";
+import { Soundfont, CacheStorage as SmplrCacheStorage } from "smplr";
 import { BaseEngine } from "../BaseEngine";
+import { VoicePool } from "../voicePool";
+
+const VOICE_POOL_SIZE = 8;
 
 export class SmplrEngine extends BaseEngine {
   readonly type = "smplr";
 
-  private soundfont: Soundfont | null = null;
-  private activeNotes: Map<string, () => void> = new Map();
+  private voicePool = new VoicePool<Soundfont>();
+  private storage = new SmplrCacheStorage("bloop-smplr-soundfonts");
   private currentSoundfontName: string;
   private loadPromise: Promise<void> | null = null;
+
+  private attack: number;
+  private decay: number;
+  private sustain: number;
+  private release: number;
 
   constructor(
     audioContext: AudioContext,
@@ -21,6 +29,10 @@ export class SmplrEngine extends BaseEngine {
   ) {
     super(audioContext, destination, config);
     this.currentSoundfontName = config.soundfont;
+    this.attack = config.attack ?? 0;
+    this.decay = config.decay ?? 0;
+    this.sustain = config.sustain ?? 1;
+    this.release = config.release ?? 0.3;
   }
 
   get resourceKey(): string {
@@ -50,14 +62,21 @@ export class SmplrEngine extends BaseEngine {
           await this.audioContext.resume();
         }
 
-        const sf = new Soundfont(this.audioContext, {
-          instrument: instrumentName,
-          destination: this.destination,
-        });
+        await this.voicePool.load(
+          VOICE_POOL_SIZE,
+          this.audioContext,
+          this.destination,
+          async (envelopeGain) => {
+            const sf = new Soundfont(this.audioContext, {
+              instrument: instrumentName,
+              storage: this.storage,
+              destination: envelopeGain,
+            });
+            await sf.load;
+            return sf;
+          },
+        );
 
-        await sf.load;
-
-        this.soundfont = sf;
         this.currentSoundfontName = instrumentName;
         this.setState("ready");
       } catch (error) {
@@ -82,52 +101,42 @@ export class SmplrEngine extends BaseEngine {
   }
 
   private playNoteInternal(noteName: NoteName, noteId: string): void {
-    if (!this.soundfont) return;
-
-    if (this.activeNotes.has(noteId)) {
-      this.stopNote(noteId);
-    }
-
     try {
-      const stopFn = this.soundfont.start({ note: noteName });
-      this.activeNotes.set(noteId, stopFn);
+      this.voicePool.play(
+        noteId,
+        this.audioContext,
+        this.attack,
+        this.decay,
+        this.sustain,
+        (sampler) => sampler.start({ note: noteName, decayTime: this.release }),
+      );
     } catch (error) {
       console.error("[SmplrEngine] Failed to play note:", error);
     }
   }
 
   stopNote(noteId: string): void {
-    const stopFn = this.activeNotes.get(noteId);
-    if (stopFn) {
-      try {
-        stopFn();
-      } catch {
-        // Ignore errors
-      }
-      this.activeNotes.delete(noteId);
-    }
+    this.voicePool.stop(noteId, this.audioContext, this.release);
   }
 
   stopAllNotes(): void {
-    for (const noteId of this.activeNotes.keys()) {
-      this.stopNote(noteId);
-    }
+    this.voicePool.stopAll(this.audioContext, this.release);
   }
 
   updateConfig(config: InstrumentConfigUpdate): void {
+    if (config.attack !== undefined) this.attack = config.attack;
+    if (config.decay !== undefined) this.decay = config.decay;
+    if (config.sustain !== undefined) this.sustain = config.sustain;
+    if (config.release !== undefined) this.release = config.release;
+
     if (config.soundfont && config.soundfont !== this.currentSoundfontName) {
-      this.stopAllNotes();
-      this.soundfont = null;
-      this.loadPromise = null;
       this.loadSoundfont(config.soundfont);
     }
     this.config = { ...this.config, ...config } as SmplrConfig;
   }
 
   dispose(): void {
-    this.stopAllNotes();
-    this.activeNotes.clear();
-    this.soundfont = null;
+    this.voicePool.dispose();
     this.loadPromise = null;
     this.stateCallbacks.clear();
     this._state = "idle";
