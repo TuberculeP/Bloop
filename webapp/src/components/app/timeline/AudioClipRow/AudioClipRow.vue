@@ -144,14 +144,30 @@ useAudioClipKeyboard(
   isContainerFocused,
 );
 
-const handleDragEnd = (updates: Array<{ clipId: string; x: number }>): void => {
-  trackHistoryStore.startBatch(props.track.id, "Move clip");
-  for (const { clipId, x } of updates) {
-    timelineStore.updateClipInTrack(props.track.id, clipId, {
-      x: Math.max(0, x),
-    });
+const onInteractionEnd = (): void => {
+  justFinishedInteracting.value = true;
+};
+
+// Facteur commun à toute interaction groupée (drag/resize) : un seul batch
+// d'historique pour tout le groupe, peu importe le nombre de clips déplacés.
+const applyBatchUpdate = <T extends { clipId: string }>(
+  label: string,
+  updates: T[],
+  toChanges: (update: T) => Partial<AudioClip>,
+): void => {
+  trackHistoryStore.startBatch(props.track.id, label);
+  for (const update of updates) {
+    timelineStore.updateClipInTrack(
+      props.track.id,
+      update.clipId,
+      toChanges(update),
+    );
   }
   trackHistoryStore.endBatch();
+};
+
+const handleDragEnd = (updates: Array<{ clipId: string; x: number }>): void => {
+  applyBatchUpdate("Move clip", updates, (u) => ({ x: Math.max(0, u.x) }));
 };
 
 const {
@@ -165,23 +181,17 @@ const {
   () => props.colWidth,
   () => subdivision.value,
   handleDragEnd,
-  () => {
-    justFinishedInteracting.value = true;
-  },
+  onInteractionEnd,
 );
 
 const handleResizeEnd = (
   updates: Array<{ clipId: string; x: number; w: number; startOffset: number }>,
 ): void => {
-  trackHistoryStore.startBatch(props.track.id, "Resize clip");
-  for (const { clipId, x, w, startOffset } of updates) {
-    timelineStore.updateClipInTrack(props.track.id, clipId, {
-      x: Math.max(0, x),
-      w: Math.max(1, w),
-      startOffset: Math.max(0, startOffset),
-    });
-  }
-  trackHistoryStore.endBatch();
+  applyBatchUpdate("Resize clip", updates, (u) => ({
+    x: Math.max(0, u.x),
+    w: Math.max(1, u.w),
+    startOffset: Math.max(0, u.startOffset),
+  }));
 };
 
 const {
@@ -195,9 +205,7 @@ const {
   () => props.colWidth,
   () => subdivision.value,
   handleResizeEnd,
-  () => {
-    justFinishedInteracting.value = true;
-  },
+  onInteractionEnd,
 );
 
 const { initCanvas, getClipAtPosition, isOnResizeHandle, containerSize } =

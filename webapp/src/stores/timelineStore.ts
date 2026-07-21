@@ -960,6 +960,28 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // Persistence
   // ============================================
 
+  // Factory de debounce partagée par la sauvegarde de projet et la
+  // persistance du zoom ci-dessous : un seul setTimeout/clearTimeout à la
+  // fois par `fn`, plus un `flush` pour ne rien perdre si l'onglet se ferme
+  // juste après (voir les deux usages).
+  const createDebouncer = (fn: () => void, ms: number) => {
+    let id: ReturnType<typeof setTimeout> | null = null;
+    const schedule = (): void => {
+      if (id) clearTimeout(id);
+      id = setTimeout(() => {
+        id = null;
+        fn();
+      }, ms);
+    };
+    const flush = (): void => {
+      if (!id) return;
+      clearTimeout(id);
+      id = null;
+      fn();
+    };
+    return { schedule, flush };
+  };
+
   const saveToLocalStorage = (): void => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(project.value));
@@ -968,50 +990,25 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     }
   };
 
-  // Le watcher deep sur `project` déclenche saveToLocalStorage() à chaque
-  // mutation, y compris les mutations à la volée pendant un drag (clip,
-  // note, point d'automation). JSON.stringify + localStorage.setItem sur
-  // tout le projet est synchrone et coûteux : on le debounce pour ne pas
+  // Le watcher deep sur `project` déclenche scheduleSaveToLocalStorage() à
+  // chaque mutation, y compris les mutations à la volée pendant un drag
+  // (clip, note, point d'automation). JSON.stringify + localStorage.setItem
+  // sur tout le projet est synchrone et coûteux : on le debounce pour ne pas
   // bloquer le thread principal (et donc la boucle rAF du playback) en
   // rafale. `flushSaveToLocalStorage` garantit qu'on ne perd pas les
   // dernières modifications si l'utilisateur ferme l'onglet juste après.
-  let saveDebounceId: ReturnType<typeof setTimeout> | null = null;
-  const SAVE_DEBOUNCE_MS = 500;
+  const {
+    schedule: scheduleSaveToLocalStorage,
+    flush: flushSaveToLocalStorage,
+  } = createDebouncer(saveToLocalStorage, 500);
 
-  const scheduleSaveToLocalStorage = (): void => {
-    if (saveDebounceId) clearTimeout(saveDebounceId);
-    saveDebounceId = setTimeout(() => {
-      saveDebounceId = null;
-      saveToLocalStorage();
-    }, SAVE_DEBOUNCE_MS);
-  };
-
-  const flushSaveToLocalStorage = (): void => {
-    if (!saveDebounceId) return;
-    clearTimeout(saveDebounceId);
-    saveDebounceId = null;
-    saveToLocalStorage();
-  };
-
-  // Même logique de debounce que scheduleSaveToLocalStorage ci-dessus,
-  // appliquée à l'écriture localStorage de zoomLevel (voir sa déclaration).
-  let zoomPersistDebounceId: ReturnType<typeof setTimeout> | null = null;
-  const ZOOM_PERSIST_DEBOUNCE_MS = 400;
-
-  const scheduleZoomPersist = (): void => {
-    if (zoomPersistDebounceId) clearTimeout(zoomPersistDebounceId);
-    zoomPersistDebounceId = setTimeout(() => {
-      zoomPersistDebounceId = null;
+  // zoomLevel pilote le rendu immédiatement (voir sa déclaration) ; seule
+  // l'écriture localStorage est debounce ici, pour ne pas la faire à chaque
+  // event wheel (60-100/s en pinch trackpad).
+  const { schedule: scheduleZoomPersist, flush: flushZoomPersist } =
+    createDebouncer(() => {
       persistedZoomLevel.value = zoomLevel.value;
-    }, ZOOM_PERSIST_DEBOUNCE_MS);
-  };
-
-  const flushZoomPersist = (): void => {
-    if (!zoomPersistDebounceId) return;
-    clearTimeout(zoomPersistDebounceId);
-    zoomPersistDebounceId = null;
-    persistedZoomLevel.value = zoomLevel.value;
-  };
+    }, 400);
 
   if (typeof window !== "undefined") {
     window.addEventListener("beforeunload", flushSaveToLocalStorage);

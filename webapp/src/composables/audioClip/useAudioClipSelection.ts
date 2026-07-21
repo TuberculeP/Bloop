@@ -1,4 +1,4 @@
-import { ref, computed, type Ref } from "vue";
+import { ref, type Ref } from "vue";
 import type { AudioClip } from "../../lib/utils/types";
 
 export interface SelectionRect {
@@ -19,23 +19,6 @@ export function useAudioClipSelection(
   const selectedClipIds = ref<Set<string>>(new Set());
   const selectionRect = ref<SelectionRect | null>(null);
   const justFinishedSelecting = ref(false);
-
-  const isSelecting = computed(() => selectionRect.value !== null);
-
-  const selectionRectStyle = computed(() => {
-    if (!selectionRect.value) return null;
-    const { startX, startY, currentX, currentY } = selectionRect.value;
-    const left = Math.min(startX, currentX);
-    const top = Math.min(startY, currentY);
-    const width = Math.abs(currentX - startX);
-    const height = Math.abs(currentY - startY);
-    return {
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${width}px`,
-      height: `${height}px`,
-    };
-  });
 
   // Le canvas ne couvre plus que le viewport visible (piste sticky, voir
   // AudioClipRow.vue) : les coordonnées canvas-local (via getBoundingClientRect)
@@ -117,8 +100,6 @@ export function useAudioClipSelection(
   return {
     selectedClipIds,
     selectionRect,
-    isSelecting,
-    selectionRectStyle,
     justFinishedSelecting,
     handleSelectionStart,
     selectClip,

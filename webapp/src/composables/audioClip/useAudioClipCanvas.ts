@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from "vue";
 import type { AudioClip, TimeSignature } from "../../lib/utils/types";
-import { ticksPerSecond } from "../../lib/audio/timeGrid";
+import { getVisibleTickRange, ticksPerSecond } from "../../lib/audio/timeGrid";
 import { useAudioLibraryStore } from "../../stores/audioLibraryStore";
 import {
   AudioClipRenderer,
@@ -172,7 +172,21 @@ export function useAudioClipCanvas(
   const render = () => {
     if (!renderer.value) return;
 
-    const clipData = config.clips().map(buildClipRenderData);
+    // Filtre par plage de ticks visible AVANT de construire les données de
+    // rendu (lookup sample + calcul de durée par clip) : sans ça, une piste
+    // chargée redéciderait ce travail pour des clips hors-écran à chaque
+    // redraw, alors que le renderer les aurait de toute façon exclus après
+    // coup (culling interne).
+    const [tickStart, tickEnd] = getVisibleTickRange(
+      config.scrollLeft(),
+      config.viewportWidth(),
+      config.colWidth(),
+      config.cols(),
+    );
+    const visibleClips = config
+      .clips()
+      .filter((c) => c.x < tickEnd && c.x + c.w > tickStart);
+    const clipData = visibleClips.map(buildClipRenderData);
 
     renderer.value.render(
       clipData,
@@ -188,7 +202,10 @@ export function useAudioClipCanvas(
   // Le chargement des waveforms est asynchrone (audioLibraryStore.loadSample) :
   // on dépend explicitement de samples.get(sampleId).waveformData pour chaque
   // clip visible, sinon l'arrivée tardive d'une waveform décodée après le
-  // premier rendu ne déclenche aucun redraw.
+  // premier rendu ne déclenche aucun redraw. Regroupé avec les autres sources
+  // qui ont besoin d'un vrai deep watch (Set/Map mutés en place :
+  // selectedClipIds, dragState, resizingState) — ces collections restent
+  // petites (quelques clips), le traversal reste bon marché.
   watch(
     [
       () => config.clips(),
@@ -198,19 +215,26 @@ export function useAudioClipCanvas(
           .map((c) => audioLibraryStore.samples.get(c.sampleId)?.waveformData),
       config.selectedClipIds,
       config.dragState,
-      config.dragPreviewDeltaTicks,
       config.resizingState,
-      config.resizePreviewDeltaTicks,
       config.selectionRect,
-      () => config.playbackPosition(),
-      () => config.isPlaying(),
     ],
     scheduleRender,
     { deep: true },
   );
-  // scrollLeft est un nombre : watch séparé (sans deep) pour ne pas traverser
-  // clips/waveformData à chaque tick de scroll simplement pour détecter ce
-  // scalaire.
+  // dragPreviewDeltaTicks/resizePreviewDeltaTicks changent à chaque mousemove
+  // brut pendant un drag/resize (non throttled) : les isoler du deep watch
+  // ci-dessus évite de re-traverser les tableaux waveformData (1000 points
+  // par sample) à cette fréquence pour de simples scalaires. scrollLeft reste
+  // séparé pour la même raison (scroll à haute fréquence).
+  watch(
+    [
+      config.dragPreviewDeltaTicks,
+      config.resizePreviewDeltaTicks,
+      () => config.playbackPosition(),
+      () => config.isPlaying(),
+    ],
+    scheduleRender,
+  );
   watch(() => config.scrollLeft(), scheduleRender);
 
   const scheduleResize = useRafSchedule(updateCanvasSize);
@@ -228,37 +252,17 @@ export function useAudioClipCanvas(
   );
   watch(() => config.viewportWidth(), scheduleResize);
 
-  // Géométrie minimale (pas de lookup sample/waveform) : le hit-testing
-  // n'utilise que id/x/w (voir getClipAtPosition/isOnResizeHandle dans
-  // audioClipRenderer.ts), et tourne sur CHAQUE mousemove tant que la souris
-  // survole la piste (curseur grab/ew-resize dynamique) — reconstruire les
-  // waveforms à cette fréquence serait inutilement coûteux, contrairement au
-  // render() throttlé par rAF.
-  const buildHitTestData = (clip: AudioClip): ClipRenderData => ({
-    id: clip.id,
-    x: clip.x,
-    w: clip.w,
-    startOffset: clip.startOffset,
-    sampleDurationTicks: 0,
-    waveformData: null,
-    color: "",
-    name: "",
-    isSelected: false,
-    isDragging: false,
-    isResizing: false,
-  });
-
+  // Le hit-testing tourne sur CHAQUE mousemove tant que la souris survole la
+  // piste (curseur grab/ew-resize dynamique), contrairement au render()
+  // throttlé par rAF : un AudioClip brut (id/x/w) satisfait déjà la géométrie
+  // minimale attendue par le renderer (voir ClipHitTestData), donc on le lui
+  // passe directement sans construire de wrapper à cette fréquence.
   const getClipAtPosition = (
     worldX: number,
     worldY: number,
   ): AudioClip | null => {
     if (!renderer.value) return null;
-
-    const clipData = config.clips().map(buildHitTestData);
-    const found = renderer.value.getClipAtPosition(worldX, worldY, clipData);
-    if (!found) return null;
-
-    return config.clips().find((c) => c.id === found.id) ?? null;
+    return renderer.value.getClipAtPosition(worldX, worldY, config.clips());
   };
 
   const isOnResizeHandle = (
@@ -266,7 +270,7 @@ export function useAudioClipCanvas(
     clip: AudioClip,
   ): "left" | "right" | null => {
     if (!renderer.value) return null;
-    return renderer.value.isOnResizeHandle(worldX, buildHitTestData(clip));
+    return renderer.value.isOnResizeHandle(worldX, clip);
   };
 
   return {

@@ -31,6 +31,18 @@ export interface ClipRenderData {
   previewStartOffset?: number;
 }
 
+// Géométrie minimale pour le hit-testing (mousedown/mousemove) : un
+// AudioClip brut (id/x/w) la satisfait déjà telle quelle, sans wrapper — le
+// hit-testing tourne à chaque mousemove, contrairement au rendu (throttlé par
+// rAF), donc pas question d'y construire waveform/couleur/nom pour rien.
+export interface ClipHitTestData {
+  id: string;
+  x: number;
+  w: number;
+  previewX?: number;
+  previewW?: number;
+}
+
 export interface SelectionRectData {
   x: number;
   y: number;
@@ -191,17 +203,7 @@ export class AudioClipRenderer {
     ctx.clip();
 
     if (clip.waveformData) {
-      this.drawClipWaveform(
-        clip.waveformData,
-        clip.color,
-        clipStartOffset,
-        clipW,
-        clip.sampleDurationTicks,
-        px,
-        py,
-        pw,
-        ph,
-      );
+      this.drawClipWaveform(clip, clipStartOffset, clipW, { px, py, pw, ph });
     } else {
       this.drawLoadingPlaceholder(px, py, pw, ph);
     }
@@ -233,18 +235,15 @@ export class AudioClipRenderer {
   // moyenne d'amplitude par barre sur la portion de `waveformData` (1000
   // points, fixe par sample) visible compte tenu de startOffset/largeur.
   private drawClipWaveform(
-    waveformData: number[],
-    color: string,
+    clip: ClipRenderData,
     startOffset: number,
     clipWidthTicks: number,
-    sampleDurationTicks: number,
-    px: number,
-    py: number,
-    pw: number,
-    ph: number,
+    rect: { px: number; py: number; pw: number; ph: number },
   ) {
     const { ctx, config } = this;
-    if (waveformData.length === 0) return;
+    const { waveformData, color, sampleDurationTicks } = clip;
+    const { px, py, pw, ph } = rect;
+    if (!waveformData || waveformData.length === 0) return;
 
     const startRatio =
       sampleDurationTicks > 0 ? startOffset / sampleDurationTicks : 0;
@@ -302,6 +301,8 @@ export class AudioClipRenderer {
     return `rgb(${r},${g},${b})`;
   }
 
+  // Le rectangle du clip est déjà posé comme zone de clip par l'appelant
+  // (drawClip) : pas besoin de save/clip/restore imbriqué ici.
   private drawLoadingPlaceholder(
     px: number,
     py: number,
@@ -309,11 +310,6 @@ export class AudioClipRenderer {
     ph: number,
   ) {
     const { ctx } = this;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(px, py, pw, ph);
-    ctx.clip();
-
     ctx.strokeStyle = COLORS.placeholderStripe;
     ctx.lineWidth = 4;
     const stripeGap = 8;
@@ -323,7 +319,6 @@ export class AudioClipRenderer {
       ctx.lineTo(x + ph, py);
     }
     ctx.stroke();
-    ctx.restore();
   }
 
   private drawPlaybackCursor(playbackPosition: number) {
@@ -348,11 +343,11 @@ export class AudioClipRenderer {
     ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
   }
 
-  getClipAtPosition(
+  getClipAtPosition<T extends ClipHitTestData>(
     worldX: number,
     worldY: number,
-    clips: ClipRenderData[],
-  ): ClipRenderData | null {
+    clips: T[],
+  ): T | null {
     const { config } = this;
     if (worldY < 0 || worldY > config.rowHeight) return null;
 
@@ -372,7 +367,7 @@ export class AudioClipRenderer {
 
   isOnResizeHandle(
     worldX: number,
-    clip: ClipRenderData,
+    clip: ClipHitTestData,
   ): "left" | "right" | null {
     const { config } = this;
     const clipX = clip.previewX ?? clip.x;

@@ -79,18 +79,13 @@ export function useAudioClipResize(
     // Snap la position ABSOLUE du bord déplacé du clip cliqué (référence du
     // groupe), pas le delta brut : même principe que l'ancien
     // AudioClipItem.vue. Le delta qui en résulte est ensuite appliqué à tout
-    // le groupe, chaque clip étant clampé individuellement ci-dessous.
+    // le groupe, chaque clip étant clampé individuellement ci-dessous. Le
+    // bord qui bouge est le droit (x+w) en resize droit, le gauche (x) en
+    // resize gauche.
     const clicked = clipsInitialState.get(clickedClipId)!;
-    let delta: number;
-    if (side === "right") {
-      const rawRightEdge = clicked.x + clicked.w + rawDeltaTicks;
-      const snappedRightEdge = snapToGrid(rawRightEdge, subdivision());
-      delta = snappedRightEdge - (clicked.x + clicked.w);
-    } else {
-      const rawX = clicked.x + rawDeltaTicks;
-      const snappedX = snapToGrid(rawX, subdivision());
-      delta = snappedX - clicked.x;
-    }
+    const movingEdge = side === "right" ? clicked.x + clicked.w : clicked.x;
+    const snappedEdge = snapToGrid(movingEdge + rawDeltaTicks, subdivision());
+    let delta = snappedEdge - movingEdge;
 
     let minDelta = -Infinity;
     let maxDelta = Infinity;
@@ -120,29 +115,19 @@ export function useAudioClipResize(
       const delta = resizePreviewDeltaTicks.value;
       const { side, clipsInitialState } = resizingState.value;
       if (delta !== 0) {
-        const updates: Array<{
-          clipId: string;
-          x: number;
-          w: number;
-          startOffset: number;
-        }> = [];
-        for (const [clipId, info] of clipsInitialState) {
-          if (side === "right") {
-            updates.push({
-              clipId,
-              x: info.x,
-              w: info.w + delta,
-              startOffset: info.startOffset,
-            });
-          } else {
-            updates.push({
-              clipId,
-              x: info.x + delta,
-              w: info.w - delta,
-              startOffset: info.startOffset + delta,
-            });
-          }
-        }
+        // Resize droit : seule la largeur bouge. Resize gauche : x et
+        // startOffset bougent du même delta que le bord déplacé, largeur
+        // inversement (le bord droit reste fixe).
+        const xDelta = side === "left" ? delta : 0;
+        const wDelta = side === "left" ? -delta : delta;
+        const startOffsetDelta = side === "left" ? delta : 0;
+
+        const updates = Array.from(clipsInitialState, ([clipId, info]) => ({
+          clipId,
+          x: info.x + xDelta,
+          w: info.w + wDelta,
+          startOffset: info.startOffset + startOffsetDelta,
+        }));
         onResizeEnd(updates);
       }
       onInteractionEnd();
