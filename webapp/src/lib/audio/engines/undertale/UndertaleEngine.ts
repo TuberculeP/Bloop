@@ -5,11 +5,61 @@ import type {
 } from "../../../utils/types";
 import { Soundfont2Sampler } from "smplr";
 import { SoundFont2 } from "soundfont2";
+import { useSampleCacheStore } from "../../../../stores/sampleCacheStore";
 import { BaseEngine } from "../BaseEngine";
 import { VoicePool } from "../voicePool";
 
-const UNDERTALE_SF2_URL = "/soundfonts/undertale.sf2";
+export const UNDERTALE_SF2_URL = "/soundfonts/undertale.sf2";
+const UNDERTALE_SF2_CACHE_KEY = "undertale:sf2";
 const VOICE_POOL_SIZE = 8;
+
+// Le fichier (154 Mo) est unique et partagé par toutes les pistes/voix
+// Undertale de l'onglet — mémoïsé au niveau module pour ne le fetch/parser
+// qu'une seule fois, quel que soit le nombre de tracks ou la taille du
+// VoicePool. `Soundfont2Sampler` (smplr) ne propose pas de point d'injection
+// pour un buffer déjà chargé : son constructeur refait toujours en interne
+// `fetch(options.url)` (node_modules/smplr/dist/index.mjs:2186-2191). On
+// intercepte donc ce fetch précis pour qu'il résolve depuis la mémoire au
+// lieu de relire 154 Mo à chaque voix (mesuré : ~15s de coût réel sur 8
+// voix), et on ne parse `SoundFont2` qu'une fois (mesuré : ~8s sur 8 voix).
+let sharedSoundfontPromise: Promise<SoundFont2> | null = null;
+let fetchPatched = false;
+
+function installUndertaleFetchCache(buffer: ArrayBuffer): void {
+  if (fetchPatched) return;
+  fetchPatched = true;
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+    if (url === UNDERTALE_SF2_URL) {
+      return Promise.resolve(new Response(buffer.slice(0)));
+    }
+    return originalFetch(input, init);
+  }) as typeof window.fetch;
+}
+
+function getSharedUndertaleSoundfont(): Promise<SoundFont2> {
+  if (!sharedSoundfontPromise) {
+    sharedSoundfontPromise = (async () => {
+      const cacheStore = useSampleCacheStore();
+      await cacheStore.initialize();
+      let buffer = await cacheStore.get(UNDERTALE_SF2_CACHE_KEY);
+      if (!buffer) {
+        const response = await fetch(UNDERTALE_SF2_URL);
+        buffer = await response.arrayBuffer();
+        await cacheStore.set(UNDERTALE_SF2_CACHE_KEY, buffer);
+      }
+      installUndertaleFetchCache(buffer);
+      return new SoundFont2(new Uint8Array(buffer));
+    })();
+  }
+  return sharedSoundfontPromise;
+}
 
 export class UndertaleEngine extends BaseEngine {
   readonly type = "undertale";
@@ -61,6 +111,9 @@ export class UndertaleEngine extends BaseEngine {
           await this.audioContext.resume();
         }
 
+        const sharedSoundfont = await getSharedUndertaleSoundfont();
+
+        const poolStart = performance.now();
         await this.voicePool.load(
           VOICE_POOL_SIZE,
           this.audioContext,
@@ -68,12 +121,15 @@ export class UndertaleEngine extends BaseEngine {
           async (envelopeGain) => {
             const sampler = new Soundfont2Sampler(this.audioContext, {
               url: UNDERTALE_SF2_URL,
-              createSoundfont: (data) => new SoundFont2(new Uint8Array(data)),
+              createSoundfont: () => sharedSoundfont,
               destination: envelopeGain,
             });
             await sampler.load;
             return sampler;
           },
+        );
+        console.log(
+          `[Perf] UndertaleEngine: voicePool.load (${VOICE_POOL_SIZE} voix) = ${(performance.now() - poolStart).toFixed(1)}ms`,
         );
 
         this._instrumentNames = this.voicePool.first?.instrumentNames ?? [];

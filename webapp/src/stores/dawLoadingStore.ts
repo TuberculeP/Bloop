@@ -257,13 +257,25 @@ export const useDawLoadingStore = defineStore("dawLoading", () => {
 
     try {
       // Phase 1: Init
+      const initStart = performance.now();
       await executeInitPhase();
+      console.log(
+        `[Perf] executeInitPhase = ${(performance.now() - initStart).toFixed(1)}ms`,
+      );
 
       // Phase 2: Instruments
+      const instrumentsStart = performance.now();
       await executeInstrumentsPhase();
+      console.log(
+        `[Perf] executeInstrumentsPhase = ${(performance.now() - instrumentsStart).toFixed(1)}ms`,
+      );
 
       // Phase 3: Samples
+      const samplesStart = performance.now();
       await executeSamplesPhase();
+      console.log(
+        `[Perf] executeSamplesPhase = ${(performance.now() - samplesStart).toFixed(1)}ms`,
+      );
 
       isComplete.value = true;
     } catch (e) {

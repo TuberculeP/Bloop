@@ -1,1 +1,1 @@
-export { UndertaleEngine } from "./UndertaleEngine";
+export { UndertaleEngine, UNDERTALE_SF2_URL } from "./UndertaleEngine";
