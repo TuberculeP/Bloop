@@ -19,15 +19,13 @@ const VOICE_POOL_SIZE = 8;
 // VoicePool. `Soundfont2Sampler` (smplr) ne propose pas de point d'injection
 // pour un buffer déjà chargé : son constructeur refait toujours en interne
 // `fetch(options.url)` (node_modules/smplr/dist/index.mjs:2186-2191). On
-// intercepte donc ce fetch précis pour qu'il résolve depuis la mémoire au
-// lieu de relire 154 Mo à chaque voix (mesuré : ~15s de coût réel sur 8
-// voix), et on ne parse `SoundFont2` qu'une fois (mesuré : ~8s sur 8 voix).
+// intercepte donc ce fetch précis pour qu'il résolve instantanément — le
+// `createSoundfont` fourni plus bas ignore les octets reçus (il retourne
+// directement le soundfont déjà parsé), donc une réponse vide suffit, pas
+// besoin de garder le vrai buffer de 154 Mo en mémoire pour ce patch.
 let sharedSoundfontPromise: Promise<SoundFont2> | null = null;
-let fetchPatched = false;
 
-function installUndertaleFetchCache(buffer: ArrayBuffer): void {
-  if (fetchPatched) return;
-  fetchPatched = true;
+function installUndertaleFetchCache(): void {
   const originalFetch = window.fetch.bind(window);
   window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
     const url =
@@ -37,7 +35,7 @@ function installUndertaleFetchCache(buffer: ArrayBuffer): void {
           ? input.href
           : input.url;
     if (url === UNDERTALE_SF2_URL) {
-      return Promise.resolve(new Response(buffer.slice(0)));
+      return Promise.resolve(new Response(new ArrayBuffer(0)));
     }
     return originalFetch(input, init);
   }) as typeof window.fetch;
@@ -54,8 +52,9 @@ function getSharedUndertaleSoundfont(): Promise<SoundFont2> {
         buffer = await response.arrayBuffer();
         await cacheStore.set(UNDERTALE_SF2_CACHE_KEY, buffer);
       }
-      installUndertaleFetchCache(buffer);
-      return new SoundFont2(new Uint8Array(buffer));
+      const soundfont = new SoundFont2(new Uint8Array(buffer));
+      installUndertaleFetchCache();
+      return soundfont;
     })();
   }
   return sharedSoundfontPromise;
@@ -63,7 +62,7 @@ function getSharedUndertaleSoundfont(): Promise<SoundFont2> {
 
 export class UndertaleEngine extends BaseEngine {
   readonly type = "undertale";
-  readonly resourceKey = "undertale:sf2";
+  readonly resourceKey = UNDERTALE_SF2_CACHE_KEY;
   readonly resourceLabel = "Undertale Soundfont";
 
   private voicePool = new VoicePool<Soundfont2Sampler>();
@@ -113,7 +112,6 @@ export class UndertaleEngine extends BaseEngine {
 
         const sharedSoundfont = await getSharedUndertaleSoundfont();
 
-        const poolStart = performance.now();
         await this.voicePool.load(
           VOICE_POOL_SIZE,
           this.audioContext,
@@ -127,9 +125,6 @@ export class UndertaleEngine extends BaseEngine {
             await sampler.load;
             return sampler;
           },
-        );
-        console.log(
-          `[Perf] UndertaleEngine: voicePool.load (${VOICE_POOL_SIZE} voix) = ${(performance.now() - poolStart).toFixed(1)}ms`,
         );
 
         this._instrumentNames = this.voicePool.first?.instrumentNames ?? [];
