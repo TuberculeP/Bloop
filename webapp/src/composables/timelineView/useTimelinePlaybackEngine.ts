@@ -251,6 +251,31 @@ export function useTimelinePlaybackEngine(
     playMetronomeClick(lastBeatTick % barLength === 0);
   };
 
+  // Même logique de plage que maybePlayMetronomeAt, mais sur la résolution la
+  // plus fine utile aux effets synchronisés au tempo (ex: Bloopy Pump, croche
+  // = TICKS_PER_BEAT / 2) : chaque effet décide en interne, via son propre
+  // paramètre "rate", s'il doit se retrigger sur ce tick.
+  const EIGHTH_NOTE_TICKS = TICKS_PER_BEAT / 2;
+
+  const maybeTriggerBloopyPumpEffects = (
+    fromExclusive: number,
+    toInclusive: number,
+  ) => {
+    const lastEighthTick =
+      Math.floor(toInclusive / EIGHTH_NOTE_TICKS) * EIGHTH_NOTE_TICKS;
+    if (lastEighthTick <= fromExclusive) return;
+    trackAudioStore.notifyTrackEffectsBeatBoundary(
+      lastEighthTick,
+      timelineStore.timeSignature,
+      timelineStore.tempo,
+    );
+    audioBusStore.notifyMasterEffectsBeatBoundary(
+      lastEighthTick,
+      timelineStore.timeSignature,
+      timelineStore.tempo,
+    );
+  };
+
   const stopAllActiveNotes = () => {
     for (const [, { trackId, noteId }] of activeNotes.value) {
       trackAudioStore.stopNoteOnTrack(trackId, noteId);
@@ -328,6 +353,7 @@ export function useTimelinePlaybackEngine(
       playNotesAtPosition(prevIntPosition, newIntPosition);
       playClipsAtPosition(newPosition);
       maybePlayMetronomeAt(prevIntPosition, newIntPosition);
+      maybeTriggerBloopyPumpEffects(prevIntPosition, newIntPosition);
     }
 
     applyAutomationAtPosition(newPosition);
@@ -347,6 +373,10 @@ export function useTimelinePlaybackEngine(
     triggerNotesAtPosition(currentPosition.value);
     playClipsAtPosition(currentPosition.value);
     maybePlayMetronomeAt(currentPosition.value - 1, currentPosition.value);
+    maybeTriggerBloopyPumpEffects(
+      currentPosition.value - 1,
+      currentPosition.value,
+    );
 
     animationFrameId.value = requestAnimationFrame(animate);
   };

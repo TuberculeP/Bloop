@@ -1,4 +1,4 @@
-import type { EffectInstanceConfig } from "../../utils/types";
+import type { EffectInstanceConfig, TimeSignature } from "../../utils/types";
 import { createEffectInstance } from "./registry";
 import type { EffectInstance, EffectParamDescriptor } from "./types";
 
@@ -123,6 +123,21 @@ export class EffectChain {
 
   setEnabled(effectId: string, enabled: boolean): void {
     this.slots.find((slot) => slot.config.id === effectId)?.setEnabled(enabled);
+  }
+
+  // Franchissement de croche (résolution la plus fine utile aux effets
+  // synchronisés au tempo, ex: Bloopy Pump) — voir
+  // maybeTriggerBloopyPumpEffects dans useTimelinePlaybackEngine.ts. Un effet
+  // bypassé ne doit pas se retrigger silencieusement en coulisses.
+  notifyBeatBoundary(
+    tick: number,
+    timeSignature: TimeSignature,
+    tempo: number,
+  ): void {
+    for (const slot of this.slots) {
+      if (!slot.config.enabled) continue;
+      slot.instance.onBeatBoundary?.(tick, timeSignature, tempo);
+    }
   }
 
   getParamDescriptor(
