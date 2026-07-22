@@ -47,8 +47,8 @@ export function getAutomationValueAt(
 }
 
 // Résout la cible d'automation contre la chaîne d'effets vivante du channel :
-// le cas "channel"/"volume" est un pseudo-effet réservé au fader (hors de la
-// pile d'effets, voir AutomationTarget), tout le reste passe par le
+// le cas "channel"/"volume"/"pan" est un pseudo-effet réservé au fader (hors
+// de la pile d'effets, voir AutomationTarget), tout le reste passe par le
 // descripteur de paramètre exposé par l'EffectInstance visée.
 export function applyAutomationToChannel(
   target: AutomationTarget,
@@ -60,6 +60,12 @@ export function applyAutomationToChannel(
   const smoothTime = 0.01;
 
   if (target.effectId === "channel") {
+    if (target.paramId === "pan") {
+      if (!channel.panNode) return;
+      const pan = normalizedValue * 2 - 1; // 0-1 -> -1..1
+      channel.panNode.pan.setTargetAtTime(pan, now, smoothTime);
+      return;
+    }
     const gain = Math.max(0.001, normalizedValue);
     channel.gainNode.gain.setTargetAtTime(gain, now, smoothTime);
     return;

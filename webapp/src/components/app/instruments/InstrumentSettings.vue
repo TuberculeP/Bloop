@@ -11,6 +11,7 @@ import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
 import { ALL_NOTES } from "../../../lib/audio/pianoRollConstants";
+import { getChannelParamMeta } from "../../../lib/audio/channelParams";
 import RangeSlider from "../../ui/RangeSlider.vue";
 import EffectParamRow from "../effects/EffectParamRow.vue";
 import EffectRack from "../effects/EffectRack.vue";
@@ -30,6 +31,9 @@ const emit = defineEmits<{
 const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
 const audioLibraryStore = useAudioLibraryStore();
+
+const volumeMeta = getChannelParamMeta("volume")!;
+const panMeta = getChannelParamMeta("pan")!;
 
 const instrumentType = computed(() => props.track.instrument.type);
 
@@ -204,6 +208,16 @@ const handleVolumeChange = (volume: number) => {
   timelineStore.setTrackVolume(props.track.id, volume);
 };
 
+const panDisplayValue = computed(() => {
+  const pan = props.track.pan;
+  if (pan === 0) return "C";
+  return pan < 0 ? `G${-pan}` : `D${pan}`;
+});
+
+const handlePanChange = (pan: number) => {
+  timelineStore.setTrackPan(props.track.id, pan);
+};
+
 const handleClose = () => {
   emit("close");
 };
@@ -225,12 +239,28 @@ const handleClose = () => {
                 :track-id="track.id"
                 effect-id="channel"
                 param-id="volume"
-                label="Volume"
-                unit="%"
-                :min="0"
-                :max="100"
+                :label="volumeMeta.label"
+                :unit="volumeMeta.unit"
+                :min="volumeMeta.min"
+                :max="volumeMeta.max"
+                :default-start="volumeMeta.defaultStart"
                 :model-value="track.volume"
                 @update:model-value="handleVolumeChange"
+              />
+            </div>
+
+            <div class="setting-group">
+              <EffectParamRow
+                :track-id="track.id"
+                effect-id="channel"
+                param-id="pan"
+                :label="panMeta.label"
+                :min="panMeta.min"
+                :max="panMeta.max"
+                :default-start="panMeta.defaultStart"
+                :model-value="track.pan"
+                :display-value="panDisplayValue"
+                @update:model-value="handlePanChange"
               />
             </div>
 
