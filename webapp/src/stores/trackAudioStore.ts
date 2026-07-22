@@ -9,6 +9,7 @@ import type {
   InstrumentConfig,
   InstrumentConfigUpdate,
   NoteName,
+  TimeSignature,
   Track,
 } from "../lib/utils/types";
 import { useAudioLibraryStore } from "./audioLibraryStore";
@@ -352,6 +353,17 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
   };
 
+  const notifyTrackEffectsBeatBoundary = (
+    tick: number,
+    timeSignature: TimeSignature,
+    tempo: number,
+  ): void => {
+    for (const track of timelineStore.getPlayableTracks()) {
+      const channel = trackChannels.value.get(track.id);
+      channel?.effectsChain.notifyBeatBoundary(tick, timeSignature, tempo);
+    }
+  };
+
   const getTrackEngineState = (trackId: string): EngineState => {
     return trackEngineStates.value.get(trackId) ?? "idle";
   };
@@ -530,6 +542,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     updateTrackEffectParam,
     updateTrackInstrument,
     applyAutomation,
+    notifyTrackEffectsBeatBoundary,
 
     getTrackEngineState,
     getEngine,

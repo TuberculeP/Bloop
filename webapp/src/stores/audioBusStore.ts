@@ -4,7 +4,7 @@ import { useSequencerStore } from "./sequencerStore";
 import { useTimelineStore } from "./timelineStore";
 import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
-import type { AutomationTarget } from "../lib/utils/types";
+import type { AutomationTarget, TimeSignature } from "../lib/utils/types";
 import type { TrackChannel } from "../lib/audio/automationTypes";
 
 export const useAudioBusStore = defineStore("audioBusStore", () => {
@@ -175,6 +175,14 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     applyAutomationToChannel(target, value, masterChannel, audioContext);
   };
 
+  const notifyMasterEffectsBeatBoundary = (
+    tick: number,
+    timeSignature: TimeSignature,
+    tempo: number,
+  ): void => {
+    effectsChain.notifyBeatBoundary(tick, timeSignature, tempo);
+  };
+
   return {
     audioContext,
     inputBus,
@@ -183,5 +191,6 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
     startPcmCapture,
     stopPcmCapture,
     applyMasterAutomation,
+    notifyMasterEffectsBeatBoundary,
   };
 });

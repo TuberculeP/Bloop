@@ -1,3 +1,5 @@
+import type { TimeSignature } from "../../utils/types";
+
 // Interface d'effet volontairement proche, dans la FORME (pas le protocole),
 // de WAM 2.0 (Web Audio Modules) : `input`/`output` ~ getter `audioNode` d'un
 // WamNode, `getParams()` ~ WamParameterInfo[]. Ça prépare un futur adaptateur
@@ -19,6 +21,10 @@ export interface EffectParamMeta {
   step?: number;
   defaultValue: number;
   toDisplay?: (value: number) => string;
+  /** Paramètre discret (ex: rate, forme de courbe) : rendu en `<select>` par
+   * le rack d'effets plutôt qu'en slider continu. `value` reste le nombre
+   * stocké dans `EffectInstanceConfig.params`. */
+  options?: { value: number; label: string }[];
 }
 
 // Version "vivante" d'un paramètre, résolue contre une instance audio réelle
@@ -41,4 +47,12 @@ export interface EffectInstance {
   getParams(): EffectParamDescriptor[];
   getParam(paramId: string): EffectParamDescriptor | undefined;
   dispose(): void;
+  /** Optionnel : effets synchronisés au tempo (ex: Bloopy Pump). Appelé par la
+   * boucle de lecture à chaque franchissement de croche (voir
+   * EffectChain.notifyBeatBoundary / useTimelinePlaybackEngine). */
+  onBeatBoundary?(
+    tick: number,
+    timeSignature: TimeSignature,
+    tempo: number,
+  ): void;
 }
