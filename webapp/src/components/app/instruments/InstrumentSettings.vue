@@ -11,6 +11,7 @@ import { useTrackAudioStore } from "../../../stores/trackAudioStore";
 import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
 import { ALL_NOTES } from "../../../lib/audio/pianoRollConstants";
+import { getChannelParamMeta } from "../../../lib/audio/channelParams";
 import RangeSlider from "../../ui/RangeSlider.vue";
 import EffectParamRow from "../effects/EffectParamRow.vue";
 import EffectRack from "../effects/EffectRack.vue";
@@ -30,6 +31,9 @@ const emit = defineEmits<{
 const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
 const audioLibraryStore = useAudioLibraryStore();
+
+const volumeMeta = getChannelParamMeta("volume")!;
+const panMeta = getChannelParamMeta("pan")!;
 
 const instrumentType = computed(() => props.track.instrument.type);
 
@@ -235,10 +239,11 @@ const handleClose = () => {
                 :track-id="track.id"
                 effect-id="channel"
                 param-id="volume"
-                label="Volume"
-                unit="%"
-                :min="0"
-                :max="100"
+                :label="volumeMeta.label"
+                :unit="volumeMeta.unit"
+                :min="volumeMeta.min"
+                :max="volumeMeta.max"
+                :default-start="volumeMeta.defaultStart"
                 :model-value="track.volume"
                 @update:model-value="handleVolumeChange"
               />
@@ -249,9 +254,10 @@ const handleClose = () => {
                 :track-id="track.id"
                 effect-id="channel"
                 param-id="pan"
-                label="Pan"
-                :min="-127"
-                :max="127"
+                :label="panMeta.label"
+                :min="panMeta.min"
+                :max="panMeta.max"
+                :default-start="panMeta.defaultStart"
                 :model-value="track.pan"
                 :display-value="panDisplayValue"
                 @update:model-value="handlePanChange"

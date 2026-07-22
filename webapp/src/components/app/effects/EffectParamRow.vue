@@ -5,7 +5,7 @@ import RangeSlider from "../../ui/RangeSlider.vue";
 
 const props = defineProps<{
   trackId: string; // "master" pour le bus master
-  effectId: string; // "channel" pour le fader de volume (hors pile d'effets)
+  effectId: string; // "channel" pour le fader de volume/pan (hors pile d'effets)
   paramId: string;
   label: string;
   unit?: string;
@@ -14,6 +14,10 @@ const props = defineProps<{
   step?: number;
   modelValue: number;
   displayValue?: string;
+  // Normalisé 0-1 : position canonique du premier point posé à l'activation
+  // de l'automatisation, indépendante de la valeur live du paramètre. Si
+  // absent, on reprend la valeur actuelle du paramètre.
+  defaultStart?: number;
 }>();
 
 const emit = defineEmits<{
@@ -49,15 +53,14 @@ const toggleAutomation = () => {
       effectId: props.effectId,
       paramId: props.paramId,
     });
-    // Point de départ à la valeur actuelle du paramètre (0.5 = centré pour
-    // le pan) plutôt qu'une lane vide sans courbe visible.
+    // Point de départ plutôt qu'une lane vide sans courbe visible :
+    // defaultStart (position canonique) si fourni, sinon la valeur actuelle
+    // du paramètre.
     if (laneId) {
-      const normalizedValue =
+      const y =
+        props.defaultStart ??
         (props.modelValue - props.min) / (props.max - props.min);
-      timelineStore.addAutomationPoint(props.trackId, laneId, {
-        x: 0,
-        y: normalizedValue,
-      });
+      timelineStore.addAutomationPoint(props.trackId, laneId, { x: 0, y });
     }
   }
 };
