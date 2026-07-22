@@ -351,6 +351,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       instrument,
       color: getNextTrackColor(),
       volume: 100,
+      pan: 0,
       effects: [],
       muted: false,
       solo: false,
@@ -430,6 +431,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
 
   const setTrackVolume = (trackId: string, volume: number): boolean => {
     return updateTrack(trackId, { volume: Math.max(0, Math.min(100, volume)) });
+  };
+
+  const setTrackPan = (trackId: string, pan: number): boolean => {
+    return updateTrack(trackId, { pan: Math.max(-127, Math.min(127, pan)) });
   };
 
   const updateTrackInstrument = (
@@ -1056,6 +1061,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
         if (!track.notes) {
           track.notes = [];
         }
+        // Projets antérieurs à l'ajout du pan
+        if (track.pan === undefined) {
+          track.pan = 0;
+        }
         // S'assurer que clips existe pour les audio tracks
         if (track.instrument.type === "audioTrack" && !track.clips) {
           track.clips = [];
@@ -1098,6 +1107,10 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       track.updatedAt = new Date(track.updatedAt);
       if (!track.notes) {
         track.notes = [];
+      }
+      // Projets antérieurs à l'ajout du pan
+      if (track.pan === undefined) {
+        track.pan = 0;
       }
       // S'assurer que clips existe pour les audio tracks
       if (track.instrument.type === "audioTrack" && !track.clips) {
@@ -1235,6 +1248,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     setTrackMuted,
     setTrackSolo,
     setTrackVolume,
+    setTrackPan,
     updateTrackInstrument,
     reorderTracks,
 

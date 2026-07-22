@@ -236,12 +236,12 @@ export interface EffectInstanceConfig {
 }
 
 // Cible d'un paramètre automatisable : une piste (ou "master") + un effet de
-// sa pile (ou la sentinelle "channel" pour le fader de volume, qui n'est pas
-// dans la pile d'effets) + un paramètre de cet effet.
+// sa pile (ou la sentinelle "channel" pour le fader de volume/pan, qui n'est
+// pas dans la pile d'effets) + un paramètre de cet effet.
 export interface AutomationTarget {
   trackId: string | "master";
-  effectId: string; // EffectInstanceConfig.id, ou "channel" (fader volume)
-  paramId: string; // paramId de l'effet, ou "volume" si effectId === "channel"
+  effectId: string; // EffectInstanceConfig.id, ou "channel" (fader volume/pan)
+  paramId: string; // paramId de l'effet, ou "volume"/"pan" si effectId === "channel"
 }
 
 export interface AutomationPoint {
@@ -262,6 +262,7 @@ export interface Track {
   instrument: InstrumentConfig;
   color: string;
   volume: number; // 0-100
+  pan: number; // -127 (gauche) à 127 (droite), 0 = centré (convention musicale)
   effects: EffectInstanceConfig[]; // pile d'effets réordonnable (EQ, reverb, etc.)
   muted: boolean;
   solo: boolean;

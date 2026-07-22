@@ -27,6 +27,7 @@ import { useTimelineMidiRecording } from "../../../composables/timelineView/useT
 import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
 import { useMidiImport } from "../../../composables/timelineView/useMidiImport";
 import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
+import { useDropdown } from "../../../composables/useDropdown";
 import {
   pxPerTick,
   ticksPerBar,
@@ -448,10 +449,11 @@ const zoomIn = () => setZoom(timelineStore.zoomLevel * ZOOM_STEP_FACTOR);
 const zoomOut = () => setZoom(timelineStore.zoomLevel / ZOOM_STEP_FACTOR);
 const resetZoom = () => setZoom(1);
 
-const showZoomSettings = ref(false);
-const closeZoomSettings = () => {
-  showZoomSettings.value = false;
-};
+const {
+  isOpen: showToolbarSettings,
+  close: closeToolbarSettings,
+  toggle: toggleToolbarSettings,
+} = useDropdown();
 
 // Zoom centré sur la souris (Ctrl+molette, inclut le pinch trackpad qui met
 // ctrlKey=true dans Chrome/Firefox) : on garde le tick sous le curseur stable
@@ -650,18 +652,21 @@ defineExpose({
 
     <div class="timeline-header">
       <div class="header-left">
-        <BaseButton
-          variant="accent"
+        <button
+          class="back-btn"
           @click="handleBackToProjects"
           title="Retour aux projets"
-          left-icon="fas fa-home"
-        />
-        <BaseButton
+        >
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <button
+          class="library-btn"
+          :class="{ active: showAudioLibrary }"
           @click="showAudioLibrary = !showAudioLibrary"
           title="Audio Library"
-          :variant="showAudioLibrary ? 'secondary' : 'primary'"
-          label="Audio Lib."
-        />
+        >
+          <i class="fas fa-folder"></i>
+        </button>
         <input
           v-if="isEditingProjectName"
           ref="projectNameInputRef"
@@ -681,6 +686,9 @@ defineExpose({
         </span>
       </div>
       <div class="header-center">
+        <div class="position-display">
+          {{ displayBarBeat.bar }}:{{ displayBarBeat.beat }}
+        </div>
         <div class="transport-controls">
           <button
             class="transport-btn"
@@ -745,6 +753,21 @@ defineExpose({
             </Transition>
           </div>
 
+          <button
+            class="metronome-toggle"
+            :class="{ active: timelineStore.metronomeEnabled }"
+            @click="
+              timelineStore.metronomeEnabled = !timelineStore.metronomeEnabled
+            "
+            :title="
+              timelineStore.metronomeEnabled
+                ? 'Désactiver le métronome'
+                : 'Activer le métronome'
+            "
+          >
+            <i class="fas fa-stopwatch"></i>
+          </button>
+
           <div class="midi-control" v-on-click-outside="closeMidiPicker">
             <button
               class="midi-status-toggle"
@@ -804,36 +827,6 @@ defineExpose({
             max="240"
             step="1"
           />
-          <button
-            class="metronome-toggle"
-            :class="{ active: timelineStore.metronomeEnabled }"
-            @click="
-              timelineStore.metronomeEnabled = !timelineStore.metronomeEnabled
-            "
-            :title="
-              timelineStore.metronomeEnabled
-                ? 'Désactiver le métronome'
-                : 'Activer le métronome'
-            "
-          >
-            <i class="fas fa-stopwatch"></i>
-          </button>
-        </div>
-        <div class="time-signature-control">
-          <label>Sign.:</label>
-          <input
-            type="number"
-            v-model.number="timeSignatureNumerator"
-            min="1"
-            max="32"
-            step="1"
-          />
-          <span>/</span>
-          <select v-model.number="timeSignatureDenominator">
-            <option v-for="d in DENOMINATOR_OPTIONS" :key="d" :value="d">
-              {{ d }}
-            </option>
-          </select>
         </div>
         <div class="subdivision-control">
           <label>Grille:</label>
@@ -843,48 +836,69 @@ defineExpose({
             </option>
           </select>
         </div>
-        <div class="position-display">
-          {{ displayBarBeat.bar }}:{{ displayBarBeat.beat }}
-        </div>
-        <div class="zoom-control">
-          <button class="zoom-btn" @click="zoomOut" title="Dézoomer">
-            <i class="fas fa-minus"></i>
-          </button>
-          <span
-            class="zoom-percent"
-            @click="resetZoom"
-            title="Réinitialiser le zoom (100%)"
+        <div class="toolbar-settings" v-on-click-outside="closeToolbarSettings">
+          <button
+            class="toolbar-icon-btn"
+            @click="toggleToolbarSettings"
+            title="Réglages"
           >
-            {{ zoomPercent }}%
-          </span>
-          <button class="zoom-btn" @click="zoomIn" title="Zoomer">
-            <i class="fas fa-plus"></i>
+            <i class="fas fa-cog"></i>
           </button>
-          <div class="zoom-settings" v-on-click-outside="closeZoomSettings">
-            <button
-              class="zoom-btn"
-              @click="showZoomSettings = !showZoomSettings"
-              title="Réglages du zoom"
-            >
-              <i class="fas fa-cog"></i>
-            </button>
-            <Transition name="fade">
-              <div v-if="showZoomSettings" class="zoom-settings-dropdown">
-                <div class="zoom-settings-header">Zoom</div>
-                <div class="zoom-settings-row">
-                  <label>Sensibilité molette / pincement</label>
-                  <RangeSlider
-                    :model-value="timelineStore.zoomWheelSpeed"
-                    :min="timelineStore.ZOOM_WHEEL_SPEED_MIN"
-                    :max="timelineStore.ZOOM_WHEEL_SPEED_MAX"
-                    :step="1"
-                    thumb-size="small"
-                    @update:model-value="timelineStore.setZoomWheelSpeed"
-                  />
-                </div>
+          <Transition name="fade">
+            <div v-if="showToolbarSettings" class="toolbar-settings-dropdown">
+              <div class="toolbar-settings-header">Zoom</div>
+              <div class="toolbar-settings-row toolbar-settings-row--inline">
+                <button
+                  class="toolbar-icon-btn"
+                  @click="zoomOut"
+                  title="Dézoomer"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span
+                  class="zoom-percent"
+                  @click="resetZoom"
+                  title="Réinitialiser le zoom (100%)"
+                >
+                  {{ zoomPercent }}%
+                </span>
+                <button class="toolbar-icon-btn" @click="zoomIn" title="Zoomer">
+                  <i class="fas fa-plus"></i>
+                </button>
               </div>
-            </Transition>
-          </div>
+              <div class="toolbar-settings-row">
+                <label>Sensibilité molette / pincement</label>
+                <RangeSlider
+                  :model-value="timelineStore.zoomWheelSpeed"
+                  :min="timelineStore.ZOOM_WHEEL_SPEED_MIN"
+                  :max="timelineStore.ZOOM_WHEEL_SPEED_MAX"
+                  :step="1"
+                  thumb-size="small"
+                  @update:model-value="timelineStore.setZoomWheelSpeed"
+                />
+              </div>
+              <div class="toolbar-settings-header">Signature rythmique</div>
+              <div class="toolbar-settings-row toolbar-settings-row--inline">
+                <input
+                  type="number"
+                  v-model.number="timeSignatureNumerator"
+                  min="1"
+                  max="32"
+                  step="1"
+                  class="time-signature-input"
+                />
+                <span>/</span>
+                <select
+                  v-model.number="timeSignatureDenominator"
+                  class="time-signature-select"
+                >
+                  <option v-for="d in DENOMINATOR_OPTIONS" :key="d" :value="d">
+                    {{ d }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </Transition>
         </div>
       </div>
       <div class="header-right">
@@ -1187,11 +1201,13 @@ defineExpose({
   padding: 12px 16px;
   background: var(--color-bg-secondary-dark);
   border-bottom: 1px solid var(--color-border-secondary);
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .header-left,
 .header-right {
-  flex: 1;
+  flex: 1 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1199,6 +1215,7 @@ defineExpose({
 
 .header-right {
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .header-btn {
@@ -1223,16 +1240,48 @@ defineExpose({
 }
 
 .back-btn {
-  padding: 8px 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--color-white);
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .library-btn {
-  padding: 8px 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent2);
+    color: var(--color-white);
+  }
 
   &.active {
     background: var(--color-accent3);
     border-color: var(--color-accent2);
+    color: var(--color-white);
   }
 }
 
@@ -1307,6 +1356,7 @@ defineExpose({
 .header-center {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 24px;
 }
 
@@ -1336,6 +1386,7 @@ defineExpose({
 
 .transport-controls {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -1469,7 +1520,8 @@ defineExpose({
 }
 
 .mic-picker-dropdown,
-.zoom-settings-dropdown {
+.midi-picker-dropdown,
+.toolbar-settings-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   background: var(--color-bg-secondary-dark);
@@ -1480,13 +1532,15 @@ defineExpose({
   z-index: 100;
 }
 
-.mic-picker-dropdown {
+.mic-picker-dropdown,
+.midi-picker-dropdown {
   left: 0;
   min-width: 220px;
 }
 
 .mic-picker-header,
-.zoom-settings-header {
+.midi-picker-header,
+.toolbar-settings-header {
   padding: 10px 14px;
   font-size: 11px;
   font-weight: 600;
@@ -1497,7 +1551,8 @@ defineExpose({
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
-.mic-picker-option {
+.mic-picker-option,
+.midi-picker-option {
   width: 100%;
   display: block;
   text-align: left;
@@ -1519,7 +1574,8 @@ defineExpose({
   }
 }
 
-.mic-picker-empty {
+.mic-picker-empty,
+.midi-picker-empty {
   padding: 10px 14px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
@@ -1559,83 +1615,6 @@ defineExpose({
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.midi-status-toggle {
-  width: 30px;
-  height: 30px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s ease;
-
-  &:hover:not(:disabled) {
-    color: var(--color-white);
-  }
-
-  &.connected {
-    color: var(--color-status-success);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
-.midi-picker-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  min-width: 220px;
-  background: var(--color-bg-secondary-dark);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-  z-index: 100;
-}
-
-.midi-picker-header {
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.6);
-  background: var(--color-bg-primary-dark);
-  border-bottom: 1px solid var(--color-border-secondary);
-}
-
-.midi-picker-option {
-  width: 100%;
-  display: block;
-  text-align: left;
-  padding: 10px 14px;
-  background: transparent;
-  border: none;
-  color: var(--color-white);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: var(--color-bg-daw-active);
-  }
-
-  &.active {
-    color: var(--color-accent2);
-    font-weight: 600;
-  }
-}
-
-.midi-picker-empty {
-  padding: 10px 14px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
 }
 
 .menu-overlay {
@@ -1702,6 +1681,45 @@ defineExpose({
   transform: translateY(-8px);
 }
 
+// Champs numériques/select de la barre d'outils : mêmes bordures/focus/couleurs
+// partout, seuls la largeur et le fond changent selon le contexte (barre
+// principale vs sous-menu réglages, cf. .tempo-control/.subdivision-control
+// vs .time-signature-input/.time-signature-select ci-dessous).
+.tempo-control input,
+.subdivision-control select,
+.time-signature-input,
+.time-signature-select {
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-sm);
+  color: var(--color-white);
+  font-size: 14px;
+  text-align: center;
+  color-scheme: dark;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent2);
+  }
+}
+
+.tempo-control input,
+.time-signature-input {
+  -moz-appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+}
+
+.subdivision-control select,
+.time-signature-select {
+  padding: 6px 20px 6px 8px;
+  background-position: right 4px center;
+  background-size: 10px;
+}
+
 .tempo-control {
   display: flex;
   align-items: center;
@@ -1715,22 +1733,10 @@ defineExpose({
   input {
     width: 60px;
     padding: 6px 8px;
-    border: 1px solid var(--color-border-secondary);
-    border-radius: var(--radius-sm);
     background-color: var(--color-bg-secondary-dark);
-    color: var(--color-white);
-    font-size: 14px;
-    text-align: center;
-    color-scheme: dark;
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-accent2);
-    }
   }
 }
 
-.time-signature-control,
 .subdivision-control {
   display: flex;
   align-items: center;
@@ -1741,33 +1747,27 @@ defineExpose({
     color: rgba(255, 255, 255, 0.6);
   }
 
-  input,
   select {
-    padding: 6px 8px;
-    border: 1px solid var(--color-border-secondary);
-    border-radius: var(--radius-sm);
     background-color: var(--color-bg-secondary-dark);
-    color: var(--color-white);
-    font-size: 14px;
-    text-align: center;
-    color-scheme: dark;
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-accent2);
-    }
-  }
-
-  input {
-    width: 44px;
   }
 }
 
+.time-signature-input {
+  width: 44px;
+  padding: 6px 8px;
+  background-color: var(--color-bg-primary-dark);
+}
+
+.time-signature-select {
+  background-color: var(--color-bg-primary-dark);
+}
+
 .metronome-toggle,
-.zoom-btn {
+.toolbar-icon-btn,
+.midi-status-toggle {
   width: 32px;
   height: 32px;
-  border: 1px solid var(--color-border-secondary);
+  border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
   color: rgba(255, 255, 255, 0.5);
@@ -1775,10 +1775,19 @@ defineExpose({
   cursor: pointer;
   transition: all 0.15s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: var(--color-accent2);
     color: var(--color-white);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.toolbar-icon-btn {
+  border-color: var(--color-border-secondary);
 }
 
 .metronome-toggle.active {
@@ -1787,10 +1796,9 @@ defineExpose({
   color: var(--color-white);
 }
 
-.zoom-control {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.midi-status-toggle.connected {
+  color: var(--color-status-success);
+  border-color: var(--color-status-success);
 }
 
 .zoom-percent {
@@ -1809,16 +1817,16 @@ defineExpose({
   }
 }
 
-.zoom-settings {
+.toolbar-settings {
   position: relative;
 }
 
-.zoom-settings-dropdown {
+.toolbar-settings-dropdown {
   right: 0;
   min-width: 260px;
 }
 
-.zoom-settings-row {
+.toolbar-settings-row {
   padding: 12px 14px;
 
   label {
@@ -1826,6 +1834,12 @@ defineExpose({
     font-size: 12px;
     color: rgba(255, 255, 255, 0.6);
     margin-bottom: 8px;
+  }
+
+  &--inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 }
 
@@ -1886,7 +1900,7 @@ defineExpose({
   font-size: 16px;
   min-width: 60px;
   text-align: center;
-  padding: 6px 12px;
+  padding: 6px 8px;
   background-color: var(--color-bg-secondary-dark);
   color: var(--color-white);
   border-radius: var(--radius-sm);
@@ -2085,18 +2099,5 @@ defineExpose({
   color: var(--color-text-secondary);
   font-size: 0.85rem;
   margin: 0;
-}
-
-@media (max-width: 1024px) {
-  .timeline-header {
-    flex-wrap: wrap;
-    row-gap: 8px;
-  }
-
-  .header-center {
-    order: 3;
-    width: 100%;
-    justify-content: center;
-  }
 }
 </style>

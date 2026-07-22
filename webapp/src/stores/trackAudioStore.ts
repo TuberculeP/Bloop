@@ -22,6 +22,7 @@ import { ticksPerSecond } from "../lib/audio/timeGrid";
 interface TrackChannel {
   trackId: string;
   gainNode: GainNode;
+  panNode: StereoPannerNode;
   effectsChain: EffectChain;
   engine: InstrumentEngine;
   unsubscribeState: () => void;
@@ -48,9 +49,15 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const gainNode = markRaw(audioContext.createGain());
     gainNode.gain.value = isPlayable ? track.volume / 100 : 0.001;
 
-    // Pile d'effets réordonnable (EQ, reverb, etc.) : gainNode -> effets -> inputBus
+    // Pan — fader de channel strip au même titre que le volume, hors de la
+    // pile d'effets. -127..127 (convention musicale) -> -1..1 (StereoPannerNode).
+    const panNode = markRaw(audioContext.createStereoPanner());
+    panNode.pan.value = track.pan / 127;
+    gainNode.connect(panNode);
+
+    // Pile d'effets réordonnable (EQ, reverb, etc.) : gainNode -> pan -> effets -> inputBus
     const effectsChain = markRaw(
-      new EffectChain(audioContext, gainNode, inputBus),
+      new EffectChain(audioContext, panNode, inputBus),
     );
     effectsChain.rebuild(track.effects);
 
@@ -67,6 +74,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const channel: TrackChannel = {
       trackId: track.id,
       gainNode,
+      panNode,
       effectsChain,
       engine,
       unsubscribeState,
@@ -120,6 +128,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       channel.engine.dispose();
       channel.effectsChain.dispose();
       channel.gainNode.disconnect();
+      channel.panNode.disconnect();
       trackChannels.value.delete(trackId);
       trackEngineStates.value.delete(trackId);
     }
@@ -272,6 +281,16 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
   };
 
+  const updateTrackPan = (trackId: string, pan: number): void => {
+    const channel = trackChannels.value.get(trackId);
+    if (channel) {
+      channel.panNode.pan.linearRampToValueAtTime(
+        pan / 127,
+        audioContext.currentTime + 0.05,
+      );
+    }
+  };
+
   // Rebuild complet de la pile d'effets (ajout/suppression/réordre/bypass) —
   // rare comparé aux mises à jour de valeurs de param, cf. les deux watchers
   // séparés dans `initialize()`.
@@ -419,6 +438,20 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       ),
     );
 
+    // Watcher pan : séparé du watcher volume+mute+solo ci-dessus, le pan
+    // n'a pas d'impact sur l'état "playable" des autres pistes.
+    watcherStopHandles.push(
+      watch(
+        () => timelineStore.tracks.map((t) => ({ id: t.id, pan: t.pan })),
+        (tracksPan) => {
+          for (const { id, pan } of tracksPan) {
+            updateTrackPan(id, pan);
+          }
+        },
+        { deep: true },
+      ),
+    );
+
     // Watcher structurel : ajout/suppression/réordre/bypass d'un effet ->
     // rebuild complet de la chaîne. Scindé du watcher de valeurs ci-dessous
     // pour ne pas reconstruire tout le graphe à chaque simple changement de
@@ -492,6 +525,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     stopAllClips,
 
     updateTrackVolume,
+    updateTrackPan,
     updateTrackEffects,
     updateTrackEffectParam,
     updateTrackInstrument,
