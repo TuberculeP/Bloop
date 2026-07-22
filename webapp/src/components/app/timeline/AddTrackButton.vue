@@ -40,6 +40,12 @@ const instruments = [
     description: "Instruments réalistes (piano, guitare, etc.)",
   },
   {
+    type: "fmSynth" as InstrumentType,
+    name: "FM Synth",
+    icon: "🎛️",
+    description: "Synthèse FM (style DX7), 32 presets d'usine",
+  },
+  {
     type: "undertale" as InstrumentType,
     name: "Undertale",
     icon: "💀",

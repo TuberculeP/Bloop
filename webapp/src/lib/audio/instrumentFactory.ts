@@ -2,6 +2,8 @@ import type { InstrumentConfig } from "../utils/types";
 import {
   AudioClipEngine,
   BasicSynthEngine,
+  FM_SYNTH_PRESETS,
+  FmSynthEngine,
   SmplrEngine,
   UndertaleEngine,
   type InstrumentEngine,
@@ -31,6 +33,9 @@ export function createInstrumentEngine(
 
     case "undertale":
       return new UndertaleEngine(audioContext, destination, config);
+
+    case "fmSynth":
+      return new FmSynthEngine(audioContext, destination, config);
 
     case "audioTrack":
       return new AudioClipEngine(audioContext, destination, config);
@@ -78,6 +83,13 @@ export function getDefaultConfigForType(
         decay: 0,
         sustain: 1,
         release: 0.3,
+      };
+
+    case "fmSynth":
+      return {
+        type: "fmSynth",
+        patch: FM_SYNTH_PRESETS[0],
+        gain: 1,
       };
 
     case "audioTrack":

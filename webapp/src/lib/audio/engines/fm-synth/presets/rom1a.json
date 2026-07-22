@@ -1,0 +1,5026 @@
+[
+  {
+    "algorithm": 22,
+    "feedback": 7,
+    "name": "BRASS   1",
+    "lfoSpeed": 37,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 5,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          72,
+          76,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          88,
+          96,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 98,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          62,
+          51,
+          29,
+          71
+        ],
+        "levels": [
+          82,
+          95,
+          96,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          77,
+          76,
+          82,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          98,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          77,
+          36,
+          41,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          98,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          77,
+          36,
+          41,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          98,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 98,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          49,
+          99,
+          28,
+          68
+        ],
+        "levels": [
+          98,
+          98,
+          91,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 82,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 22,
+    "feedback": 7,
+    "name": "BRASS   2",
+    "lfoSpeed": 37,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          80,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          80,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 84,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ],
+        "detune": -3,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          88,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 80,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 18,
+    "feedback": 6,
+    "name": "BRASS   3",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 5,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          55,
+          24,
+          19,
+          55
+        ],
+        "levels": [
+          99,
+          86,
+          86,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          37,
+          34,
+          15,
+          70
+        ],
+        "levels": [
+          85,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 70,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          46,
+          35,
+          22,
+          50
+        ],
+        "levels": [
+          99,
+          86,
+          86,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 77,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          66,
+          92,
+          22,
+          50
+        ],
+        "levels": [
+          53,
+          61,
+          62,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 79,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          48,
+          55,
+          22,
+          50
+        ],
+        "levels": [
+          98,
+          61,
+          62,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 70,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 6,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          77,
+          56,
+          20,
+          70
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 79,
+        "oscMode": 0,
+        "freqCoarse": 7,
+        "freqFine": 21,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 2,
+    "feedback": 7,
+    "name": "STRINGS 1",
+    "lfoSpeed": 30,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 8,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          45,
+          24,
+          20,
+          41
+        ],
+        "levels": [
+          99,
+          85,
+          70,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          75,
+          71,
+          17,
+          49
+        ],
+        "levels": [
+          82,
+          92,
+          62,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          44,
+          45,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          85,
+          82,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          96,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          86,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 77,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          53,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          86,
+          92,
+          86,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 84,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          53,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          86,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 53,
+        "oscMode": 0,
+        "freqCoarse": 14,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 2,
+    "feedback": 7,
+    "name": "STRINGS 2",
+    "lfoSpeed": 30,
+    "lfoDelay": 81,
+    "lfoPitchModDepth": 8,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          48,
+          56,
+          10,
+          47
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 92,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          81,
+          13,
+          7,
+          25
+        ],
+        "levels": [
+          99,
+          92,
+          28,
+          0
+        ],
+        "detune": -6,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 74,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          51,
+          15,
+          10,
+          47
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 6,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 92,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          49,
+          74,
+          10,
+          32
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 76,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          76,
+          73,
+          10,
+          28
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 66,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          72,
+          76,
+          10,
+          32
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 70,
+        "oscMode": 0,
+        "freqCoarse": 8,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 15,
+    "feedback": 7,
+    "name": "STRINGS 3",
+    "lfoSpeed": 28,
+    "lfoDelay": 46,
+    "lfoPitchModDepth": 30,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 1,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          52,
+          30,
+          25,
+          43
+        ],
+        "levels": [
+          99,
+          92,
+          90,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          71,
+          35,
+          51
+        ],
+        "levels": [
+          82,
+          92,
+          87,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          50,
+          52,
+          35,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          91,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          96,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          89,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          53,
+          67,
+          38,
+          54
+        ],
+        "levels": [
+          86,
+          92,
+          74,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 84,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          53,
+          64,
+          44,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          56,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 54,
+        "oscMode": 0,
+        "freqCoarse": 14,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 2,
+    "feedback": 7,
+    "name": "ORCHESTRA",
+    "lfoSpeed": 30,
+    "lfoDelay": 63,
+    "lfoPitchModDepth": 6,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          80,
+          56,
+          10,
+          45
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          53,
+          46,
+          32,
+          61
+        ],
+        "levels": [
+          99,
+          93,
+          90,
+          0
+        ],
+        "detune": -6,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          54,
+          15,
+          10,
+          47
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 6,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 96,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          56,
+          74,
+          10,
+          45
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 72,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          76,
+          73,
+          10,
+          55
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 80,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          72,
+          76,
+          10,
+          32
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 82,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 19,
+    "feedback": 6,
+    "name": "PIANO   1",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          81,
+          25,
+          20,
+          48
+        ],
+        "levels": [
+          99,
+          82,
+          0,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          25,
+          0
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          81,
+          25,
+          25,
+          14
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 57,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          81,
+          23,
+          22,
+          45
+        ],
+        "levels": [
+          99,
+          78,
+          0,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          81,
+          58,
+          36,
+          39
+        ],
+        "levels": [
+          99,
+          14,
+          0,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 93,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 58,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          25,
+          0
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 82,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 18,
+    "feedback": 5,
+    "name": "PIANO   2",
+    "lfoSpeed": 30,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          80,
+          24,
+          10,
+          50
+        ],
+        "levels": [
+          99,
+          62,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          95,
+          0,
+          25,
+          0
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          90,
+          27,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          85,
+          0,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 5,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          97,
+          27,
+          10,
+          25
+        ],
+        "levels": [
+          99,
+          86,
+          48,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 84,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          90,
+          71,
+          33,
+          31
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          92,
+          71,
+          58,
+          36
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 78,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 3,
+    "feedback": 4,
+    "name": "PIANO   3",
+    "lfoSpeed": 45,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          90,
+          30,
+          28,
+          45
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": -4,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          98,
+          36,
+          6,
+          32
+        ],
+        "levels": [
+          91,
+          90,
+          0,
+          0
+        ],
+        "detune": 4,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          94,
+          80,
+          19,
+          12
+        ],
+        "levels": [
+          83,
+          67,
+          0,
+          0
+        ],
+        "detune": -3,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 97,
+        "oscMode": 0,
+        "freqCoarse": 7,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          90,
+          64,
+          28,
+          45
+        ],
+        "levels": [
+          99,
+          97,
+          0,
+          0
+        ],
+        "detune": 3,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 95,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          98,
+          20,
+          6,
+          2
+        ],
+        "levels": [
+          91,
+          90,
+          0,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          80,
+          73,
+          15,
+          10
+        ],
+        "levels": [
+          99,
+          19,
+          0,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 5,
+        "lfoAmpModSens": 0,
+        "volume": 84,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 5,
+    "feedback": 6,
+    "name": "E.PIANO 1",
+    "lfoSpeed": 34,
+    "lfoDelay": 33,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          96,
+          25,
+          25,
+          67
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ],
+        "detune": 3,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          95,
+          50,
+          35,
+          78
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 58,
+        "oscMode": 0,
+        "freqCoarse": 14,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          95,
+          20,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          95,
+          29,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 6,
+        "lfoAmpModSens": 0,
+        "volume": 89,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          95,
+          20,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": -7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          95,
+          29,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 6,
+        "lfoAmpModSens": 0,
+        "volume": 79,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 8,
+    "feedback": 7,
+    "name": "GUITAR  1",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 1,
+    "lfoAmpModDepth": 3,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          74,
+          85,
+          27,
+          70
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 5,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          91,
+          25,
+          39,
+          60
+        ],
+        "levels": [
+          99,
+          86,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 93,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          78,
+          87,
+          22,
+          75
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          81,
+          87,
+          22,
+          75
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 4,
+        "lfoAmpModSens": 0,
+        "volume": 89,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          81,
+          87,
+          22,
+          75
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          57,
+          99,
+          75
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 6,
+        "lfoAmpModSens": 3,
+        "volume": 57,
+        "oscMode": 0,
+        "freqCoarse": 12,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 16,
+    "feedback": 7,
+    "name": "GUITAR  2",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          95,
+          67,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          99,
+          99,
+          42
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          99
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          99,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 50,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          92,
+          99,
+          15,
+          71
+        ],
+        "levels": [
+          99,
+          96,
+          75,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 70,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          99,
+          12,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          76,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          44,
+          1,
+          71
+        ],
+        "levels": [
+          99,
+          96,
+          75,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 73,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 18,
+    "feedback": 7,
+    "name": "SYN-LEAD 1",
+    "lfoSpeed": 37,
+    "lfoDelay": 42,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 99,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          12,
+          70
+        ],
+        "levels": [
+          99,
+          95,
+          95,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          96,
+          89,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 71,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          87,
+          0,
+          0
+        ],
+        "levels": [
+          93,
+          90,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 82,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          99,
+          92,
+          28,
+          60
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 71,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          99,
+          97,
+          0
+        ],
+        "levels": [
+          99,
+          65,
+          60,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 43,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          70,
+          60,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 47,
+        "oscMode": 0,
+        "freqCoarse": 17,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 16,
+    "feedback": 7,
+    "name": "BASS    1",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          95,
+          62,
+          17,
+          58
+        ],
+        "levels": [
+          99,
+          95,
+          32,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          20,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 80,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          88,
+          96,
+          32,
+          30
+        ],
+        "levels": [
+          79,
+          65,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          90,
+          42,
+          7,
+          55
+        ],
+        "levels": [
+          90,
+          30,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 5,
+        "lfoAmpModSens": 0,
+        "volume": 93,
+        "oscMode": 0,
+        "freqCoarse": 5,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 62,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          94,
+          56,
+          24,
+          55
+        ],
+        "levels": [
+          93,
+          28,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 9,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 17,
+    "feedback": 7,
+    "name": "BASS    2",
+    "lfoSpeed": 31,
+    "lfoDelay": 33,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          75,
+          37,
+          18,
+          63
+        ],
+        "levels": [
+          99,
+          70,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 1,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          28,
+          37,
+          42,
+          50
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 80,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 3,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          73,
+          25,
+          32,
+          30
+        ],
+        "levels": [
+          97,
+          78,
+          0,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 68,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          80,
+          39,
+          28,
+          53
+        ],
+        "levels": [
+          93,
+          57,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          51,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          74,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 1,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          25,
+          50,
+          24,
+          55
+        ],
+        "levels": [
+          96,
+          97,
+          0,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 32,
+    "feedback": 0,
+    "name": "E.ORGAN 1",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          99,
+          80,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          20,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ],
+        "detune": -6,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 1,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          80,
+          54,
+          82
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 4,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 50,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          99,
+          80,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 5,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          80,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          54,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 94,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 19,
+    "feedback": 7,
+    "name": "PIPES   1",
+    "lfoSpeed": 34,
+    "lfoDelay": 33,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          45,
+          25,
+          25,
+          36
+        ],
+        "levels": [
+          99,
+          99,
+          98,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          97,
+          62,
+          47
+        ],
+        "levels": [
+          99,
+          99,
+          90,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 90,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          97,
+          62,
+          47
+        ],
+        "levels": [
+          99,
+          99,
+          90,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          61,
+          25,
+          25,
+          50
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 88,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          61,
+          25,
+          25,
+          61
+        ],
+        "levels": [
+          99,
+          99,
+          93,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 97,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          72,
+          25,
+          25,
+          70
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 76,
+        "oscMode": 0,
+        "freqCoarse": 10,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 5,
+    "feedback": 1,
+    "name": "HARPSICH 1",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          95,
+          28,
+          27,
+          47
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 89,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          95,
+          72,
+          71,
+          99
+        ],
+        "levels": [
+          99,
+          97,
+          91,
+          98
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          95,
+          28,
+          27,
+          47
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          95,
+          72,
+          71,
+          99
+        ],
+        "levels": [
+          99,
+          97,
+          91,
+          98
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          95,
+          28,
+          27,
+          47
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          95,
+          72,
+          71,
+          99
+        ],
+        "levels": [
+          99,
+          97,
+          91,
+          98
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 6,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 3,
+    "feedback": 5,
+    "name": "CLAV    1",
+    "lfoSpeed": 30,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          95,
+          92,
+          28,
+          60
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          95,
+          95,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          96,
+          89,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          98,
+          87,
+          0,
+          0
+        ],
+        "levels": [
+          87,
+          86,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 71,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 50,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          95,
+          92,
+          28,
+          60
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          95,
+          95,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          96,
+          89,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 6,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          98,
+          87,
+          0,
+          0
+        ],
+        "levels": [
+          87,
+          86,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 78,
+        "oscMode": 0,
+        "freqCoarse": 8,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 23,
+    "feedback": 5,
+    "name": "VIBE    1",
+    "lfoSpeed": 26,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          99,
+          28,
+          99,
+          50
+        ],
+        "levels": [
+          99,
+          25,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 50,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          80,
+          85,
+          24,
+          50
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          80,
+          85,
+          43,
+          50
+        ],
+        "levels": [
+          99,
+          74,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 4,
+        "lfoAmpModSens": 0,
+        "volume": 72,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          80,
+          85,
+          24,
+          50
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": -7,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          80,
+          85,
+          24,
+          50
+        ],
+        "levels": [
+          99,
+          90,
+          42,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 5,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          48,
+          99,
+          50
+        ],
+        "levels": [
+          99,
+          32,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 57,
+        "oscMode": 0,
+        "freqCoarse": 14,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 7,
+    "feedback": 0,
+    "name": "MARIMBA",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          95,
+          40,
+          49,
+          55
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 95,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          72,
+          0,
+          0
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 96,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          95,
+          33,
+          49,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          99,
+          75,
+          0,
+          82
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 5,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          75,
+          0,
+          8
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 93,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 50,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          0,
+          63,
+          55,
+          0
+        ],
+        "levels": [
+          78,
+          78,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 13,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 2,
+    "feedback": 7,
+    "name": "KOTO",
+    "lfoSpeed": 30,
+    "lfoDelay": 40,
+    "lfoPitchModDepth": 17,
+    "lfoAmpModDepth": 15,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          94,
+          62,
+          58,
+          34
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 90,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          68,
+          28,
+          48
+        ],
+        "levels": [
+          99,
+          83,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          94,
+          64,
+          30,
+          33
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          90,
+          28,
+          17,
+          39
+        ],
+        "levels": [
+          99,
+          76,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 82,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          91,
+          37,
+          29,
+          29
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          82,
+          53,
+          37,
+          48
+        ],
+        "levels": [
+          99,
+          81,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 81,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 16,
+    "feedback": 5,
+    "name": "FLUTE   1",
+    "lfoSpeed": 30,
+    "lfoDelay": 23,
+    "lfoPitchModDepth": 8,
+    "lfoAmpModDepth": 13,
+    "lfoPitchModSens": 1,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          61,
+          67,
+          70,
+          65
+        ],
+        "levels": [
+          93,
+          89,
+          98,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 98,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          97,
+          62,
+          54
+        ],
+        "levels": [
+          99,
+          99,
+          90,
+          0
+        ],
+        "detune": 4,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          53,
+          38,
+          75,
+          61
+        ],
+        "levels": [
+          88,
+          44,
+          24,
+          0
+        ],
+        "detune": -3,
+        "velocitySens": 0,
+        "lfoAmpModSens": 1,
+        "volume": 76,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          61,
+          25,
+          25,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 0,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          65,
+          38,
+          0,
+          61
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 56,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          64,
+          98,
+          61
+        ],
+        "levels": [
+          99,
+          67,
+          52,
+          0
+        ],
+        "detune": 4,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 53,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 5,
+    "feedback": 7,
+    "name": "ORCH-CHIME",
+    "lfoSpeed": 30,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 5,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 3,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          34,
+          42,
+          71,
+          34
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 5,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 97,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 5,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          80,
+          49,
+          17,
+          30
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          80,
+          70,
+          9,
+          12
+        ],
+        "levels": [
+          88,
+          80,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 91,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 57,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          41,
+          42,
+          71,
+          34
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 98,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": -7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 5,
+    "feedback": 7,
+    "name": "TUB BELLS",
+    "lfoSpeed": 35,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 1,
+    "lfoWaveform": 1,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          95,
+          33,
+          71,
+          25
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 95,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          98,
+          12,
+          71,
+          28
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ],
+        "detune": 3,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 78,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 75,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          95,
+          33,
+          71,
+          25
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ],
+        "detune": -5,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          98,
+          12,
+          71,
+          28
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 75,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          76,
+          78,
+          71,
+          70
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 5,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 1,
+        "freqCoarse": 2,
+        "freqFine": 51,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          98,
+          91,
+          0,
+          28
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": -7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 15,
+    "feedback": 5,
+    "name": "STEEL DRUM",
+    "lfoSpeed": 25,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 10,
+    "lfoAmpModDepth": 99,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 4,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          99,
+          40,
+          33,
+          38
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          19,
+          20,
+          9
+        ],
+        "levels": [
+          99,
+          87,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 0,
+        "volume": 64,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 70,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          30,
+          35,
+          42
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          99,
+          44,
+          50,
+          21
+        ],
+        "levels": [
+          91,
+          82,
+          0,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 88,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          40,
+          38,
+          0
+        ],
+        "levels": [
+          91,
+          82,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 64,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 33,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          49,
+          28,
+          12
+        ],
+        "levels": [
+          91,
+          82,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 49,
+        "oscMode": 1,
+        "freqCoarse": 2,
+        "freqFine": 60,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 16,
+    "feedback": 7,
+    "name": "TIMPANI",
+    "lfoSpeed": 11,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 16,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 2,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          99,
+          36,
+          98,
+          33
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          99,
+          74,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 3,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 86,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          99,
+          77,
+          26,
+          23
+        ],
+        "levels": [
+          99,
+          72,
+          0,
+          0
+        ],
+        "detune": -3,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 85,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 36,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          99,
+          31,
+          17,
+          30
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 7,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 75,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          50,
+          26,
+          19
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 73,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          98,
+          2,
+          26,
+          27
+        ],
+        "levels": [
+          98,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 73,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 56,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 18,
+    "feedback": 2,
+    "name": "REFS WHISL",
+    "lfoSpeed": 99,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 6,
+    "lfoWaveform": 5,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          60,
+          39,
+          28,
+          49
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 90,
+        "oscMode": 1,
+        "freqCoarse": 3,
+        "freqFine": 32,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          60,
+          39,
+          28,
+          45
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 93,
+        "oscMode": 1,
+        "freqCoarse": 9,
+        "freqFine": 53,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          60,
+          39,
+          8,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 66,
+        "oscMode": 1,
+        "freqCoarse": 1,
+        "freqFine": 67,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          94,
+          68,
+          24,
+          55
+        ],
+        "levels": [
+          96,
+          89,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 75,
+        "oscMode": 1,
+        "freqCoarse": 7,
+        "freqFine": 82,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 64,
+        "oscMode": 1,
+        "freqCoarse": 4,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          94,
+          56,
+          24,
+          55
+        ],
+        "levels": [
+          96,
+          78,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 78,
+        "oscMode": 1,
+        "freqCoarse": 5,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 7,
+    "feedback": 7,
+    "name": "VOICE   1",
+    "lfoSpeed": 35,
+    "lfoDelay": 35,
+    "lfoPitchModDepth": 11,
+    "lfoAmpModDepth": 2,
+    "lfoPitchModSens": 4,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          34,
+          20,
+          53,
+          57
+        ],
+        "levels": [
+          99,
+          94,
+          97,
+          0
+        ],
+        "detune": -7,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 87,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          19,
+          26,
+          53,
+          25
+        ],
+        "levels": [
+          51,
+          61,
+          76,
+          51
+        ],
+        "detune": 0,
+        "velocitySens": 2,
+        "lfoAmpModSens": 2,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          33,
+          20,
+          53,
+          39
+        ],
+        "levels": [
+          99,
+          94,
+          97,
+          0
+        ],
+        "detune": 7,
+        "velocitySens": 3,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          72,
+          19,
+          41,
+          12
+        ],
+        "levels": [
+          48,
+          58,
+          20,
+          9
+        ],
+        "detune": 3,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 2,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          35,
+          21,
+          36,
+          63
+        ],
+        "levels": [
+          99,
+          90,
+          85,
+          0
+        ],
+        "detune": -1,
+        "velocitySens": 1,
+        "lfoAmpModSens": 0,
+        "volume": 53,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 1,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          99,
+          72,
+          48,
+          17
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ],
+        "detune": 1,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 55,
+        "oscMode": 0,
+        "freqCoarse": 5,
+        "freqFine": 2,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 5,
+    "feedback": 7,
+    "name": "TRAIN",
+    "lfoSpeed": 39,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 99,
+    "lfoPitchModSens": 0,
+    "lfoWaveform": 0,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          65,
+          24,
+          19,
+          57
+        ],
+        "levels": [
+          99,
+          85,
+          85,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 64,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          39,
+          13,
+          12,
+          72
+        ],
+        "levels": [
+          99,
+          61,
+          66,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 72,
+        "oscMode": 0,
+        "freqCoarse": 3,
+        "freqFine": 1,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          98,
+          29,
+          28,
+          33
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": 2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 1,
+        "freqCoarse": 22,
+        "freqFine": 57,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          98,
+          29,
+          28,
+          27
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "detune": -2,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 89,
+        "oscMode": 1,
+        "freqCoarse": 10,
+        "freqFine": 99,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          42,
+          17,
+          25,
+          53
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          99
+        ],
+        "detune": 3,
+        "velocitySens": 0,
+        "lfoAmpModSens": 3,
+        "volume": 83,
+        "oscMode": 0,
+        "freqCoarse": 9,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          49,
+          17,
+          25,
+          53
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          98
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 5,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  },
+  {
+    "algorithm": 10,
+    "feedback": 0,
+    "name": "TAKE OFF",
+    "lfoSpeed": 65,
+    "lfoDelay": 0,
+    "lfoPitchModDepth": 0,
+    "lfoAmpModDepth": 0,
+    "lfoPitchModSens": 5,
+    "lfoWaveform": 2,
+    "operators": [
+      {
+        "idx": 0,
+        "enabled": true,
+        "rates": [
+          9,
+          14,
+          17,
+          34
+        ],
+        "levels": [
+          61,
+          96,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 4,
+        "freqFine": 1,
+        "pan": 0
+      },
+      {
+        "idx": 1,
+        "enabled": true,
+        "rates": [
+          82,
+          80,
+          19,
+          14
+        ],
+        "levels": [
+          80,
+          95,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 96,
+        "oscMode": 0,
+        "freqCoarse": 1,
+        "freqFine": 0,
+        "pan": 25
+      },
+      {
+        "idx": 2,
+        "enabled": true,
+        "rates": [
+          76,
+          35,
+          99,
+          11
+        ],
+        "levels": [
+          67,
+          38,
+          73,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 6,
+        "freqFine": 1,
+        "pan": -25
+      },
+      {
+        "idx": 3,
+        "enabled": true,
+        "rates": [
+          13,
+          14,
+          20,
+          30
+        ],
+        "levels": [
+          99,
+          95,
+          99,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": 0
+      },
+      {
+        "idx": 4,
+        "enabled": true,
+        "rates": [
+          88,
+          24,
+          23,
+          37
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 96,
+        "oscMode": 0,
+        "freqCoarse": 2,
+        "freqFine": 1,
+        "pan": 25
+      },
+      {
+        "idx": 5,
+        "enabled": true,
+        "rates": [
+          89,
+          22,
+          20,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ],
+        "detune": 0,
+        "velocitySens": 0,
+        "lfoAmpModSens": 0,
+        "volume": 99,
+        "oscMode": 0,
+        "freqCoarse": 0,
+        "freqFine": 0,
+        "pan": -25
+      }
+    ]
+  }
+]

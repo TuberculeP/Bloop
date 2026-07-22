@@ -107,7 +107,12 @@ export interface LegacySequenceData {
 // ============================================
 
 export type InstrumentType =
-  "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack";
+  | "basicSynth"
+  | "elementarySynth"
+  | "smplr"
+  | "undertale"
+  | "fmSynth"
+  | "audioTrack";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -148,11 +153,49 @@ export interface AudioTrackConfig {
   gain?: number;
 }
 
+// Un opérateur FM (style DX7) : forme brute/persistée, sans les valeurs
+// dérivées (outputLevel/ampL/ampR/freqRatio) qui sont recalculées au
+// chargement du patch — voir buildRuntimeParams (dsp/voiceDx7.ts).
+export interface Dx7Operator {
+  idx: number;
+  enabled: boolean;
+  rates: [number, number, number, number]; // vitesses EG (0-99)
+  levels: [number, number, number, number]; // niveaux EG (0-99)
+  detune: number; // -7 à 7
+  velocitySens: number; // 0-7
+  lfoAmpModSens: number; // 0-3
+  volume: number; // 0-99, niveau de sortie brut
+  oscMode: 0 | 1; // 0 = ratio de fréquence, 1 = fréquence fixe
+  freqCoarse: number;
+  freqFine: number;
+  pan: number; // -50 à 50
+}
+
+export interface Dx7Patch {
+  name: string;
+  algorithm: number; // 1-32
+  feedback: number; // 0-7
+  lfoSpeed: number;
+  lfoDelay: number;
+  lfoPitchModDepth: number;
+  lfoAmpModDepth: number;
+  lfoPitchModSens: number; // 0-7
+  lfoWaveform: number; // 0-5
+  operators: Dx7Operator[]; // 6 opérateurs
+}
+
+export interface FmSynthConfig {
+  type: "fmSynth";
+  patch: Dx7Patch;
+  gain?: number;
+}
+
 export type InstrumentConfig =
   | BasicSynthConfig
   | SmplrConfig
   | ElementarySynthConfig
   | UndertaleConfig
+  | FmSynthConfig
   | AudioTrackConfig;
 
 export interface InstrumentConfigUpdate {
@@ -165,6 +208,7 @@ export interface InstrumentConfigUpdate {
   decay?: number;
   sustain?: number;
   release?: number;
+  patch?: Dx7Patch;
 }
 
 export interface AudioClip {

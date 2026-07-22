@@ -324,6 +324,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       elementarySynth: "Elementary",
       smplr: "Sampler",
       undertale: "Undertale",
+      fmSynth: "FM Synth",
       audioTrack: "Audio",
     };
     const baseName = baseNames[instrumentType];

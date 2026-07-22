@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch, type Component } from "vue";
 import type { Track, OscillatorType } from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
@@ -8,6 +8,17 @@ import RangeSlider from "../../ui/RangeSlider.vue";
 import EffectParamRow from "../effects/EffectParamRow.vue";
 import EffectRack from "../effects/EffectRack.vue";
 import BaseButton from "../../ui/BaseButton.vue";
+import BaseModal from "../../ui/BaseModal.vue";
+import Dx7InstrumentPanel from "./Dx7InstrumentPanel.vue";
+
+// Instruments avec leur propre interface dédiée : au lieu des paramètres
+// inline habituels, le drawer affiche un bouton qui ouvre cette interface
+// dans une modale (voir `hasCustomInterface` plus bas).
+const INSTRUMENT_INTERFACE_COMPONENTS: Partial<
+  Record<Track["instrument"]["type"], Component>
+> = {
+  fmSynth: Dx7InstrumentPanel,
+};
 
 const props = defineProps<{
   track: Track;
@@ -22,6 +33,21 @@ const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
 
 const instrumentType = computed(() => props.track.instrument.type);
+
+const hasCustomInterface = computed(
+  () => instrumentType.value in INSTRUMENT_INTERFACE_COMPONENTS,
+);
+const customInterfaceComponent = computed(
+  () => INSTRUMENT_INTERFACE_COMPONENTS[instrumentType.value],
+);
+
+const showInstrumentModal = ref(false);
+watch(
+  () => [props.track.id, props.visible],
+  () => {
+    showInstrumentModal.value = false;
+  },
+);
 
 const currentOscillatorType = computed(() => {
   if (props.track.instrument.type === "basicSynth") {
@@ -239,6 +265,16 @@ const handleClose = () => {
               </div>
             </template>
 
+            <template v-else-if="hasCustomInterface">
+              <div class="setting-group">
+                <BaseButton
+                  label="Ouvrir l'éditeur d'instrument"
+                  right-icon="fas fa-up-right-and-down-left-from-center"
+                  @click="showInstrumentModal = true"
+                />
+              </div>
+            </template>
+
             <template v-else-if="instrumentType === 'elementarySynth'">
               <div class="setting-group">
                 <p class="coming-soon">Paramètres ADSR à venir...</p>
@@ -313,6 +349,17 @@ const handleClose = () => {
       </div>
     </Transition>
   </Teleport>
+
+  <BaseModal v-model="showInstrumentModal" size="large">
+    <template #header>
+      <h3>{{ track.name }}</h3>
+    </template>
+    <component
+      :is="customInterfaceComponent"
+      v-if="customInterfaceComponent"
+      :track="track"
+    />
+  </BaseModal>
 </template>
 
 <style scoped lang="scss">
