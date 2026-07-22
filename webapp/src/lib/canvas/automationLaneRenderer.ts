@@ -14,6 +14,8 @@ export interface AutomationRenderConfig {
   trackColor: string;
   timeSignature: TimeSignature;
   subdivision: number;
+  topLabel?: string; // ex: "D" pour le pan (valeur max = droite)
+  bottomLabel?: string; // ex: "G" pour le pan (valeur min = gauche)
 }
 
 const COLORS = {
@@ -24,6 +26,7 @@ const COLORS = {
   point: "#f2efe8",
   pointHover: "#ff3fb4",
   pointSelected: "#fff7ab",
+  axisLabel: "rgba(255, 255, 255, 0.35)",
 };
 
 const POINT_RADIUS = 5;
@@ -102,6 +105,28 @@ export class AutomationLaneRenderer {
     }
 
     ctx.restore();
+
+    this.drawAxisLabels();
+  }
+
+  // Dessinés hors du repère translaté par scrollLeft : restent épinglés au
+  // viewport visible (coin haut/bas gauche) plutôt que de défiler avec la
+  // courbe.
+  private drawAxisLabels(): void {
+    const { ctx, config } = this;
+    if (!config.topLabel && !config.bottomLabel) return;
+
+    ctx.font = "10px sans-serif";
+    ctx.fillStyle = COLORS.axisLabel;
+
+    if (config.topLabel) {
+      ctx.textBaseline = "top";
+      ctx.fillText(config.topLabel, 6, 4);
+    }
+    if (config.bottomLabel) {
+      ctx.textBaseline = "bottom";
+      ctx.fillText(config.bottomLabel, 6, this.height - 4);
+    }
   }
 
   private drawMarquee(rect: {
