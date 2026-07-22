@@ -24,9 +24,11 @@ import { reverbDefinition } from "./reverb";
 import { compressorDefinition } from "./compressor";
 import { limiterDefinition } from "./limiter";
 import { overdriveDefinition } from "./overdrive";
+import { bloopyPumpDefinition } from "./bloopyPump";
 
 registerEffect(eq5Definition);
 registerEffect(reverbDefinition);
 registerEffect(compressorDefinition);
 registerEffect(limiterDefinition);
 registerEffect(overdriveDefinition);
+registerEffect(bloopyPumpDefinition);
