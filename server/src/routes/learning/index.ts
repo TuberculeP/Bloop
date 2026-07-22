@@ -18,6 +18,9 @@ function serializeArticle(article: LearningArticle, myVote: number) {
   return { ...rest, score: computeScore(votes), myVote };
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function slugify(title: string): string {
   return title
     .normalize("NFD")
@@ -123,8 +126,12 @@ learningRouter.get("/mine", isAuth, async (req, res) => {
 learningRouter.get("/:idOrSlug", async (req, res) => {
   try {
     const articleRepository = pg.getRepository(LearningArticle);
+    const { idOrSlug } = req.params;
+    const where = UUID_REGEX.test(idOrSlug)
+      ? [{ slug: idOrSlug }, { id: idOrSlug }]
+      : [{ slug: idOrSlug }];
     const article = await articleRepository.findOne({
-      where: [{ slug: req.params.idOrSlug }, { id: req.params.idOrSlug }],
+      where,
       relations: ["author", "votes"],
     });
 
