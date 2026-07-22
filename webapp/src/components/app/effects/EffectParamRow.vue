@@ -44,11 +44,21 @@ const toggleAutomation = () => {
   if (automationLane.value) {
     timelineStore.removeAutomationLane(props.trackId, automationLane.value.id);
   } else {
-    timelineStore.addAutomationLane({
+    const laneId = timelineStore.addAutomationLane({
       trackId: props.trackId,
       effectId: props.effectId,
       paramId: props.paramId,
     });
+    // Point de départ à la valeur actuelle du paramètre (0.5 = centré pour
+    // le pan) plutôt qu'une lane vide sans courbe visible.
+    if (laneId) {
+      const normalizedValue =
+        (props.modelValue - props.min) / (props.max - props.min);
+      timelineStore.addAutomationPoint(props.trackId, laneId, {
+        x: 0,
+        y: normalizedValue,
+      });
+    }
   }
 };
 </script>

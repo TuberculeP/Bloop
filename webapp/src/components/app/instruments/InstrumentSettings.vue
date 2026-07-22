@@ -204,6 +204,16 @@ const handleVolumeChange = (volume: number) => {
   timelineStore.setTrackVolume(props.track.id, volume);
 };
 
+const panDisplayValue = computed(() => {
+  const pan = props.track.pan;
+  if (pan === 0) return "C";
+  return pan < 0 ? `G${-pan}` : `D${pan}`;
+});
+
+const handlePanChange = (pan: number) => {
+  timelineStore.setTrackPan(props.track.id, pan);
+};
+
 const handleClose = () => {
   emit("close");
 };
@@ -231,6 +241,20 @@ const handleClose = () => {
                 :max="100"
                 :model-value="track.volume"
                 @update:model-value="handleVolumeChange"
+              />
+            </div>
+
+            <div class="setting-group">
+              <EffectParamRow
+                :track-id="track.id"
+                effect-id="channel"
+                param-id="pan"
+                label="Pan"
+                :min="-127"
+                :max="127"
+                :model-value="track.pan"
+                :display-value="panDisplayValue"
+                @update:model-value="handlePanChange"
               />
             </div>
 

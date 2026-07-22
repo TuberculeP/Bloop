@@ -47,7 +47,9 @@ const resolvedTrackId = props.trackId ?? "master";
 // que de dépendre d'un enum fermé de paramètres.
 const paramLabel = computed<string>(() => {
   const target = props.lane.target;
-  if (target.effectId === "channel") return "Vol";
+  if (target.effectId === "channel") {
+    return target.paramId === "pan" ? "Pan" : "Vol";
+  }
 
   const effects = props.trackId
     ? (timelineStore.tracks.find((t) => t.id === props.trackId)?.effects ?? [])
@@ -58,6 +60,17 @@ const paramLabel = computed<string>(() => {
     : undefined;
   const paramMeta = definition?.params.find((p) => p.id === target.paramId);
   return paramMeta?.shortLabel ?? paramMeta?.label ?? target.paramId;
+});
+
+// Repères haut/bas de l'axe vertical de la courbe — utile pour un paramètre
+// bipolaire comme le pan, où "en haut" et "en bas" ne sont pas évidents sans
+// indication (contrairement au volume, où le haut = plus fort va de soi).
+const axisLabels = computed<{ topLabel?: string; bottomLabel?: string }>(() => {
+  const target = props.lane.target;
+  if (target.effectId === "channel" && target.paramId === "pan") {
+    return { topLabel: "D", bottomLabel: "G" };
+  }
+  return {};
 });
 
 const actions: AutomationLaneActions = {
@@ -129,6 +142,7 @@ onMounted(() => {
       trackColor: props.trackColor,
       timeSignature: timelineStore.timeSignature,
       subdivision: timelineStore.subdivision,
+      ...axisLabels.value,
     },
     width,
     LANE_HEIGHT,
@@ -168,6 +182,7 @@ const resizeCanvas = () => {
       trackColor: props.trackColor,
       timeSignature: timelineStore.timeSignature,
       subdivision: timelineStore.subdivision,
+      ...axisLabels.value,
     },
     width,
     LANE_HEIGHT,
