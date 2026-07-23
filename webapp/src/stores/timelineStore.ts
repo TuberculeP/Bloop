@@ -210,12 +210,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
   const metronomeEnabled = useUiLayoutPreference("metronome-enabled", false);
-  // Mode de resize des clips audio ("edit" = couper, "stretch" = étirer),
-  // préférence de vue par navigateur (pas une donnée de projet).
-  const clipResizeMode = useUiLayoutPreference<ClipResizeMode>(
-    "audio-clip-resize-mode",
-    "edit",
-  );
+  // Mode de resize des clips audio ("edit" = couper, "stretch" = étirer) —
+  // volontairement NON persisté (contrairement aux autres préférences de vue
+  // ci-dessus) : le stretch est un geste ponctuel, moins fréquent que le
+  // trim classique, donc chaque session/reload repart en mode "couper" par
+  // défaut plutôt que de rester bloquée en "stretch" silencieusement.
+  const clipResizeMode = ref<ClipResizeMode>("edit");
   // Aide d'édition éphémère (non persistée) : dernière largeur donnée à une
   // note via un resize individuel, utilisée comme largeur par défaut pour la
   // prochaine note posée au clic dans le piano roll.
