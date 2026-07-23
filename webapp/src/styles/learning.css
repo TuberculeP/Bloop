@@ -165,6 +165,7 @@
 }
 
 .md-editor-preview table {
+  max-width: 100%;
   border-color: var(--color-border-secondary);
 }
 
