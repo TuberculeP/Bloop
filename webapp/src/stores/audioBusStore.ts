@@ -6,6 +6,7 @@ import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
 import type { AutomationTarget, TimeSignature } from "../lib/utils/types";
 import type { TrackChannel } from "../lib/audio/automationTypes";
+import { ensureStretchEngineReady } from "../lib/audio/engines/stretchEngine";
 
 export const useAudioBusStore = defineStore("audioBusStore", () => {
   const sequencerStore = useSequencerStore();
@@ -22,6 +23,12 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
   const audioContext = new (
     window.AudioContext || (window as any).webkitAudioContext
   )();
+
+  // Kick-off précoce (fire-and-forget) : enregistre le worklet SoundTouch dès
+  // que possible, pour qu'il soit prêt bien avant qu'un utilisateur déclenche
+  // une note/un clip stretché (voir stretchEngine.ts).
+  ensureStretchEngineReady(audioContext);
+
   const inputBus = audioContext.createGain();
   const masterGain = audioContext.createGain();
   const effectsOutput = audioContext.createGain();

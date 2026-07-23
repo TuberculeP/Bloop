@@ -4,6 +4,7 @@ import type { Track, AudioClip } from "../../../../lib/utils/types";
 import { useTimelineStore } from "../../../../stores/timelineStore";
 import { useTrackHistoryStore } from "../../../../stores/trackHistoryStore";
 import { useAudioLibraryStore } from "../../../../stores/audioLibraryStore";
+import { useStretchRenderCacheStore } from "../../../../stores/stretchRenderCacheStore";
 import {
   useAudioClipSelection,
   useAudioClipClipboard,
@@ -14,6 +15,8 @@ import {
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
 import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
+import { applyResizeStretch } from "../../../../lib/audio/clipStretch";
+import SampleClipEditModal from "./SampleClipEditModal.vue";
 
 const props = defineProps<{
   track: Track;
@@ -28,6 +31,7 @@ const props = defineProps<{
 const timelineStore = useTimelineStore();
 const trackHistoryStore = useTrackHistoryStore();
 const audioLibraryStore = useAudioLibraryStore();
+const stretchRenderCacheStore = useStretchRenderCacheStore();
 const { placeFilesOnTrack } = useSampleFileDrop();
 
 const containerRef = ref<HTMLElement | null>(null);
@@ -187,11 +191,21 @@ const {
 const handleResizeEnd = (
   updates: Array<{ clipId: string; x: number; w: number; startOffset: number }>,
 ): void => {
-  applyBatchUpdate("Resize clip", updates, (u) => ({
-    x: Math.max(0, u.x),
-    w: Math.max(1, u.w),
-    startOffset: Math.max(0, u.startOffset),
-  }));
+  const mode = timelineStore.clipResizeMode;
+  const tempo = timelineStore.tempo;
+  applyBatchUpdate("Resize clip", updates, (u) => {
+    const base = {
+      x: Math.max(0, u.x),
+      w: Math.max(1, u.w),
+      startOffset: Math.max(0, u.startOffset),
+    };
+    const prevClip = clips.value.find((c) => c.id === u.clipId);
+    return prevClip ? applyResizeStretch(prevClip, base, mode, tempo) : base;
+  });
+  // Précalcule en fond (debounced) le rendu étiré du/des clip(s) qui viennent
+  // d'être resizés, pour qu'un premier play juste après soit déjà rapide au
+  // lieu de dépendre du fallback "cache miss → lecture live" au moment du play.
+  stretchRenderCacheStore.scheduleRecompute();
 };
 
 const {
@@ -218,6 +232,7 @@ const { initCanvas, getClipAtPosition, isOnResizeHandle, containerSize } =
     clips: () => clips.value,
     trackColor: () => props.track.color,
     tempo: () => timelineStore.tempo,
+    clipResizeMode: () => timelineStore.clipResizeMode,
     selectedClipIds,
     dragState,
     dragPreviewDeltaTicks,
@@ -306,6 +321,14 @@ const handleClick = (event: MouseEvent): void => {
   if (!getClipAtPosition(worldX, worldY)) {
     clearSelection();
   }
+};
+
+const editingClip = ref<AudioClip | null>(null);
+
+const handleDoubleClick = (event: MouseEvent): void => {
+  const { x: worldX, y: worldY } = toWorldPos(event);
+  const clip = getClipAtPosition(worldX, worldY);
+  if (clip) editingClip.value = clip;
 };
 
 const handleContextMenu = (event: MouseEvent): void => {
@@ -405,12 +428,20 @@ onBeforeUnmount(() => {
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @click="handleClick"
+      @dblclick="handleDoubleClick"
       @contextmenu="handleContextMenu"
     />
 
     <div v-if="clips.length === 0" class="drop-hint">
       Drag samples here from the library
     </div>
+
+    <SampleClipEditModal
+      v-if="editingClip"
+      :clip="editingClip"
+      :track-id="track.id"
+      @close="editingClip = null"
+    />
   </div>
 </template>
 

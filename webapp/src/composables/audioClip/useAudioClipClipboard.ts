@@ -1,12 +1,18 @@
 import { ref, type Ref } from "vue";
 import { nextTick } from "vue";
 import type { AudioClip } from "../../lib/utils/types";
+import { pickStretchFields } from "../../lib/audio/clipStretch";
 
 export interface ClipboardClip {
   dx: number;
   sampleId: string;
   w: number;
   startOffset: number;
+  stretched?: boolean;
+  stretchReferenceTicks?: number;
+  stretchReferenceTempo?: number;
+  semitones?: number;
+  cents?: number;
 }
 
 export function useAudioClipClipboard(
@@ -36,6 +42,7 @@ export function useAudioClipClipboard(
       sampleId: clip.sampleId,
       w: clip.w,
       startOffset: clip.startOffset,
+      ...pickStretchFields(clip),
     }));
   };
 
@@ -55,6 +62,7 @@ export function useAudioClipClipboard(
         x,
         w: clipData.w,
         startOffset: clipData.startOffset,
+        ...pickStretchFields(clipData),
       });
     }
 
@@ -101,6 +109,7 @@ export function useAudioClipClipboard(
         x,
         w: clip.w,
         startOffset: clip.startOffset,
+        ...pickStretchFields(clip),
       });
     }
 
