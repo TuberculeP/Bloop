@@ -236,7 +236,26 @@ export interface AudioClip {
   x: number;
   w: number;
   startOffset: number;
+
+  // Sticky : une fois vrai, reste vrai pour toujours (même si l'outil
+  // toolbar repasse en "edit" et qu'on redimensionne encore ce clip) — voir
+  // applyResizeStretch (lib/audio/clipStretch.ts).
+  stretched?: boolean;
+  // Ancre du ratio de stretch, réécrite à chaque resize en mode stretch :
+  // w (ticks) et tempo (BPM) juste avant ce resize. Permet de recalculer le
+  // playbackRate à tout moment (y compris après un changement de BPM sans
+  // nouveau resize) — voir computeClipPlaybackParams.
+  stretchReferenceTicks?: number;
+  stretchReferenceTempo?: number;
+
+  // Tune/detune : vrai pitch-shift indépendant de la durée (via GrainPlayer).
+  semitones?: number; // -12..+12
+  cents?: number; // fin, dans le demi-ton courant
 }
+
+// Nom dédié, distinct de SamplePlaybackMode (SamplePlayerConfig.mode) qui est
+// un concept différent (lecture de notes MIDI via l'instrument sampler).
+export type ClipResizeMode = "edit" | "stretch";
 
 export interface AudioSample {
   id: string;

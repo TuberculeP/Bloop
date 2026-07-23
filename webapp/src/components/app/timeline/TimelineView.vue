@@ -27,6 +27,7 @@ import { useTimelineMidiRecording } from "../../../composables/timelineView/useT
 import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
 import { useMidiImport } from "../../../composables/timelineView/useMidiImport";
 import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
+import { useStretchRecompute } from "../../../composables/timelineView/useStretchRecompute";
 import { useDropdown } from "../../../composables/useDropdown";
 import {
   pxPerTick,
@@ -358,6 +359,8 @@ const {
   handleResetReadOnly,
   handleCloneProject,
 } = useTimelineProjectMeta();
+
+useStretchRecompute();
 
 const handleAddTrack = (type: InstrumentType) => {
   const config = getDefaultConfigForType(type);
@@ -876,6 +879,29 @@ defineExpose({
                   thumb-size="small"
                   @update:model-value="timelineStore.setZoomWheelSpeed"
                 />
+              </div>
+              <div class="toolbar-settings-header">
+                Redimensionnement des clips audio
+              </div>
+              <div class="toolbar-settings-row">
+                <div class="waveform-selector">
+                  <button
+                    class="waveform-btn"
+                    :class="{ active: timelineStore.clipResizeMode === 'edit' }"
+                    @click="timelineStore.clipResizeMode = 'edit'"
+                  >
+                    Couper
+                  </button>
+                  <button
+                    class="waveform-btn"
+                    :class="{
+                      active: timelineStore.clipResizeMode === 'stretch',
+                    }"
+                    @click="timelineStore.clipResizeMode = 'stretch'"
+                  >
+                    Étirer
+                  </button>
+                </div>
               </div>
               <div class="toolbar-settings-header">Signature rythmique</div>
               <div class="toolbar-settings-row toolbar-settings-row--inline">
@@ -1840,6 +1866,34 @@ defineExpose({
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+}
+
+.waveform-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.waveform-btn {
+  padding: 10px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--color-bg-daw-active);
+    border-color: rgba(var(--color-accent3-rgb), 0.7);
+  }
+
+  &.active {
+    background: var(--color-accent2);
+    border-color: var(--color-accent2);
+    color: var(--color-bg-primary-dark);
   }
 }
 

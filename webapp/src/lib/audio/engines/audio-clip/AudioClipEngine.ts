@@ -4,10 +4,35 @@ import type {
   NoteName,
 } from "../../../utils/types";
 import { BaseEngine } from "../BaseEngine";
+import {
+  createStretchVoice,
+  ensureStretchEngineReady,
+  type StretchVoice,
+} from "../stretchEngine";
 
-interface ActiveSource {
-  source: AudioBufferSourceNode;
-  gainNode: GainNode;
+type ActiveSource =
+  | { kind: "buffer"; source: AudioBufferSourceNode; gainNode: GainNode }
+  | { kind: "stretch"; voice: StretchVoice; gainNode: GainNode };
+
+// Debug temporaire : mesure combien de ms séparent le début théorique de la
+// lecture (offsetSeconds) du premier échantillon réellement audible dans le
+// buffer, pour comparer objectivement un sample normal vs un rendu stretché
+// déjà en cache (les deux passent par playClip()).
+function findOnsetMs(
+  buffer: AudioBuffer,
+  offsetSeconds: number,
+  threshold = 0.02,
+): number {
+  const startFrame = Math.floor(offsetSeconds * buffer.sampleRate);
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = startFrame; i < data.length; i++) {
+      if (Math.abs(data[i]) > threshold) {
+        return ((i - startFrame) / buffer.sampleRate) * 1000;
+      }
+    }
+  }
+  return 0;
 }
 
 export class AudioClipEngine extends BaseEngine {
@@ -52,6 +77,7 @@ export class AudioClipEngine extends BaseEngine {
     offsetSeconds: number = 0,
     durationSeconds?: number,
   ): void {
+    const tStart = performance.now();
     if (this.activeSources.has(clipId)) {
       this.stopClip(clipId);
     }
@@ -72,7 +98,12 @@ export class AudioClipEngine extends BaseEngine {
         ? Math.min(durationSeconds, remainingDuration)
         : remainingDuration;
 
+    const tNodesReady = performance.now();
     source.start(0, actualOffset, actualDuration);
+    const tStarted = performance.now();
+    console.log(
+      `[Timing][AudioClipEngine.playClip] buildNodes=${(tNodesReady - tStart).toFixed(1)}ms start()=${(tStarted - tNodesReady).toFixed(1)}ms TOTAL=${(tStarted - tStart).toFixed(1)}ms onsetGap=${findOnsetMs(buffer, actualOffset).toFixed(1)}ms`,
+    );
 
     source.onended = () => {
       this.activeSources.delete(clipId);
@@ -84,7 +115,63 @@ export class AudioClipEngine extends BaseEngine {
       }
     };
 
-    this.activeSources.set(clipId, { source, gainNode });
+    this.activeSources.set(clipId, { kind: "buffer", source, gainNode });
+  }
+
+  // Clip stretché (BPM-synchronisé) et/ou tuné : passe par le moteur de
+  // stretch/pitch partagé (stretchEngine.ts, SoundTouchJS) au lieu d'un
+  // AudioBufferSourceNode brut, pour découpler pitch et durée. N'affecte
+  // jamais playClip() ni les clips ni stretched ni tunés, qui gardent leur
+  // chemin natif inchangé.
+  async playStretchedClip(
+    clipId: string,
+    buffer: AudioBuffer,
+    offsetSeconds: number,
+    durationSeconds: number,
+    playbackRate: number,
+    detuneCents: number,
+  ): Promise<void> {
+    const tStart = performance.now();
+    if (this.activeSources.has(clipId)) {
+      this.stopClip(clipId);
+    }
+
+    await ensureStretchEngineReady(this.audioContext);
+    const tEngineReady = performance.now();
+
+    const voice = createStretchVoice({
+      context: this.audioContext,
+      buffer,
+      playbackRate,
+      detuneCents,
+    });
+    const tVoiceCreated = performance.now();
+
+    const gainNode = this.audioContext.createGain();
+    gainNode.gain.setValueAtTime(this.gain, this.audioContext.currentTime);
+
+    voice.connect(gainNode);
+    gainNode.connect(this.destination);
+
+    voice.onended = () => {
+      const active = this.activeSources.get(clipId);
+      if (active?.kind === "stretch" && active.voice === voice) {
+        this.activeSources.delete(clipId);
+        try {
+          gainNode.disconnect();
+        } catch {
+          // Ignore if already disconnected
+        }
+      }
+    };
+
+    voice.start(0, offsetSeconds, durationSeconds);
+    const tStarted = performance.now();
+    console.log(
+      `[Timing][AudioClipEngine.playStretchedClip] ensureEngineReady=${(tEngineReady - tStart).toFixed(1)}ms createVoice=${(tVoiceCreated - tEngineReady).toFixed(1)}ms connectAndStart=${(tStarted - tVoiceCreated).toFixed(1)}ms TOTAL=${(tStarted - tStart).toFixed(1)}ms`,
+    );
+
+    this.activeSources.set(clipId, { kind: "stretch", voice, gainNode });
   }
 
   stopClip(clipId: string): void {
@@ -97,8 +184,12 @@ export class AudioClipEngine extends BaseEngine {
         );
         setTimeout(() => {
           try {
-            active.source.stop();
-            active.source.disconnect();
+            if (active.kind === "buffer") {
+              active.source.stop();
+              active.source.disconnect();
+            } else {
+              active.voice.stop();
+            }
             active.gainNode.disconnect();
           } catch {
             // Ignore if already stopped

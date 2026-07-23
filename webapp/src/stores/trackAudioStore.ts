@@ -13,12 +13,13 @@ import type {
   Track,
 } from "../lib/utils/types";
 import { useAudioLibraryStore } from "./audioLibraryStore";
+import { useStretchRenderCacheStore } from "./stretchRenderCacheStore";
 import { AudioClipEngine } from "../lib/audio/engines/audio-clip";
 import { SamplePlayerEngine } from "../lib/audio/engines/sample-player";
 import { createInstrumentEngine } from "../lib/audio/instrumentFactory";
 import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
-import { ticksPerSecond } from "../lib/audio/timeGrid";
+import { computeClipPlaybackParams } from "../lib/audio/clipStretch";
 
 interface TrackChannel {
   trackId: string;
@@ -196,7 +197,9 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     clip: AudioClip,
     playbackOffsetColumns: number = 0,
   ): Promise<void> => {
+    const tPlayCalled = performance.now();
     await ensureAudioContextResumed();
+    const tResumed = performance.now();
 
     const track = timelineStore.tracks.find((t) => t.id === trackId);
     if (!track) {
@@ -224,18 +227,89 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
 
     const audioLibraryStore = useAudioLibraryStore();
     const buffer = await audioLibraryStore.loadSample(clip.sampleId);
+    const tSampleLoaded = performance.now();
 
     if (!buffer) {
       console.warn(`Failed to load sample: ${clip.sampleId}`);
       return;
     }
 
-    const tickRate = ticksPerSecond(timelineStore.tempo);
-    const offsetInSeconds =
-      (clip.startOffset + playbackOffsetColumns) / tickRate;
-    const durationInSeconds = (clip.w - playbackOffsetColumns) / tickRate;
+    const params = computeClipPlaybackParams(
+      clip,
+      timelineStore.tempo,
+      playbackOffsetColumns,
+    );
 
-    engine.playClip(clip.id, buffer, offsetInSeconds, durationInSeconds);
+    if (params.needsStretchEngine) {
+      const stretchRenderCacheStore = useStretchRenderCacheStore();
+      const cached = await stretchRenderCacheStore.getCachedStretchedClip(
+        clip,
+        timelineStore.tempo,
+        audioContext,
+      );
+      const tCacheChecked = performance.now();
+
+      if (cached) {
+        // Buffer déjà dans le domaine CIBLE (déjà étiré) : le scrub se
+        // calcule en simple proportion, pas besoin de compenser un
+        // playbackRate comme dans le chemin live ci-dessous.
+        const fraction = playbackOffsetColumns / clip.w;
+        const scrubOffset = fraction * cached.duration;
+        engine.playClip(
+          clip.id,
+          cached,
+          scrubOffset,
+          cached.duration - scrubOffset,
+        );
+        const tPlayStarted = performance.now();
+        console.log(
+          `[Timing][stretch:HIT] resume=${(tResumed - tPlayCalled).toFixed(1)}ms ` +
+            `loadSample=${(tSampleLoaded - tResumed).toFixed(1)}ms ` +
+            `cacheGet=${(tCacheChecked - tSampleLoaded).toFixed(1)}ms ` +
+            `playClip=${(tPlayStarted - tCacheChecked).toFixed(1)}ms ` +
+            `TOTAL=${(tPlayStarted - tPlayCalled).toFixed(1)}ms`,
+        );
+      } else {
+        await engine.playStretchedClip(
+          clip.id,
+          buffer,
+          params.offsetSeconds,
+          params.durationSeconds,
+          params.playbackRate,
+          params.detuneCents,
+        );
+        const tPlayStarted = performance.now();
+        console.log(
+          `[Timing][stretch:MISS] resume=${(tResumed - tPlayCalled).toFixed(1)}ms ` +
+            `loadSample=${(tSampleLoaded - tResumed).toFixed(1)}ms ` +
+            `cacheGet=${(tCacheChecked - tSampleLoaded).toFixed(1)}ms ` +
+            `livePlayStretched=${(tPlayStarted - tCacheChecked).toFixed(1)}ms ` +
+            `TOTAL=${(tPlayStarted - tPlayCalled).toFixed(1)}ms`,
+        );
+        // Fire-and-forget : rend disponible un cache chaud pour la prochaine
+        // lecture, sans jamais bloquer celle-ci.
+        stretchRenderCacheStore.ensureStretchedClipCached(
+          clip,
+          buffer,
+          timelineStore.tempo,
+          audioContext,
+        );
+      }
+    } else {
+      engine.playClip(
+        clip.id,
+        buffer,
+        params.offsetSeconds,
+        params.durationSeconds,
+      );
+      const tPlayStarted = performance.now();
+      console.log(
+        `[Timing][plain] resume=${(tResumed - tPlayCalled).toFixed(1)}ms ` +
+          `loadSample=${(tSampleLoaded - tResumed).toFixed(1)}ms ` +
+          `playClip=${(tPlayStarted - tSampleLoaded).toFixed(1)}ms ` +
+          `TOTAL=${(tPlayStarted - tPlayCalled).toFixed(1)}ms`,
+      );
+    }
   };
 
   const stopClipOnTrack = (trackId: string, clipId: string): void => {

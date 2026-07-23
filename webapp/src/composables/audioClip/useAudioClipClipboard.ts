@@ -7,6 +7,11 @@ export interface ClipboardClip {
   sampleId: string;
   w: number;
   startOffset: number;
+  stretched?: boolean;
+  stretchReferenceTicks?: number;
+  stretchReferenceTempo?: number;
+  semitones?: number;
+  cents?: number;
 }
 
 export function useAudioClipClipboard(
@@ -36,6 +41,11 @@ export function useAudioClipClipboard(
       sampleId: clip.sampleId,
       w: clip.w,
       startOffset: clip.startOffset,
+      stretched: clip.stretched,
+      stretchReferenceTicks: clip.stretchReferenceTicks,
+      stretchReferenceTempo: clip.stretchReferenceTempo,
+      semitones: clip.semitones,
+      cents: clip.cents,
     }));
   };
 
@@ -55,6 +65,11 @@ export function useAudioClipClipboard(
         x,
         w: clipData.w,
         startOffset: clipData.startOffset,
+        stretched: clipData.stretched,
+        stretchReferenceTicks: clipData.stretchReferenceTicks,
+        stretchReferenceTempo: clipData.stretchReferenceTempo,
+        semitones: clipData.semitones,
+        cents: clipData.cents,
       });
     }
 
@@ -101,6 +116,11 @@ export function useAudioClipClipboard(
         x,
         w: clip.w,
         startOffset: clip.startOffset,
+        stretched: clip.stretched,
+        stretchReferenceTicks: clip.stretchReferenceTicks,
+        stretchReferenceTempo: clip.stretchReferenceTempo,
+        semitones: clip.semitones,
+        cents: clip.cents,
       });
     }
 

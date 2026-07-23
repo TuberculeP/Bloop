@@ -6,6 +6,7 @@ import type {
   MidiNote,
   AudioClip,
   AudioSample,
+  ClipResizeMode,
   InstrumentConfig,
   InstrumentType,
   TrackColor,
@@ -207,6 +208,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
   const metronomeEnabled = useUiLayoutPreference("metronome-enabled", false);
+  // Mode de resize des clips audio ("edit" = couper, "stretch" = étirer),
+  // préférence de vue par navigateur (pas une donnée de projet).
+  const clipResizeMode = useUiLayoutPreference<ClipResizeMode>(
+    "audio-clip-resize-mode",
+    "edit",
+  );
   // Aide d'édition éphémère (non persistée) : dernière largeur donnée à une
   // note via un resize individuel, utilisée comme largeur par défaut pour la
   // prochaine note posée au clic dans le piano roll.
@@ -647,6 +654,11 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       x: cutPosition,
       w: rightW,
       startOffset: rightStartOffset,
+      stretched: clip.stretched,
+      stretchReferenceTicks: clip.stretchReferenceTicks,
+      stretchReferenceTempo: clip.stretchReferenceTempo,
+      semitones: clip.semitones,
+      cents: clip.cents,
     });
 
     track.updatedAt = new Date();
@@ -1235,6 +1247,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     expandedTrack,
     automationExpandedMaster,
     metronomeEnabled,
+    clipResizeMode,
     lastResizedNoteWidth,
     zoomLevel,
     zoomWheelSpeed,
