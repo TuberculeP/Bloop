@@ -44,4 +44,10 @@ const model = defineModel<string>();
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .base-select {
+    font-size: 16px;
+  }
+}
 </style>
