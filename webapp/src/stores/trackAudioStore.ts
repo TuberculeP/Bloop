@@ -197,9 +197,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     clip: AudioClip,
     playbackOffsetColumns: number = 0,
   ): Promise<void> => {
-    const tPlayCalled = performance.now();
     await ensureAudioContextResumed();
-    const tResumed = performance.now();
 
     const track = timelineStore.tracks.find((t) => t.id === trackId);
     if (!track) {
@@ -227,7 +225,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
 
     const audioLibraryStore = useAudioLibraryStore();
     const buffer = await audioLibraryStore.loadSample(clip.sampleId);
-    const tSampleLoaded = performance.now();
 
     if (!buffer) {
       console.warn(`Failed to load sample: ${clip.sampleId}`);
@@ -247,7 +244,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
         timelineStore.tempo,
         audioContext,
       );
-      const tCacheChecked = performance.now();
 
       if (cached) {
         // Buffer déjà dans le domaine CIBLE (déjà étiré) : le scrub se
@@ -261,14 +257,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
           scrubOffset,
           cached.duration - scrubOffset,
         );
-        const tPlayStarted = performance.now();
-        console.log(
-          `[Timing][stretch:HIT] resume=${(tResumed - tPlayCalled).toFixed(1)}ms ` +
-            `loadSample=${(tSampleLoaded - tResumed).toFixed(1)}ms ` +
-            `cacheGet=${(tCacheChecked - tSampleLoaded).toFixed(1)}ms ` +
-            `playClip=${(tPlayStarted - tCacheChecked).toFixed(1)}ms ` +
-            `TOTAL=${(tPlayStarted - tPlayCalled).toFixed(1)}ms`,
-        );
       } else {
         await engine.playStretchedClip(
           clip.id,
@@ -277,14 +265,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
           params.durationSeconds,
           params.playbackRate,
           params.detuneCents,
-        );
-        const tPlayStarted = performance.now();
-        console.log(
-          `[Timing][stretch:MISS] resume=${(tResumed - tPlayCalled).toFixed(1)}ms ` +
-            `loadSample=${(tSampleLoaded - tResumed).toFixed(1)}ms ` +
-            `cacheGet=${(tCacheChecked - tSampleLoaded).toFixed(1)}ms ` +
-            `livePlayStretched=${(tPlayStarted - tCacheChecked).toFixed(1)}ms ` +
-            `TOTAL=${(tPlayStarted - tPlayCalled).toFixed(1)}ms`,
         );
         // Fire-and-forget : rend disponible un cache chaud pour la prochaine
         // lecture, sans jamais bloquer celle-ci.
@@ -301,13 +281,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
         buffer,
         params.offsetSeconds,
         params.durationSeconds,
-      );
-      const tPlayStarted = performance.now();
-      console.log(
-        `[Timing][plain] resume=${(tResumed - tPlayCalled).toFixed(1)}ms ` +
-          `loadSample=${(tSampleLoaded - tResumed).toFixed(1)}ms ` +
-          `playClip=${(tPlayStarted - tSampleLoaded).toFixed(1)}ms ` +
-          `TOTAL=${(tPlayStarted - tPlayCalled).toFixed(1)}ms`,
       );
     }
   };

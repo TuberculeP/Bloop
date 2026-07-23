@@ -1,6 +1,32 @@
 import type { AudioClip, ClipResizeMode } from "../utils/types";
 import { ticksPerSecond } from "./timeGrid";
 
+export type StretchFields = Pick<
+  AudioClip,
+  | "stretched"
+  | "stretchReferenceTicks"
+  | "stretchReferenceTempo"
+  | "semitones"
+  | "cents"
+>;
+
+// Champs qui définissent l'altération d'un clip (stretch + tune) — liste
+// unique à tenir à jour si un futur champ d'édition s'ajoute : copier/coller,
+// dupliquer et couper un clip doivent tous préserver l'altération de la même
+// façon plutôt que de réénumérer ces clés à chaque call site. Paramètre typé
+// en `StretchFields` (pas `AudioClip`) pour accepter aussi bien un clip
+// complet qu'une entrée de presse-papier (ClipboardClip) qui partage ces
+// mêmes 5 champs sans être un AudioClip complet.
+export function pickStretchFields(clip: StretchFields): StretchFields {
+  return {
+    stretched: clip.stretched,
+    stretchReferenceTicks: clip.stretchReferenceTicks,
+    stretchReferenceTempo: clip.stretchReferenceTempo,
+    semitones: clip.semitones,
+    cents: clip.cents,
+  };
+}
+
 export interface ClipPlaybackParams {
   offsetSeconds: number;
   durationSeconds: number;
@@ -128,19 +154,20 @@ export function applyResizeStretch(
   const startOffset =
     prevClip.startOffset + startOffsetDeltaTicks * conversionFactor;
 
+  const base = {
+    ...newTicks,
+    startOffset,
+    stretched: true as const,
+    stretchReferenceTempo: prevClip.stretchReferenceTempo,
+  };
+
   if (toolbarMode === "stretch") {
     // Mode "étirer" : on ne touche jamais la référence native déjà ancrée
     // (fix précédent) — la largeur pilote délibérément un NOUVEAU ratio de
     // stretch, recalculé par computeClipPlaybackParams à partir de cette
     // référence fixe. Seul le décalage de départ (bord gauche) est reconverti
     // dans le référentiel natif ici.
-    return {
-      ...newTicks,
-      startOffset,
-      stretched: true,
-      stretchReferenceTicks: prevClip.stretchReferenceTicks,
-      stretchReferenceTempo: prevClip.stretchReferenceTempo,
-    };
+    return { ...base, stretchReferenceTicks: prevClip.stretchReferenceTicks };
   }
 
   // Mode "couper" sur un clip déjà stretché : le stretch (playbackRate) doit
@@ -150,11 +177,5 @@ export function applyResizeStretch(
   // elle démarre/finit sans perdre le calage à 120). stretchReferenceTicks
   // est donc recalculé avec le MÊME conversionFactor pour que le NOUVEAU w
   // reproduise exactement playbackRateBefore.
-  return {
-    ...newTicks,
-    startOffset,
-    stretched: true,
-    stretchReferenceTicks: newTicks.w * conversionFactor,
-    stretchReferenceTempo: prevClip.stretchReferenceTempo,
-  };
+  return { ...base, stretchReferenceTicks: newTicks.w * conversionFactor };
 }

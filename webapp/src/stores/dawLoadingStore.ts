@@ -278,6 +278,12 @@ export const useDawLoadingStore = defineStore("dawLoading", () => {
     const audioBusStore = useAudioBusStore();
     const stretchRenderCacheStore = useStretchRenderCacheStore();
 
+    // Rendus indépendants les uns des autres (samples déjà en cache mémoire
+    // depuis la phase précédente) — en parallèle, comme executeInstrumentsPhase
+    // ci-dessus, plutôt que séquentiel comme executeSamplesPhase (qui limite
+    // volontairement les requêtes réseau concurrentes ; ici il n'y en a pas).
+    const renderTasks: Promise<void>[] = [];
+
     for (const track of project.tracks) {
       if (track.instrument.type !== "audioTrack" || !track.clips) continue;
       for (const clip of track.clips) {
@@ -286,27 +292,32 @@ export const useDawLoadingStore = defineStore("dawLoading", () => {
         if (!task) continue;
 
         task.status = "loading";
-        try {
-          const buffer = await audioLibraryStore.loadSample(clip.sampleId);
-          if (buffer) {
-            await stretchRenderCacheStore.ensureStretchedClipCached(
-              clip,
-              buffer,
-              project.tempo,
-              audioBusStore.audioContext,
-            );
-          }
-          task.status = "complete";
-        } catch (e) {
-          console.error(
-            `[DawLoading] Failed to prerender stretched clip ${clip.id}:`,
-            e,
-          );
-          task.status = "error";
-        }
+        renderTasks.push(
+          (async () => {
+            try {
+              const buffer = await audioLibraryStore.loadSample(clip.sampleId);
+              if (buffer) {
+                await stretchRenderCacheStore.ensureStretchedClipCached(
+                  clip,
+                  buffer,
+                  project.tempo,
+                  audioBusStore.audioContext,
+                );
+              }
+              task.status = "complete";
+            } catch (e) {
+              console.error(
+                `[DawLoading] Failed to prerender stretched clip ${clip.id}:`,
+                e,
+              );
+              task.status = "error";
+            }
+          })(),
+        );
       }
     }
 
+    await Promise.all(renderTasks);
     phase.status = "complete";
   }
 

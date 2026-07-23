@@ -4,6 +4,7 @@ import type { Track, AudioClip } from "../../../../lib/utils/types";
 import { useTimelineStore } from "../../../../stores/timelineStore";
 import { useTrackHistoryStore } from "../../../../stores/trackHistoryStore";
 import { useAudioLibraryStore } from "../../../../stores/audioLibraryStore";
+import { useStretchRenderCacheStore } from "../../../../stores/stretchRenderCacheStore";
 import {
   useAudioClipSelection,
   useAudioClipClipboard,
@@ -13,7 +14,6 @@ import {
   useAudioClipCanvas,
 } from "../../../../composables/audioClip";
 import { useSampleFileDrop } from "../../../../composables/useSampleFileDrop";
-import { scheduleStretchRecompute } from "../../../../composables/timelineView/useStretchRecompute";
 import { ticksPerSecond } from "../../../../lib/audio/timeGrid";
 import { applyResizeStretch } from "../../../../lib/audio/clipStretch";
 import SampleClipEditModal from "./SampleClipEditModal.vue";
@@ -31,6 +31,7 @@ const props = defineProps<{
 const timelineStore = useTimelineStore();
 const trackHistoryStore = useTrackHistoryStore();
 const audioLibraryStore = useAudioLibraryStore();
+const stretchRenderCacheStore = useStretchRenderCacheStore();
 const { placeFilesOnTrack } = useSampleFileDrop();
 
 const containerRef = ref<HTMLElement | null>(null);
@@ -204,7 +205,7 @@ const handleResizeEnd = (
   // Précalcule en fond (debounced) le rendu étiré du/des clip(s) qui viennent
   // d'être resizés, pour qu'un premier play juste après soit déjà rapide au
   // lieu de dépendre du fallback "cache miss → lecture live" au moment du play.
-  scheduleStretchRecompute();
+  stretchRenderCacheStore.scheduleRecompute();
 };
 
 const {

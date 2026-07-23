@@ -6,6 +6,10 @@ import {
   type ClipPlaybackParams,
 } from "../lib/audio/clipStretch";
 import { renderStretchedBuffer } from "../lib/audio/engines/stretchEngine";
+import { createDebouncer } from "../lib/utils/debounce";
+import { useTimelineStore } from "./timelineStore";
+import { useAudioLibraryStore } from "./audioLibraryStore";
+import { useAudioBusStore } from "./audioBusStore";
 
 export function buildStretchCacheKey(
   sampleId: string,
@@ -126,6 +130,46 @@ const STORE_NAME = "renders";
 // modeste suffit largement pour quelques dizaines de clips étirés en cache.
 const MAX_CACHE_SIZE = 200 * 1024 * 1024; // 200MB
 
+// Un changement de BPM ou un resize en mode stretch change le playbackRate
+// d'un clip stretché — les rendus déjà en cache deviennent obsolètes (cache
+// miss naturel, la clé inclut le playbackRate). recomputeAllStretchedClips
+// relance un pré-calcul en fond pour tous les clips stretchés du projet dès
+// que ça se stabilise (debounced), pour qu'un premier play soit déjà rapide
+// plutôt que de dépendre du fallback "cache miss → lecture live + re-cache"
+// de trackAudioStore. Le timer vit ici (module-level, comme `inFlight`/
+// `decodedBuffers` ci-dessus) plutôt que dans un composable Vue, pour être
+// appelable depuis n'importe où (watcher de tempo, ou juste après un resize
+// dans AudioClipRow.vue) sans prop-drilling ni second watcher redondant.
+const RECOMPUTE_DEBOUNCE_MS = 600;
+
+async function recomputeAllStretchedClips(): Promise<void> {
+  const timelineStore = useTimelineStore();
+  const audioLibraryStore = useAudioLibraryStore();
+  const audioBusStore = useAudioBusStore();
+  const stretchRenderCacheStore = useStretchRenderCacheStore();
+
+  const tempo = timelineStore.tempo;
+  for (const track of timelineStore.project.tracks) {
+    if (track.instrument.type !== "audioTrack" || !track.clips) continue;
+    for (const clip of track.clips) {
+      if (!clip.stretched) continue;
+      const buffer = await audioLibraryStore.loadSample(clip.sampleId);
+      if (!buffer) continue;
+      stretchRenderCacheStore.ensureStretchedClipCached(
+        clip,
+        buffer,
+        tempo,
+        audioBusStore.audioContext,
+      );
+    }
+  }
+}
+
+const recomputeDebouncer = createDebouncer(
+  recomputeAllStretchedClips,
+  RECOMPUTE_DEBOUNCE_MS,
+);
+
 export const useStretchRenderCacheStore = defineStore("stretchRenderCache", {
   state: () => ({
     db: null as IDBPDatabase | null,
@@ -163,29 +207,15 @@ export const useStretchRenderCacheStore = defineStore("stretchRenderCache", {
       key: string,
       audioContext: BaseAudioContext,
     ): Promise<AudioBuffer | null> {
-      const tStart = performance.now();
-
       const resident = decodedBuffers.get(key);
-      if (resident) {
-        console.log(
-          `[Timing][cacheStore.get MEMORY-HIT] TOTAL=${(performance.now() - tStart).toFixed(1)}ms`,
-        );
-        return resident;
-      }
+      if (resident) return resident;
 
       if (!this.isInitialized) await this.initialize();
-      const tInitChecked = performance.now();
       if (!this.db) return null;
 
       const cached = (await this.db.get(STORE_NAME, key)) as
         CachedStretchRender | undefined;
-      const tDbRead = performance.now();
-      if (!cached) {
-        console.log(
-          `[Timing][cacheStore.get MISS] initCheck=${(tInitChecked - tStart).toFixed(1)}ms dbGet=${(tDbRead - tInitChecked).toFixed(1)}ms`,
-        );
-        return null;
-      }
+      if (!cached) return null;
 
       const buffer = audioContext.createBuffer(
         cached.numberOfChannels,
@@ -201,10 +231,6 @@ export const useStretchRenderCacheStore = defineStore("stretchRenderCache", {
           ch,
         );
       }
-      const tBufferRebuilt = performance.now();
-      console.log(
-        `[Timing][cacheStore.get IDB-HIT] initCheck=${(tInitChecked - tStart).toFixed(1)}ms dbGet=${(tDbRead - tInitChecked).toFixed(1)}ms rebuildBuffer=${(tBufferRebuilt - tDbRead).toFixed(1)}ms TOTAL=${(tBufferRebuilt - tStart).toFixed(1)}ms`,
-      );
       decodedBuffers.set(key, buffer);
 
       // Rafraîchit le timestamp LRU en fond, sans jamais retarder le retour
@@ -352,6 +378,12 @@ export const useStretchRenderCacheStore = defineStore("stretchRenderCache", {
       })();
       inFlight.set(key, task);
       return task;
+    },
+
+    // Déclenche (debounced) un recalcul en fond de tous les clips stretchés
+    // du projet — voir recomputeAllStretchedClips ci-dessus pour le pourquoi.
+    scheduleRecompute(): void {
+      recomputeDebouncer.schedule();
     },
   },
 });

@@ -59,21 +59,6 @@ export interface RenderStretchedBufferOptions {
   padFrames?: number; // défaut 0 : nb de frames natives de préroll à couper après rendu
 }
 
-// Debug temporaire : localise le premier échantillon audible (au-dessus d'un
-// seuil) dans un buffer, pour vérifier objectivement si le rendu final
-// démarre bien pile au bon endroit.
-function findOnsetMs(buffer: AudioBuffer, threshold = 0.02): number {
-  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-    const data = buffer.getChannelData(ch);
-    for (let i = 0; i < data.length; i++) {
-      if (Math.abs(data[i]) > threshold) {
-        return (i / buffer.sampleRate) * 1000;
-      }
-    }
-  }
-  return (buffer.length / buffer.sampleRate) * 1000;
-}
-
 // Pré-rendu offline (OfflineAudioContext, pas de contrainte temps réel) d'un
 // buffer étiré/tuné — utilisé pour peupler le cache (stretchRenderCacheStore)
 // au lieu de payer le coût de construction d'un SoundTouchNode + la latence
@@ -101,7 +86,6 @@ export async function renderStretchedBuffer(
 ): Promise<AudioBuffer> {
   const { buffer, playbackRate = 1, detuneCents = 0, padFrames = 0 } = options;
 
-  const tRenderStart = performance.now();
   const rendered = await processOffline({
     input: buffer,
     processorUrl,
@@ -130,9 +114,6 @@ export async function renderStretchedBuffer(
       ) as Float32Array<ArrayBuffer>;
     trimmed.copyToChannel(slice, ch);
   }
-  console.log(
-    `[Timing][renderStretchedBuffer] processOffline=${(performance.now() - tRenderStart).toFixed(1)}ms padFrames=${padFrames} padOutputFrames=${padOutputFrames} (${((padOutputFrames / rendered.sampleRate) * 1000).toFixed(1)}ms) onsetGap trimmedOutput=${findOnsetMs(trimmed).toFixed(1)}ms`,
-  );
   return trimmed;
 }
 

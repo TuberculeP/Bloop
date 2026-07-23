@@ -29,6 +29,8 @@ import {
   LEGACY_TO_TICKS_SCALE,
   migrateLegacyProject,
 } from "../lib/audio/timeGrid";
+import { pickStretchFields } from "../lib/audio/clipStretch";
+import { createDebouncer } from "../lib/utils/debounce";
 import { useProjectStore } from "./projectStore";
 import { useUiLayoutPreference } from "../composables/useUiLayoutStorage";
 
@@ -654,11 +656,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       x: cutPosition,
       w: rightW,
       startOffset: rightStartOffset,
-      stretched: clip.stretched,
-      stretchReferenceTicks: clip.stretchReferenceTicks,
-      stretchReferenceTempo: clip.stretchReferenceTempo,
-      semitones: clip.semitones,
-      cents: clip.cents,
+      ...pickStretchFields(clip),
     });
 
     track.updatedAt = new Date();
@@ -986,28 +984,6 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // ============================================
   // Persistence
   // ============================================
-
-  // Factory de debounce partagée par la sauvegarde de projet et la
-  // persistance du zoom ci-dessous : un seul setTimeout/clearTimeout à la
-  // fois par `fn`, plus un `flush` pour ne rien perdre si l'onglet se ferme
-  // juste après (voir les deux usages).
-  const createDebouncer = (fn: () => void, ms: number) => {
-    let id: ReturnType<typeof setTimeout> | null = null;
-    const schedule = (): void => {
-      if (id) clearTimeout(id);
-      id = setTimeout(() => {
-        id = null;
-        fn();
-      }, ms);
-    };
-    const flush = (): void => {
-      if (!id) return;
-      clearTimeout(id);
-      id = null;
-      fn();
-    };
-    return { schedule, flush };
-  };
 
   const saveToLocalStorage = (): void => {
     try {
