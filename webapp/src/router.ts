@@ -58,6 +58,7 @@ import LandingAbout from "./views/landing/LandingAbout.vue";
 import LandingSupport from "./views/landing/LandingSupport.vue";
 import ButtonView from "./views/messages/ButtonView.vue";
 import LandingContact from "./views/landing/LandingContact.vue";
+import PublicProfileView from "./views/profile/PublicProfileView.vue";
 
 const routes = [
   { path: "/", component: LandingIndex, name: "landing-main" },
@@ -111,6 +112,11 @@ const routes = [
   },
   { path: "/profile", component: ProfileView, name: "profile" },
   { path: "/messages", component: MessagesView, name: "messages" },
+  {
+    path: "/public-profile/:slug",
+    component: PublicProfileView,
+    name: "public-profile",
+  },
   // Admin routes
   {
     path: "/admin",
