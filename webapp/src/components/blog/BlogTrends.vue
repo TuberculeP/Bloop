@@ -105,7 +105,6 @@ defineExpose({ clearFilters, selectedTags });
   border: 1px solid var(--color-border-secondary);
   border-radius: var(--radius-md);
   padding: 20px;
-  margin-bottom: 20px;
   color: var(--color-white);
   display: flex;
   flex-direction: column;

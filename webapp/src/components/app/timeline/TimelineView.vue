@@ -49,6 +49,7 @@ import EmptyState from "../../ui/EmptyState.vue";
 import FormField from "../../ui/FormField.vue";
 import BaseInput from "../../ui/BaseInput.vue";
 import { useToast } from "../../../composables/useToast";
+import VpnBanner from "../../ad/VpnBanner.vue";
 
 const emit = defineEmits<{
   (
@@ -1264,6 +1265,8 @@ defineExpose({
       </ul>
     </div>
   </Teleport>
+
+  <VpnBanner :dismissible="true" />
 </template>
 
 <style scoped lang="scss">
