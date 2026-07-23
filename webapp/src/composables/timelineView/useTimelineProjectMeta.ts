@@ -3,20 +3,30 @@ import { useRoute, useRouter } from "vue-router";
 import { useProjectStore } from "../../stores/projectStore";
 import { useTimelineStore } from "../../stores/timelineStore";
 import { useDawLoadingStore } from "../../stores/dawLoadingStore";
+import { useDropdown } from "../useDropdown";
+import { useToast } from "../useToast";
 
-/** Métadonnées de projet : nom, sauvegarde, clonage, rechargement (route + lecture seule). */
+/** Métadonnées de projet : nom, sauvegarde, clonage, rechargement (route + lecture seule), partage. */
 export function useTimelineProjectMeta() {
   const router = useRouter();
   const route = useRoute();
   const projectStore = useProjectStore();
   const timelineStore = useTimelineStore();
   const dawLoadingStore = useDawLoadingStore();
+  const toast = useToast();
 
   const isCloning = ref(false);
   const isSaving = ref(false);
   const saveMessage = ref<{ type: "success" | "error"; text: string } | null>(
     null,
   );
+
+  const {
+    isOpen: showShareMenu,
+    close: closeShareMenu,
+    toggle: toggleShareMenu,
+  } = useDropdown();
+  const isTogglingVisibility = ref(false);
 
   const isEditingProjectName = ref(false);
   const editedProjectName = ref("");
@@ -115,6 +125,49 @@ export function useTimelineProjectMeta() {
     }
   };
 
+  const getShareLink = () =>
+    `${window.location.origin}/app/sequencer?projectId=${projectStore.currentProjectId}`;
+
+  const setVisibility = async (nextIsPublic: boolean) => {
+    if (
+      !projectStore.currentProjectId ||
+      isTogglingVisibility.value ||
+      nextIsPublic === projectStore.isPublic
+    )
+      return;
+
+    isTogglingVisibility.value = true;
+    const result = await projectStore.updateVisibility(
+      projectStore.currentProjectId,
+      nextIsPublic,
+    );
+    isTogglingVisibility.value = false;
+
+    if (!result.success) {
+      toast.error(result.error || "Erreur lors du changement de visibilité.");
+    }
+  };
+
+  const copyShareLink = async () => {
+    if (!projectStore.currentProjectId) return;
+
+    await navigator.clipboard.writeText(getShareLink());
+    toast.success("Lien copié !");
+    closeShareMenu();
+  };
+
+  const shareToBlog = () => {
+    if (!projectStore.currentProjectId) return;
+
+    closeShareMenu();
+    router.push({
+      name: "app-blog",
+      query: {
+        shareText: `Découvrez ma nouvelle musique : ${getShareLink()}`,
+      },
+    });
+  };
+
   return {
     isCloning,
     isSaving,
@@ -129,5 +182,12 @@ export function useTimelineProjectMeta() {
     handleBackToProjects,
     handleResetReadOnly,
     handleCloneProject,
+    showShareMenu,
+    closeShareMenu,
+    toggleShareMenu,
+    isTogglingVisibility,
+    setVisibility,
+    copyShareLink,
+    shareToBlog,
   };
 }
