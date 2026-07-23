@@ -448,14 +448,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
   const initialize = (): void => {
     if (isInitialized.value) return;
 
-    // Restaurer les métadonnées des samples utilisés par le projet AVANT de
-    // synchroniser les pistes ci-dessous : un Sample Player résout son sample
-    // dès la création de son channel (syncTracksWithStore), donc restaurer
-    // ces métadonnées après aurait été une course perdue d'avance.
-    if (timelineStore.project.usedSamples) {
-      useAudioLibraryStore().restoreSamples(timelineStore.project.usedSamples);
-    }
-
     // Synchroniser avec les pistes existantes
     syncTracksWithStore();
 
