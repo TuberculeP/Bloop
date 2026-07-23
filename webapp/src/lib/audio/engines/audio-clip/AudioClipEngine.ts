@@ -4,11 +4,15 @@ import type {
   NoteName,
 } from "../../../utils/types";
 import { BaseEngine } from "../BaseEngine";
+import {
+  createStretchVoice,
+  ensureStretchEngineReady,
+  type StretchVoice,
+} from "../stretchEngine";
 
-interface ActiveSource {
-  source: AudioBufferSourceNode;
-  gainNode: GainNode;
-}
+type ActiveSource =
+  | { kind: "buffer"; source: AudioBufferSourceNode; gainNode: GainNode }
+  | { kind: "stretch"; voice: StretchVoice; gainNode: GainNode };
 
 export class AudioClipEngine extends BaseEngine {
   readonly type = "audioTrack";
@@ -84,7 +88,56 @@ export class AudioClipEngine extends BaseEngine {
       }
     };
 
-    this.activeSources.set(clipId, { source, gainNode });
+    this.activeSources.set(clipId, { kind: "buffer", source, gainNode });
+  }
+
+  // Clip stretché (BPM-synchronisé) et/ou tuné : passe par le moteur de
+  // stretch/pitch partagé (stretchEngine.ts, SoundTouchJS) au lieu d'un
+  // AudioBufferSourceNode brut, pour découpler pitch et durée. N'affecte
+  // jamais playClip() ni les clips ni stretched ni tunés, qui gardent leur
+  // chemin natif inchangé.
+  async playStretchedClip(
+    clipId: string,
+    buffer: AudioBuffer,
+    offsetSeconds: number,
+    durationSeconds: number,
+    playbackRate: number,
+    detuneCents: number,
+  ): Promise<void> {
+    if (this.activeSources.has(clipId)) {
+      this.stopClip(clipId);
+    }
+
+    await ensureStretchEngineReady(this.audioContext);
+
+    const voice = createStretchVoice({
+      context: this.audioContext,
+      buffer,
+      playbackRate,
+      detuneCents,
+    });
+
+    const gainNode = this.audioContext.createGain();
+    gainNode.gain.setValueAtTime(this.gain, this.audioContext.currentTime);
+
+    voice.connect(gainNode);
+    gainNode.connect(this.destination);
+
+    voice.onended = () => {
+      const active = this.activeSources.get(clipId);
+      if (active?.kind === "stretch" && active.voice === voice) {
+        this.activeSources.delete(clipId);
+        try {
+          gainNode.disconnect();
+        } catch {
+          // Ignore if already disconnected
+        }
+      }
+    };
+
+    voice.start(0, offsetSeconds, durationSeconds);
+
+    this.activeSources.set(clipId, { kind: "stretch", voice, gainNode });
   }
 
   stopClip(clipId: string): void {
@@ -97,8 +150,12 @@ export class AudioClipEngine extends BaseEngine {
         );
         setTimeout(() => {
           try {
-            active.source.stop();
-            active.source.disconnect();
+            if (active.kind === "buffer") {
+              active.source.stop();
+              active.source.disconnect();
+            } else {
+              active.voice.stop();
+            }
             active.gainNode.disconnect();
           } catch {
             // Ignore if already stopped
