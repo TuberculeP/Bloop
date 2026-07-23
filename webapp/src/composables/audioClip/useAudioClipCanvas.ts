@@ -1,7 +1,16 @@
 import { ref, watch, type Ref } from "vue";
-import type { AudioClip, TimeSignature } from "../../lib/utils/types";
-import { getVisibleTickRange, ticksPerSecond } from "../../lib/audio/timeGrid";
+import type {
+  AudioClip,
+  ClipResizeMode,
+  TimeSignature,
+} from "../../lib/utils/types";
+import { getVisibleTickRange } from "../../lib/audio/timeGrid";
+import {
+  computeClipPlaybackParams,
+  applyResizeStretch,
+} from "../../lib/audio/clipStretch";
 import { useAudioLibraryStore } from "../../stores/audioLibraryStore";
+import { useStretchRenderCacheStore } from "../../stores/stretchRenderCacheStore";
 import {
   AudioClipRenderer,
   type ClipRenderData,
@@ -20,6 +29,7 @@ interface UseAudioClipCanvasConfig {
   clips: () => AudioClip[];
   trackColor: () => string;
   tempo: () => number;
+  clipResizeMode: () => ClipResizeMode;
   selectedClipIds: Ref<Set<string>>;
   dragState: Ref<AudioClipDragState | null>;
   dragPreviewDeltaTicks: Ref<number | null>;
@@ -37,6 +47,7 @@ export function useAudioClipCanvas(
   config: UseAudioClipCanvasConfig,
 ) {
   const audioLibraryStore = useAudioLibraryStore();
+  const stretchRenderCacheStore = useStretchRenderCacheStore();
   const renderer = ref<AudioClipRenderer | null>(null);
   // Taille du wrapper DOM, mise à jour uniquement dans le même chemin
   // throttlé (rAF) que le resize du canvas — voir usePianoGridCanvas.ts pour
@@ -68,7 +79,12 @@ export function useAudioClipCanvas(
 
     let previewX: number | undefined;
     let previewW: number | undefined;
-    let previewStartOffset: number | undefined;
+    // Clip "effectif" pour le calcul de la waveform : identique à `clip` sauf
+    // pendant un resize en cours, où il simule le résultat d'un
+    // applyResizeStretch sur les valeurs d'aperçu — pour que la waveform
+    // reflète immédiatement le stretch pendant le drag, pas seulement une
+    // fois le resize relâché.
+    let waveformClip: AudioClip = clip;
 
     if (isDragging && config.dragPreviewDeltaTicks.value !== null) {
       const initial = config.dragState.value!.clipsInitialPos.get(clip.id)!;
@@ -80,6 +96,7 @@ export function useAudioClipCanvas(
         clip.id,
       )!;
       const delta = config.resizePreviewDeltaTicks.value;
+      let previewStartOffset = initial.startOffset;
       if (config.resizingState.value!.side === "right") {
         previewW = initial.w + delta;
       } else {
@@ -87,17 +104,39 @@ export function useAudioClipCanvas(
         previewW = initial.w - delta;
         previewStartOffset = initial.startOffset + delta;
       }
+      waveformClip = {
+        ...clip,
+        ...applyResizeStretch(
+          clip,
+          {
+            x: previewX ?? initial.x,
+            w: previewW,
+            startOffset: previewStartOffset,
+          },
+          config.clipResizeMode(),
+          config.tempo(),
+        ),
+      };
     }
+
+    const waveformParams = computeClipPlaybackParams(
+      waveformClip,
+      config.tempo(),
+    );
+
+    // Un clip en cours de re-rendu (BPM/tune changé, cache pas encore chaud)
+    // affiche le même placeholder qu'une waveform pas encore chargée — le
+    // rendu stretché en cache pourrait être obsolète le temps du recalcul.
+    const isReprocessing = stretchRenderCacheStore.pendingClipIds.has(clip.id);
 
     return {
       id: clip.id,
       x: clip.x,
       w: clip.w,
-      startOffset: clip.startOffset,
-      sampleDurationTicks: sample
-        ? Math.ceil(sample.duration * ticksPerSecond(config.tempo()))
-        : 0,
-      waveformData: sample?.waveformData ?? null,
+      waveformOffsetSeconds: waveformParams.offsetSeconds,
+      waveformDurationSeconds: waveformParams.durationSeconds,
+      sampleDurationSeconds: sample?.duration ?? 0,
+      waveformData: isReprocessing ? null : (sample?.waveformData ?? null),
       color: config.trackColor(),
       name: sample?.name ?? "Loading...",
       isSelected: config.selectedClipIds.value.has(clip.id),
@@ -105,7 +144,6 @@ export function useAudioClipCanvas(
       isResizing,
       previewX,
       previewW,
-      previewStartOffset,
     };
   };
 
@@ -204,8 +242,12 @@ export function useAudioClipCanvas(
   // clip visible, sinon l'arrivée tardive d'une waveform décodée après le
   // premier rendu ne déclenche aucun redraw. Regroupé avec les autres sources
   // qui ont besoin d'un vrai deep watch (Set/Map mutés en place :
-  // selectedClipIds, dragState, resizingState) — ces collections restent
-  // petites (quelques clips), le traversal reste bon marché.
+  // selectedClipIds, dragState, resizingState, pendingClipIds) — ces
+  // collections restent petites (quelques clips), le traversal reste bon
+  // marché. `tempo()` est ici aussi : le découpage de la waveform en dépend
+  // (cf. computeClipPlaybackParams, y compris pour un clip non stretché) —
+  // sans lui, un changement de BPM laissait la waveform visuellement figée
+  // sur l'ancienne tempo jusqu'à un redraw déclenché par autre chose.
   watch(
     [
       () => config.clips(),
@@ -213,10 +255,12 @@ export function useAudioClipCanvas(
         config
           .clips()
           .map((c) => audioLibraryStore.samples.get(c.sampleId)?.waveformData),
+      () => config.tempo(),
       config.selectedClipIds,
       config.dragState,
       config.resizingState,
       config.selectionRect,
+      () => stretchRenderCacheStore.pendingClipIds,
     ],
     scheduleRender,
     { deep: true },

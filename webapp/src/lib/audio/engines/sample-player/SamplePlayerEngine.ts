@@ -1,4 +1,3 @@
-import { GrainPlayer, getContext, setContext } from "tone";
 import type {
   SamplePlayerConfig,
   InstrumentConfigUpdate,
@@ -6,13 +5,16 @@ import type {
 } from "../../../utils/types";
 import { BaseEngine } from "../BaseEngine";
 import { noteNameToMidi } from "../noteUtils";
-
-const GRAIN_SIZE = 0.1;
-const GRAIN_OVERLAP = 0.05;
+import {
+  createStretchVoice,
+  ensureStretchEngineReady,
+  isStretchEngineReady,
+  type StretchVoice,
+} from "../stretchEngine";
 
 type ActiveVoice =
   | { kind: "normal"; source: AudioBufferSourceNode; envelopeNode: GainNode }
-  | { kind: "stretch"; player: GrainPlayer; envelopeNode: GainNode };
+  | { kind: "stretch"; voice: StretchVoice; envelopeNode: GainNode };
 
 export class SamplePlayerEngine extends BaseEngine {
   readonly type = "samplePlayer";
@@ -37,9 +39,11 @@ export class SamplePlayerEngine extends BaseEngine {
   ) {
     super(audioContext, destination, config);
 
-    if (getContext().rawContext !== audioContext) {
-      setContext(audioContext);
-    }
+    // Fire-and-forget : en pratique déjà déclenché globalement par
+    // audioBusStore dès la création du contexte partagé, bien avant qu'une
+    // note ne puisse être jouée (chargement des samples sur le CDN prend
+    // largement plus de temps qu'un addModule local).
+    ensureStretchEngineReady(audioContext);
 
     this.sampleId = config.sampleId;
     this.rootNoteMidi = noteNameToMidi(config.rootNote);
@@ -94,24 +98,27 @@ export class SamplePlayerEngine extends BaseEngine {
 
     const semitoneOffset = noteNameToMidi(noteName) - this.rootNoteMidi;
 
-    if (this.mode === "stretch") {
-      const player = new GrainPlayer({
-        url: this.buffer,
-        grainSize: GRAIN_SIZE,
-        overlap: GRAIN_OVERLAP,
-        playbackRate: 1,
-        detune: semitoneOffset * 100,
+    // playNote est synchrone (déclenchement temps réel) : si le worklet
+    // SoundTouch n'est pas encore prêt (cas rare, seulement possible dans
+    // les premières dizaines de ms après le boot de l'app), on dégrade
+    // gracieusement vers le pitch "classique" (playbackRate natif) pour
+    // cette note-là — auto-corrigé dès la note suivante.
+    if (this.mode === "stretch" && isStretchEngineReady(this.audioContext)) {
+      const voice = createStretchVoice({
+        context: this.audioContext,
+        buffer: this.buffer,
+        detuneCents: semitoneOffset * 100,
       });
-      player.connect(envelopeNode);
-      player.onstop = () => {
-        const voice = this.activeVoices.get(noteId);
-        if (voice?.kind === "stretch" && voice.player === player) {
+      voice.connect(envelopeNode);
+      voice.onended = () => {
+        const active = this.activeVoices.get(noteId);
+        if (active?.kind === "stretch" && active.voice === voice) {
           this.activeVoices.delete(noteId);
           envelopeNode.disconnect();
         }
       };
-      player.start(now);
-      this.activeVoices.set(noteId, { kind: "stretch", player, envelopeNode });
+      voice.start(now, 0, this.buffer.duration);
+      this.activeVoices.set(noteId, { kind: "stretch", voice, envelopeNode });
     } else {
       const source = this.audioContext.createBufferSource();
       source.buffer = this.buffer;
@@ -156,8 +163,7 @@ export class SamplePlayerEngine extends BaseEngine {
             voice.source.stop();
             voice.source.disconnect();
           } else {
-            voice.player.stop();
-            voice.player.dispose();
+            voice.voice.stop();
           }
           voice.envelopeNode.disconnect();
         } catch {

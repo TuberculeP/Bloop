@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MessageUser } from "../../services/messages";
+import ProfileAvatar from "../shared/ProfileAvatar.vue";
 
 defineProps<{
   users: MessageUser[];
@@ -30,15 +31,8 @@ defineEmits<{
         class="user-item"
         @click="$emit('select', user)"
       >
-        <div class="user-avatar">
-          {{ user.firstName[0] }}{{ user.lastName[0] }}
-        </div>
-        <div class="user-info">
-          <span class="user-name"
-            >{{ user.firstName }} {{ user.lastName }}</span
-          >
-          <span class="user-email">{{ user.email }}</span>
-        </div>
+        <ProfileAvatar :user="user" size="small" />
+        <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
       </div>
       <div v-if="users.length === 0" class="no-users">
         Aucun utilisateur trouvé
@@ -51,7 +45,6 @@ defineEmits<{
 .user-search {
   padding: 1rem;
   border-bottom: 1px solid var(--color-border-secondary);
-  background: var(--bg-tertiary);
 }
 
 .user-search-input {
@@ -59,7 +52,7 @@ defineEmits<{
   padding: 0.75rem;
   border: 1px solid var(--color-border-secondary);
   border-radius: var(--radius-md);
-  background: var(--bg-primary);
+  background: var(--color-border-secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -79,34 +72,11 @@ defineEmits<{
 }
 
 .user-item:hover {
-  background: var(--bg-primary);
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--accent-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.875rem;
-  flex-shrink: 0;
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
+  background: var(--color-primary-pale);
 }
 
 .user-name {
   font-weight: 500;
-}
-
-.user-email {
-  font-size: 0.75rem;
 }
 
 .no-users {

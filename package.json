@@ -20,6 +20,7 @@
     "@elemaudio/core": "^4.0.1",
     "@elemaudio/web-renderer": "^4.0.3",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@soundtouchjs/audio-worklet": "^2.1.0",
     "@tailwindcss/vite": "^4.1.11",
     "@tonejs/midi": "^2.0.28",
     "@types/cors": "^2.8.19",

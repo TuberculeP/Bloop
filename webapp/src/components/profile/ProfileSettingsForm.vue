@@ -9,12 +9,15 @@ import BaseButton from "../ui/BaseButton.vue";
 import FormField from "../ui/FormField.vue";
 import BaseInput from "../ui/BaseInput.vue";
 import { useToast } from "../../composables/useToast";
+import { useAdsStore } from "../../stores/adsStore.ts";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const onboardingStore = useOnboardingStore();
+const adsStore = useAdsStore();
 const toast = useToast();
 const user = computed(() => authStore.user);
+const isAdmin = computed(() => user.value?.role === "ROLE_ADMIN");
 
 const replayOnboarding = async () => {
   await router.push({ name: "app-main" });
@@ -86,7 +89,9 @@ const save = async () => {
   }
 };
 
-onMounted(resetForm);
+onMounted(() => {
+  resetForm();
+});
 </script>
 
 <template>
@@ -159,6 +164,24 @@ onMounted(resetForm);
         @click="replayOnboarding"
         label="Revoir le tutoriel de bienvenue"
       />
+    </div>
+
+    <div v-if="isAdmin" class="ads-section">
+      <div class="ads-info">
+        <h3>Publicités</h3>
+        <p>Affiche ou masque les bannières partenaires sur l'application.</p>
+      </div>
+      <label class="toggle-switch">
+        <input
+          type="checkbox"
+          :checked="adsStore.isEnabled"
+          aria-label="Afficher les publicités"
+          @change="adsStore.toggle"
+        />
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+      </label>
     </div>
   </div>
 </template>
@@ -242,6 +265,78 @@ onMounted(resetForm);
   font-size: 0.85rem;
 }
 
+/* ── Publicités (admin) ── */
+.ads-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border-secondary);
+}
+
+.ads-info h3 {
+  margin: 0 0 4px;
+  color: var(--color-white);
+  font-size: 1rem;
+}
+
+.ads-info p {
+  margin: 0;
+  color: var(--color-white-light);
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  display: inline-flex;
+  align-items: center;
+  width: 46px;
+  height: 26px;
+  padding: 3px;
+  background: var(--color-bg-secondary-dark);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.toggle-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--color-white-light);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: var(--color-accent3);
+  border-color: var(--color-accent3);
+}
+
+.toggle-switch input:checked + .toggle-track .toggle-thumb {
+  background: var(--color-white);
+  transform: translateX(20px);
+}
+
+.toggle-switch input:focus-visible + .toggle-track {
+  outline: 2px solid var(--color-accent3-hover);
+  outline-offset: 2px;
+}
+
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -249,6 +344,12 @@ onMounted(resetForm);
 
   .settings-card {
     padding: 24px;
+  }
+
+  .tutorial-section,
+  .ads-section {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

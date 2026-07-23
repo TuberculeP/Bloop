@@ -27,6 +27,7 @@ import { useTimelineMidiRecording } from "../../../composables/timelineView/useT
 import { useTimelineFileDrop } from "../../../composables/timelineView/useTimelineFileDrop";
 import { useMidiImport } from "../../../composables/timelineView/useMidiImport";
 import { useTimelineProjectMeta } from "../../../composables/timelineView/useTimelineProjectMeta";
+import { useStretchRecompute } from "../../../composables/timelineView/useStretchRecompute";
 import { useDropdown } from "../../../composables/useDropdown";
 import {
   pxPerTick,
@@ -48,6 +49,7 @@ import EmptyState from "../../ui/EmptyState.vue";
 import FormField from "../../ui/FormField.vue";
 import BaseInput from "../../ui/BaseInput.vue";
 import { useToast } from "../../../composables/useToast";
+import VpnBanner from "../../ad/VpnBanner.vue";
 
 const emit = defineEmits<{
   (
@@ -74,7 +76,7 @@ const timelineStore = useTimelineStore();
 const projectStore = useProjectStore();
 const toast = useToast();
 
-const { isReadOnly, currentProjectOwner } = storeToRefs(projectStore);
+const { isReadOnly, isPublic, currentProjectOwner } = storeToRefs(projectStore);
 
 // Densité visuelle inchangée par rapport à l'ancien COL_WIDTH=20px/colonne
 // (colonne = 1/16 de temps) : 20 * 4 = 80px par temps, avant application du zoom.
@@ -357,7 +359,16 @@ const {
   handleBackToProjects,
   handleResetReadOnly,
   handleCloneProject,
+  showShareMenu,
+  closeShareMenu,
+  toggleShareMenu,
+  isTogglingVisibility,
+  setVisibility,
+  copyShareLink,
+  shareToBlog,
 } = useTimelineProjectMeta();
+
+useStretchRecompute();
 
 const handleAddTrack = (type: InstrumentType) => {
   const config = getDefaultConfigForType(type);
@@ -653,13 +664,6 @@ defineExpose({
     <div class="timeline-header">
       <div class="header-left">
         <button
-          class="back-btn"
-          @click="handleBackToProjects"
-          title="Retour aux projets"
-        >
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <button
           class="library-btn"
           :class="{ active: showAudioLibrary }"
           @click="showAudioLibrary = !showAudioLibrary"
@@ -877,6 +881,29 @@ defineExpose({
                   @update:model-value="timelineStore.setZoomWheelSpeed"
                 />
               </div>
+              <div class="toolbar-settings-header">
+                Redimensionnement des clips audio
+              </div>
+              <div class="toolbar-settings-row">
+                <div class="waveform-selector">
+                  <button
+                    class="waveform-btn"
+                    :class="{ active: timelineStore.clipResizeMode === 'edit' }"
+                    @click="timelineStore.clipResizeMode = 'edit'"
+                  >
+                    Couper
+                  </button>
+                  <button
+                    class="waveform-btn"
+                    :class="{
+                      active: timelineStore.clipResizeMode === 'stretch',
+                    }"
+                    @click="timelineStore.clipResizeMode = 'stretch'"
+                  >
+                    Étirer
+                  </button>
+                </div>
+              </div>
               <div class="toolbar-settings-header">Signature rythmique</div>
               <div class="toolbar-settings-row toolbar-settings-row--inline">
                 <input
@@ -933,6 +960,61 @@ defineExpose({
             saveMessage ? saveMessage.text : isSaving ? '...' : 'Sauvegarder'
           "
         />
+        <div class="share-menu" v-on-click-outside="closeShareMenu">
+          <button
+            class="toolbar-icon-btn"
+            @click="toggleShareMenu"
+            :disabled="!projectStore.currentProjectId"
+            :title="
+              projectStore.currentProjectId
+                ? 'Partager'
+                : 'Sauvegardez le projet avant de le partager'
+            "
+          >
+            <i class="fas fa-share-alt"></i>
+          </button>
+
+          <Transition name="fade">
+            <div v-if="showShareMenu" class="share-menu-dropdown">
+              <div class="share-menu-header">Visibilité</div>
+              <div class="share-menu-row">
+                <div class="waveform-selector">
+                  <button
+                    class="waveform-btn"
+                    :class="{ active: !isPublic }"
+                    :disabled="isReadOnly || isTogglingVisibility"
+                    @click="setVisibility(false)"
+                  >
+                    <i class="fas fa-lock"></i> Privé
+                  </button>
+                  <button
+                    class="waveform-btn"
+                    :class="{ active: isPublic }"
+                    :disabled="isReadOnly || isTogglingVisibility"
+                    @click="setVisibility(true)"
+                  >
+                    <i class="fas fa-globe"></i> Public
+                  </button>
+                </div>
+              </div>
+              <template v-if="isPublic">
+                <button class="share-menu-option" @click="copyShareLink">
+                  <i class="fas fa-link"></i> Copier le lien
+                </button>
+                <button class="share-menu-option" @click="shareToBlog">
+                  <i class="fas fa-newspaper"></i> Partager sur le blog
+                </button>
+              </template>
+            </div>
+          </Transition>
+        </div>
+        <button
+          class="back-btn"
+          @click="handleBackToProjects"
+          title="Retour aux projets"
+        >
+          <i class="fas fa-door-open"></i>
+        </button>
       </div>
     </div>
 
@@ -1183,6 +1265,8 @@ defineExpose({
       </ul>
     </div>
   </Teleport>
+
+  <VpnBanner :dismissible="true" />
 </template>
 
 <style scoped lang="scss">
@@ -1521,7 +1605,8 @@ defineExpose({
 
 .mic-picker-dropdown,
 .midi-picker-dropdown,
-.toolbar-settings-dropdown {
+.toolbar-settings-dropdown,
+.share-menu-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   background: var(--color-bg-secondary-dark);
@@ -1540,7 +1625,8 @@ defineExpose({
 
 .mic-picker-header,
 .midi-picker-header,
-.toolbar-settings-header {
+.toolbar-settings-header,
+.share-menu-header {
   padding: 10px 14px;
   font-size: 11px;
   font-weight: 600;
@@ -1552,7 +1638,8 @@ defineExpose({
 }
 
 .mic-picker-option,
-.midi-picker-option {
+.midi-picker-option,
+.share-menu-option {
   width: 100%;
   display: block;
   text-align: left;
@@ -1817,13 +1904,29 @@ defineExpose({
   }
 }
 
-.toolbar-settings {
+.toolbar-settings,
+.share-menu {
   position: relative;
 }
 
 .toolbar-settings-dropdown {
   right: 0;
   min-width: 260px;
+}
+
+.share-menu-dropdown {
+  right: 0;
+  min-width: 220px;
+}
+
+.share-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.share-menu-row {
+  padding: 12px 14px;
 }
 
 .toolbar-settings-row {
@@ -1840,6 +1943,34 @@ defineExpose({
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+}
+
+.waveform-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.waveform-btn {
+  padding: 10px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  background: var(--color-bg-primary-dark);
+  color: var(--color-white);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--color-bg-daw-active);
+    border-color: rgba(var(--color-accent3-rgb), 0.7);
+  }
+
+  &.active {
+    background: var(--color-accent2);
+    border-color: var(--color-accent2);
+    color: var(--color-bg-primary-dark);
   }
 }
 

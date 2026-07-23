@@ -9,6 +9,8 @@ import apiClient from "../../lib/utils/apiClient";
 import type { User } from "../../lib/utils/types";
 import BlogTopLikedUsers from "./BlogTopLikedUsers.vue";
 import BlogBackground from "./BlogBackground.vue";
+import ArturiaBanner from "../ad/ArturiaCard.vue";
+import AudiofanzineCard from "../ad/AudiofanzineCard.vue";
 
 const postsKey = ref(0);
 const isAuthenticated = ref(false);
@@ -59,6 +61,7 @@ onMounted(() => {
     </div>
     <div class="blog-users">
       <BlogTopLikedUsers />
+      <ArturiaBanner />
     </div>
     <div class="blog-content">
       <!-- Afficher le formulaire seulement si connecté -->
@@ -79,6 +82,7 @@ onMounted(() => {
         @tagDeselected="handleTagDeselected"
         @filtersCleared="handleFiltersCleared"
       />
+      <AudiofanzineCard />
     </div>
   </div>
 </template>

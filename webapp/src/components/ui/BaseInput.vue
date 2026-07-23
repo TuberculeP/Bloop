@@ -54,4 +54,10 @@ const model = defineModel<string | number>();
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .base-input {
+    font-size: 16px;
+  }
+}
 </style>

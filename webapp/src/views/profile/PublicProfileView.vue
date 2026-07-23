@@ -60,8 +60,7 @@ const loadProfile = async () => {
 };
 
 const openProject = (projectId: string) => {
-  // À adapter selon la route réelle de consultation d'un projet public.
-  router.push(`/studio/${projectId}`);
+  router.push(`/app/sequencer?projectId/${projectId}`);
 };
 
 const formatDate = (dateString: string): string => {

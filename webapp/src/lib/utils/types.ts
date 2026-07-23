@@ -111,6 +111,7 @@ export type InstrumentType =
   | "elementarySynth"
   | "smplr"
   | "undertale"
+  | "fmSynth"
   | "audioTrack"
   | "samplePlayer";
 
@@ -153,6 +154,43 @@ export interface AudioTrackConfig {
   gain?: number;
 }
 
+// Un opérateur FM (style DX7) : forme brute/persistée, sans les valeurs
+// dérivées (outputLevel/ampL/ampR/freqRatio) qui sont recalculées au
+// chargement du patch — voir buildRuntimeParams (dsp/voiceDx7.ts).
+export interface Dx7Operator {
+  idx: number;
+  enabled: boolean;
+  rates: [number, number, number, number]; // vitesses EG (0-99)
+  levels: [number, number, number, number]; // niveaux EG (0-99)
+  detune: number; // -7 à 7
+  velocitySens: number; // 0-7
+  lfoAmpModSens: number; // 0-3
+  volume: number; // 0-99, niveau de sortie brut
+  oscMode: 0 | 1; // 0 = ratio de fréquence, 1 = fréquence fixe
+  freqCoarse: number;
+  freqFine: number;
+  pan: number; // -50 à 50
+}
+
+export interface Dx7Patch {
+  name: string;
+  algorithm: number; // 1-32
+  feedback: number; // 0-7
+  lfoSpeed: number;
+  lfoDelay: number;
+  lfoPitchModDepth: number;
+  lfoAmpModDepth: number;
+  lfoPitchModSens: number; // 0-7
+  lfoWaveform: number; // 0-5
+  operators: Dx7Operator[]; // 6 opérateurs
+}
+
+export interface FmSynthConfig {
+  type: "fmSynth";
+  patch: Dx7Patch;
+  gain?: number;
+}
+
 export type SamplePlaybackMode = "normal" | "stretch";
 
 export interface SamplePlayerConfig {
@@ -172,6 +210,7 @@ export type InstrumentConfig =
   | SmplrConfig
   | ElementarySynthConfig
   | UndertaleConfig
+  | FmSynthConfig
   | AudioTrackConfig
   | SamplePlayerConfig;
 
@@ -185,6 +224,7 @@ export interface InstrumentConfigUpdate {
   decay?: number;
   sustain?: number;
   release?: number;
+  patch?: Dx7Patch;
   sampleId?: string | null;
   rootNote?: NoteName;
   mode?: SamplePlaybackMode;
@@ -196,7 +236,26 @@ export interface AudioClip {
   x: number;
   w: number;
   startOffset: number;
+
+  // Sticky : une fois vrai, reste vrai pour toujours (même si l'outil
+  // toolbar repasse en "edit" et qu'on redimensionne encore ce clip) — voir
+  // applyResizeStretch (lib/audio/clipStretch.ts).
+  stretched?: boolean;
+  // Ancre du ratio de stretch, réécrite à chaque resize en mode stretch :
+  // w (ticks) et tempo (BPM) juste avant ce resize. Permet de recalculer le
+  // playbackRate à tout moment (y compris après un changement de BPM sans
+  // nouveau resize) — voir computeClipPlaybackParams.
+  stretchReferenceTicks?: number;
+  stretchReferenceTempo?: number;
+
+  // Tune/detune : vrai pitch-shift indépendant de la durée (via GrainPlayer).
+  semitones?: number; // -12..+12
+  cents?: number; // fin, dans le demi-ton courant
 }
+
+// Nom dédié, distinct de SamplePlaybackMode (SamplePlayerConfig.mode) qui est
+// un concept différent (lecture de notes MIDI via l'instrument sampler).
+export type ClipResizeMode = "edit" | "stretch";
 
 export interface AudioSample {
   id: string;

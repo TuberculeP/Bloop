@@ -74,19 +74,20 @@ setAutomationPoints(trackId, laneId, points): boolean
 ### Types clés (`lib/utils/types.ts`)
 
 ```typescript
-InstrumentType = "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "audioTrack" | "samplePlayer"
+InstrumentType = "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "fmSynth" | "audioTrack" | "samplePlayer"
 
 // Discriminated unions pour type safety
 BasicSynthConfig { type: "basicSynth", oscillatorType: OscillatorType, gain? }
 SmplrConfig { type: "smplr", soundfont: string, gain?, attack?, decay?, sustain?, release? }
 ElementarySynthConfig { type: "elementarySynth", preset?, gain? }
 UndertaleConfig { type: "undertale", instrument: string, gain?, attack?, decay?, sustain?, release? }
+FmSynthConfig { type: "fmSynth", patch: Dx7Patch, gain? }  // synthèse FM style DX7, voir plus bas
 AudioTrackConfig { type: "audioTrack", gain? }
 SamplePlayerConfig { type: "samplePlayer", sampleId: string | null, rootNote: NoteName, mode: "normal" | "stretch", gain?, attack?, decay?, sustain?, release? }
-InstrumentConfig = BasicSynthConfig | SmplrConfig | ElementarySynthConfig | UndertaleConfig | AudioTrackConfig | SamplePlayerConfig
+InstrumentConfig = BasicSynthConfig | SmplrConfig | ElementarySynthConfig | UndertaleConfig | FmSynthConfig | AudioTrackConfig | SamplePlayerConfig
 
 // Pour les updates partiels (sans discriminant)
-InstrumentConfigUpdate { oscillatorType?, soundfont?, preset?, gain?, sampleId?, rootNote?, mode? }
+InstrumentConfigUpdate { oscillatorType?, soundfont?, preset?, gain?, patch?, sampleId?, rootNote?, mode? }
 
 EQBand {
   id: string          // "sub", "bass", "mid", "presence", "brilliance"
@@ -192,6 +193,14 @@ engines/
   undertale/
     UndertaleEngine.ts  # Soundfont custom Undertale, ADSR via VoicePool
 
+  fm-synth/
+    FmSynthEngine.ts        # Synthèse FM (6 opérateurs, style DX7) via AudioWorklet
+    fm-synth-processor.ts   # AudioWorkletProcessor : rendu échantillon par échantillon
+    protocol.ts             # Messages thread principal <-> worklet
+    dsp/                    # Port du moteur DX7 de mmontag/dx7-synth-js (MIT) — pure computation, sans dépendance UI/AudioContext
+    presets/rom1a.json      # 32 presets d'usine (bank ROM1A du DX7 original)
+    index.ts                # Re-exports (FmSynthEngine, FM_SYNTH_PRESETS, ALGORITHMS)
+
   sample-player/
     SamplePlayerEngine.ts # Joue un AudioSample par note (playbackRate natif en
                           # mode "normal", Tone.GrainPlayer en mode "stretch")
@@ -217,6 +226,13 @@ son propre `GainNode` d'enveloppe à la volée. Il ne connaît par ailleurs jama
 via `engine.setBuffer(buffer)`, hors de l'interface `InstrumentEngine`.
 
 Factory : `lib/audio/instrumentFactory.ts` - Crée les instances d'engines selon le type.
+
+`fmSynth` est le seul engine avec une interface dédiée plutôt que des paramètres
+inline dans `InstrumentSettings.vue` — voir `hasCustomInterface` /
+`INSTRUMENT_INTERFACE_COMPONENTS` (composant : `Dx7InstrumentPanel.vue`), qui
+ouvre l'interface réelle de l'instrument dans une modale (`BaseModal`) au lieu
+d'adapter ses contrôles aux sliders génériques du drawer. Pattern réutilisable
+pour tout futur instrument avec sa propre UI.
 
 ### Bibliothèque de samples (Audiothèque)
 
@@ -360,7 +376,7 @@ Voir [Système d'effets](#système-deffets-libaudioeffects) plus haut. `EffectRa
 
 ## Flow utilisateur
 
-1. **Ajouter une piste** : Bouton "+" → Menu instruments (BasicSynth, Smplr, Undertale, AudioTrack, Sample Player)
+1. **Ajouter une piste** : Bouton "+" → Menu instruments (BasicSynth, Smplr, Undertale, FM Synth, AudioTrack, Sample Player)
 2. **Éditer les notes** : Double-clic sur la timeline d'une piste → Piano roll s'expand en dessous
 3. **Ajouter une note** : Clic simple sur la grille du piano roll
 4. **Supprimer une note** : Clic droit sur la note
