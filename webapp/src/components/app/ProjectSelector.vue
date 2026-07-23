@@ -12,6 +12,7 @@ import type {
   TrashedProjectListItem,
 } from "../../lib/utils/types";
 import TabBar, { type TabItem } from "../shared/TabBar.vue";
+import VpnBanner from "../ad/VpnBanner.vue";
 
 type Tab = "mine" | "favorites" | "discover" | "trash";
 
@@ -577,6 +578,10 @@ onMounted(() => loadProjects());
         </div>
       </template>
     </main>
+
+    <div class="vpn-banner-full">
+      <VpnBanner :dismissible="false" />
+    </div>
   </div>
 
   <BaseModal
@@ -786,51 +791,6 @@ onMounted(() => loadProjects());
   transform: translateX(0);
 }
 
-.icon-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  background: transparent;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 6px;
-  color: var(--color-white-light);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  opacity: 0.5;
-
-  &:hover {
-    opacity: 1;
-    border-color: var(--color-accent3-hover);
-    color: var(--color-white);
-  }
-
-  &.active {
-    opacity: 1;
-    border-color: var(--color-accent3-hover);
-    color: var(--color-accent3-hover);
-    background: rgba(var(--color-accent3-rgb), 0.2);
-  }
-
-  &:disabled {
-    cursor: wait;
-    opacity: 0.3;
-  }
-}
-
-.favorite-btn.active {
-  border-color: var(--color-danger-hover);
-  color: var(--color-danger-hover);
-  background: rgba(var(--color-danger-hover-rgb), 0.15);
-}
-
-.favorite-btn:hover {
-  border-color: var(--color-danger-hover);
-  color: var(--color-danger-hover);
-}
-
 .state-container {
   text-align: center;
   padding: 60px 20px;
@@ -878,11 +838,6 @@ onMounted(() => loadProjects());
   }
 }
 
-.delete-btn:hover {
-  border-color: var(--color-danger-hover);
-  color: var(--color-danger-hover);
-}
-
 .trash-card {
   cursor: default;
   opacity: 0.75;
@@ -928,5 +883,12 @@ onMounted(() => loadProjects());
   .projects-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.vpn-banner-full {
+  width: 100vw;
+  margin-top: 80px;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
 }
 </style>

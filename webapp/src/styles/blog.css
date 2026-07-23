@@ -890,7 +890,7 @@
 }
 
 .tag-suggestion-item:hover {
-  background: var(--color-accent);
+  background: var(--color-accent-pale);
   color: var(--color-accent-hover);
 }
 
