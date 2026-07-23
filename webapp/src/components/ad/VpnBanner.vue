@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useAuthStore } from "../../stores/authStore";
+import { storeToRefs } from "pinia";
+import { useAdsStore } from "../../stores/adsStore";
 
 interface Props {
   brand?: string;
@@ -26,65 +26,12 @@ const props = withDefaults(defineProps<Props>(), {
   dismissible: true,
 });
 
-const emit = defineEmits<{
-  (e: "dismiss"): void;
-}>();
-
-const STORAGE_KEY = "ad-app";
-
-const authStore = useAuthStore();
-const isAdmin = computed(() => authStore.user?.role === "ROLE_ADMIN");
-
-// Le close n'apparaît que si la page l'autorise ET que l'utilisateur est admin.
-const canDismiss = computed(() => props.dismissible && isAdmin.value);
-
-const visible = ref(true);
-
-onMounted(() => {
-  // Si un admin a déjà fermé la bannière sur ce navigateur, elle reste masquée
-  // (peu importe la page, la clé de storage est partagée).
-  if (localStorage.getItem(STORAGE_KEY) === "false") {
-    visible.value = false;
-  }
-});
-
-// Expose l'état de visibilité pour que le parent puisse gérer son propre layout
-// (ex: gap en bas de page si la pub n'est pas affichée).
-defineExpose({
-  visible,
-});
-
-const dismiss = () => {
-  if (!canDismiss.value) return;
-
-  visible.value = false;
-  localStorage.setItem(STORAGE_KEY, "false");
-  emit("dismiss");
-};
+const adsStore = useAdsStore();
+const { isEnabled: visible } = storeToRefs(adsStore);
 </script>
 
 <template>
   <div v-if="visible" class="promo-banner">
-    <button
-      v-if="canDismiss"
-      type="button"
-      class="promo-close"
-      aria-label="Fermer la bannière"
-      @click="dismiss"
-    >
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-
     <div class="promo-left">
       <div class="promo-logo">
         <span class="promo-logo-icon" aria-hidden="true">
@@ -107,7 +54,12 @@ const dismiss = () => {
       <p class="promo-tagline">{{ props.tagline }}</p>
     </div>
 
-    <a :href="props.ctaLink" class="promo-cta" rel="noopener noreferrer">
+    <a
+      :href="props.ctaLink"
+      class="promo-cta"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       <i class="fas fa-arrow-right" />
       <span>{{ props.ctaLabel.toUpperCase() }}</span>
     </a>
@@ -175,29 +127,6 @@ const dismiss = () => {
   padding: 0.75rem 3.5rem 0.75rem 2rem;
   overflow: hidden;
   background: linear-gradient(100deg, #5b3164 0%, #95346a 100%);
-  color: var(--color-white);
-}
-
-.promo-close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 2;
-}
-
-.promo-close:hover {
-  background: rgba(255, 255, 255, 0.16);
   color: var(--color-white);
 }
 

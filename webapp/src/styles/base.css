@@ -302,9 +302,4 @@ input[type="submit"]:disabled {
   padding: 40px 24px;
   max-width: 1200px;
   width: 100%;
-  min-height: calc(100vh - (88px + 90px));
-}
-
-.page-container.no-ad-gap {
-  padding-bottom: 80px;
 }

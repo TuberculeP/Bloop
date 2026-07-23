@@ -578,10 +578,6 @@ onMounted(() => loadProjects());
         </div>
       </template>
     </main>
-
-    <div class="vpn-banner-full">
-      <VpnBanner :dismissible="false" />
-    </div>
   </div>
 
   <BaseModal
@@ -607,6 +603,9 @@ onMounted(() => loadProjects());
       />
     </template>
   </BaseModal>
+  <div class="vpn-banner-full">
+    <VpnBanner :dismissible="false" />
+  </div>
 </template>
 
 <style scoped>

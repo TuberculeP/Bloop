@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import { useAdsStore } from "../../stores/adsStore";
+
 interface Props {
   brand?: string;
   title?: string;
@@ -17,10 +20,14 @@ const props = withDefaults(defineProps<Props>(), {
   ctaLink: "#",
   imageUrl: "",
 });
+
+const adsStore = useAdsStore();
+const { isEnabled } = storeToRefs(adsStore);
 </script>
 
 <template>
   <a
+    v-if="isEnabled"
     :href="props.ctaLink"
     class="partner-card"
     target="_blank"
@@ -164,7 +171,7 @@ const props = withDefaults(defineProps<Props>(), {
 .partner-card-title {
   margin: 0;
   font-size: 1.15rem;
-  font-weight: bold;
+  font-weight: 700;
   line-height: 1.3;
   color: #0a0a0a;
 }
