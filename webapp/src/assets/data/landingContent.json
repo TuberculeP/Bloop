@@ -58,41 +58,49 @@
     {
       "name": "Freemium",
       "price": "0",
-      "description": "Pour decouvrir BLOOP",
+      "description": "Pour découvrir Bloop",
       "popular": false,
       "features": [
-        "Accès à l’espace MAO limité",
-        "Plus de 20 000 boucles",
-        "Plus de 500 instruments et sons",
-        "Espace communautaire"
+        "Accès illimité à l'espace MAO",
+        "25 projets sauvegardés",
+        "150+ instruments et presets & éditeurs complets",
+        "Partage de projets en lecture seule",
+        "Ressources d'apprentissage",
+        "Espace communautaire",
+        "2 Go de stockage cloud & Export standard "
       ],
       "cta": "Commencer gratuitement"
     },
     {
       "name": "Medium",
       "price": "9.99",
-      "description": "Pour les créateurs sérieux",
+      "description": "Pour les créateurs réguliers",
       "popular": true,
       "features": [
-        "Accès illimité à l’espace MAO",
-        "Plus de 30 000 boucles",
-        "Partage et collaboration",
-        "Espace communautaire enrichi",
-        "Support prioritaire"
+        "Pack Free",
+        "80 projets sauvegardés",
+        "300+ instruments et presets",
+        "Collaboration en temps réel & Espace communautaire enrichi",
+        "Diffusion directe sur les plateformes de streaming",
+        "Pack de son medium",
+        "25 Go de stockage cloud & Export haute qualité",
+        "Sans publicité"
       ],
       "cta": "Essai gratuit 14 jours"
     },
     {
       "name": "Premium",
       "price": "14.99",
-      "description": "Pour les professionnels",
+      "description": "Pour les artistes et créateurs",
       "popular": false,
       "features": [
-        "Accès illimité à l’espace MAO",
+        "Pack Medium",
+        "Projets illimités",
+        "Accès aux instruments et effets professionnels cloud",
         "Collaboration avancée",
-        "Real-time vocal tuning et + de 40 effets",
-        "Espace communautaire premium",
-        "Diffusion de podcast sur Spotify"
+        "Packs de sons premium et collaborations exclusives avec des artistes",
+        "Stockage cloud illimité",
+        "Accès anticipé aux nouvelles fonctionnalités (bêta)"
       ],
       "cta": "Souscrire à l'offre"
     }
@@ -115,6 +123,58 @@
       "description": "Demandez à Claude de composer, arranger, ajouter des pistes… il agit directement sur vos projets."
     }
   ],
+  "socialMedia" : [
+    {
+      "name": "Instagram",
+      "icon": "fab fa-instagram",
+      "link": "https://www.instagram.com/bloop_music/"
+    },
+    {
+      "name": "YouTube",
+      "icon": "fab fa-youtube",
+      "link": "https://www.youtube.com/@BloopOnCloud"
+    }
+  ],
+  "footerLinks" : [
+    {
+      "title": "Produit",
+      "links": [
+        { "label": "Fonctionnalités", "link": "#features" },
+        { "label": "Tarifs", "link": "#about" }
+      ]
+    },
+    {
+      "title": "Ressources",
+      "links": [
+        { "label": "Apprentissage", "link": "/learning" },
+        { "label": "Blog", "link": "/blog" }
+      ]
+    },
+    {
+      "title": "Support",
+      "links": [
+        { "label": "Centre d'aide", "link": "/support" },
+        { "label": "Contact", "link": "/contact" }
+      ]
+    }
+  ],
+  "footerLegalLinks": [
+    {
+      "id": 1,
+      "title": "Confidentialité",
+      "link": "#"
+    },
+    {
+      "id": 2,
+      "title": "CGU",
+      "link": "/cgu"
+    },
+    {
+      "id": 3,
+      "title": "CGV",
+      "link": "/cgv"
+    }
+  ],
   "aboutSection": [
     {
       "icon": "fas fa-laptop",
@@ -130,5 +190,29 @@
       "icon": "fas fa-sync-alt",
       "title": "Collaboratif",
       "description": "Partage tes créations et laisse la communauté les remixer à sa sauce."
-    }  ]
+    }
+  ],
+  "contactSection": [
+    {
+      "icon": "fas fa-envelope",
+      "title": "Email",
+      "description": "Pour toute question générale sur Bloop.",
+      "link": "mailto:hello@bloop-on.cloud",
+      "linkLabel": "hello@bloop-on.cloud"
+    },
+    {
+      "icon": "fab fa-instagram",
+      "title": "Instagram",
+      "description": "Rejoins la communauté, pose tes questions en direct.",
+      "link": "https://www.instagram.com/bloop_music/",
+      "linkLabel": "Rejoindre le serveur"
+    },
+    {
+      "icon": "fas fa-newspaper",
+      "title": "Presse",
+      "description": "Demandes médias et partenariats.",
+      "link": "mailto:presse@bloop-on.cloud",
+      "linkLabel": "presse@bloop-on.cloud"
+    }
+  ]
 }

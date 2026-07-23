@@ -250,6 +250,10 @@ const closeAuthorMenu = () => {
   showAuthorMenu.value = false;
 };
 
+const goToProfile = () => {
+  router.push("public-profile/" + props.post.author?.id);
+};
+
 // Envoyer un message à l'auteur
 const sendMessageToAuthor = () => {
   if (props.post.author?.id) {
@@ -294,13 +298,16 @@ fetchComments();
         </div>
         <!-- Menu contextuel auteur -->
         <div v-if="showAuthorMenu && !isOwnPost" class="author-menu">
+          <button class="author-menu-item" @click="goToProfile">
+            <i class="fas fa-user" />
+            Voir le profil
+          </button>
           <button class="author-menu-item" @click="sendMessageToAuthor">
-            <i class="fas fa-envelope"></i>
+            <i class="fas fa-envelope" />
             Envoyer un message
           </button>
           <button class="author-menu-item" @click="closeAuthorMenu">
-            <i class="fas fa-times"></i>
-            Fermer
+            <i class="fas fa-times" />
           </button>
         </div>
       </div>

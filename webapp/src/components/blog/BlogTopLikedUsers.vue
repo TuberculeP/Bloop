@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from "vue";
 import { getAllPosts } from "../../services/posts";
 import type { Post, User } from "../../lib/utils/types";
+import ProfileAvatar from "../shared/ProfileAvatar.vue";
+import { useRouter } from "vue-router";
 
 type TopLikedUser = {
   id: string;
@@ -14,6 +16,11 @@ type TopLikedUser = {
 const loading = ref(true);
 const error = ref<string | null>(null);
 const posts = ref<Post[]>([]);
+const router = useRouter();
+
+const goToPublicProfilePage = (id: string) => {
+  router.push("/public-profile/" + id);
+};
 
 const fetchPosts = async () => {
   try {
@@ -49,7 +56,7 @@ const topLikedUsers = computed<TopLikedUser[]>(() => {
       id: author.id,
       firstName: author.firstName,
       lastName: author.lastName,
-      //   profilePicture: author.profilePicture,
+      profilePicture: author.profilePicture,
       likesCount,
     });
   }
@@ -61,9 +68,6 @@ const topLikedUsers = computed<TopLikedUser[]>(() => {
 
 const getDisplayName = (user: TopLikedUser) =>
   `${user.firstName} ${user.lastName}`;
-
-const getInitials = (user: TopLikedUser) =>
-  `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
 
 onMounted(() => {
   fetchPosts();
@@ -85,16 +89,13 @@ onMounted(() => {
     </div>
 
     <div v-else class="users-list">
-      <article v-for="user in topLikedUsers" :key="user.id" class="user-card">
-        <div class="avatar">
-          <img
-            v-if="user.profilePicture"
-            :src="user.profilePicture"
-            :alt="`Photo de profil de ${getDisplayName(user)}`"
-          />
-          <span v-else>{{ getInitials(user) }}</span>
-        </div>
-
+      <article
+        v-for="user in topLikedUsers"
+        :key="user.id"
+        class="user-card"
+        @click="goToPublicProfilePage(user.id)"
+      >
+        <ProfileAvatar :user="user" size="small" />
         <div class="info">
           <h3>{{ getDisplayName(user) }}</h3>
           <p>{{ user.likesCount }} like{{ user.likesCount > 1 ? "s" : "" }}</p>
@@ -151,43 +152,11 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   background: var(--color-bg-secondary-dark);
   border: 1px solid color-mix(in srgb, var(--color-white) 8%, transparent);
+  cursor: pointer;
 }
 
-.rank {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-accent);
-  color: var(--color-black);
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent),
-    var(--color-secondary)
-  );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.user-card:hover {
+  border: 1px solid var(--color-accent2);
 }
 
 .info {

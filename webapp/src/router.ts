@@ -57,6 +57,8 @@ import LandingCgv from "./views/landing/LandingCgv.vue";
 import LandingAbout from "./views/landing/LandingAbout.vue";
 import LandingSupport from "./views/landing/LandingSupport.vue";
 import ButtonView from "./views/messages/ButtonView.vue";
+import LandingContact from "./views/landing/LandingContact.vue";
+import PublicProfileView from "./views/profile/PublicProfileView.vue";
 
 const routes = [
   { path: "/", component: LandingIndex, name: "landing-main" },
@@ -64,6 +66,7 @@ const routes = [
   { path: "/cgv", component: LandingCgv, name: "landing-cgv" },
   { path: "/about", component: LandingAbout, name: "landing-about" },
   { path: "/support", component: LandingSupport, name: "landing-support" },
+  { path: "/contact", component: LandingContact, name: "landing-contact" },
   { path: "/app", component: ProjectSelectorView, name: "app-main" },
   { path: "/app/sequencer", component: BloopApp, name: "app-sequencer" },
   { path: "/login", component: LoginView, name: "app-login" },
@@ -109,6 +112,11 @@ const routes = [
   },
   { path: "/profile", component: ProfileView, name: "profile" },
   { path: "/messages", component: MessagesView, name: "messages" },
+  {
+    path: "/public-profile/:slug",
+    component: PublicProfileView,
+    name: "public-profile",
+  },
   // Admin routes
   {
     path: "/admin",
