@@ -25,6 +25,7 @@ export const useProjectStore = defineStore("project", () => {
   const hasUnsavedChanges = ref(false);
   const lastSavedState = ref<string | null>(null);
   const isReadOnly = ref(false);
+  const isPublic = ref(false);
   const currentProjectOwner = ref<{
     id: string;
     firstName: string;
@@ -209,6 +210,31 @@ export const useProjectStore = defineStore("project", () => {
     }
   };
 
+  const updateVisibility = async (
+    id: string,
+    nextIsPublic: boolean,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await apiClient.patch<{ body: { isPublic: boolean } }>(
+        `/app/projects/${id}/visibility`,
+        { isPublic: nextIsPublic },
+      );
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      isPublic.value = nextIsPublic;
+
+      return { success: true };
+    } catch {
+      return {
+        success: false,
+        error: "Erreur lors du changement de visibilité.",
+      };
+    }
+  };
+
   const addFavorite = async (
     projectId: string,
   ): Promise<{ success: boolean; error?: string }> => {
@@ -336,6 +362,7 @@ export const useProjectStore = defineStore("project", () => {
           lastSavedState.value = JSON.stringify(stripTimestamps(timelineData));
 
           isReadOnly.value = result.data.isOwned === false;
+          isPublic.value = result.data.isPublic ?? false;
           currentProjectOwner.value = result.data.owner ?? null;
 
           isLoading.value = false;
@@ -368,6 +395,7 @@ export const useProjectStore = defineStore("project", () => {
     hasUnsavedChanges.value = false;
     lastSavedState.value = null;
     isReadOnly.value = false;
+    isPublic.value = false;
     currentProjectOwner.value = null;
   };
 
@@ -398,6 +426,7 @@ export const useProjectStore = defineStore("project", () => {
     currentProjectId,
     hasUnsavedChanges,
     isReadOnly,
+    isPublic,
     currentProjectOwner,
     lastSavedAt,
     lastExportedAt,
@@ -410,6 +439,7 @@ export const useProjectStore = defineStore("project", () => {
     getPublicProjects,
     getFavoriteProjects,
     cloneProject,
+    updateVisibility,
     addFavorite,
     removeFavorite,
     deleteProject,
