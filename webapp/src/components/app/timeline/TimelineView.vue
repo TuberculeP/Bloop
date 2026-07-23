@@ -656,13 +656,6 @@ defineExpose({
     <div class="timeline-header">
       <div class="header-left">
         <button
-          class="back-btn"
-          @click="handleBackToProjects"
-          title="Retour aux projets"
-        >
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <button
           class="library-btn"
           :class="{ active: showAudioLibrary }"
           @click="showAudioLibrary = !showAudioLibrary"
@@ -959,6 +952,13 @@ defineExpose({
             saveMessage ? saveMessage.text : isSaving ? '...' : 'Sauvegarder'
           "
         />
+        <button
+          class="back-btn"
+          @click="handleBackToProjects"
+          title="Retour aux projets"
+        >
+          <i class="fas fa-door-open"></i>
+        </button>
       </div>
     </div>
 
