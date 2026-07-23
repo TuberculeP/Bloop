@@ -8,6 +8,7 @@ import type {
   TrashedProjectListItem,
 } from "../lib/utils/types";
 import type { useTimelineStore } from "./timelineStore";
+import { useAudioLibraryStore } from "./audioLibraryStore";
 
 const stripTimestamps = (obj: any): any => {
   return JSON.parse(
@@ -327,6 +328,9 @@ export const useProjectStore = defineStore("project", () => {
         if (isCompatibleFormat && projectWrapper?.data) {
           const timelineData = projectWrapper.data as TimelineProject;
           timelineStore.loadProjectData(timelineData);
+          if (timelineData.usedSamples) {
+            useAudioLibraryStore().restoreSamples(timelineData.usedSamples);
+          }
           currentProjectId.value = projectId;
           hasUnsavedChanges.value = false;
           lastSavedState.value = JSON.stringify(stripTimestamps(timelineData));
