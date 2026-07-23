@@ -13,12 +13,13 @@ import type {
   Track,
 } from "../lib/utils/types";
 import { useAudioLibraryStore } from "./audioLibraryStore";
+import { useStretchRenderCacheStore } from "./stretchRenderCacheStore";
 import { AudioClipEngine } from "../lib/audio/engines/audio-clip";
 import { SamplePlayerEngine } from "../lib/audio/engines/sample-player";
 import { createInstrumentEngine } from "../lib/audio/instrumentFactory";
 import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
-import { ticksPerSecond } from "../lib/audio/timeGrid";
+import { computeClipPlaybackParams } from "../lib/audio/clipStretch";
 
 interface TrackChannel {
   trackId: string;
@@ -230,12 +231,58 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       return;
     }
 
-    const tickRate = ticksPerSecond(timelineStore.tempo);
-    const offsetInSeconds =
-      (clip.startOffset + playbackOffsetColumns) / tickRate;
-    const durationInSeconds = (clip.w - playbackOffsetColumns) / tickRate;
+    const params = computeClipPlaybackParams(
+      clip,
+      timelineStore.tempo,
+      playbackOffsetColumns,
+    );
 
-    engine.playClip(clip.id, buffer, offsetInSeconds, durationInSeconds);
+    if (params.needsStretchEngine) {
+      const stretchRenderCacheStore = useStretchRenderCacheStore();
+      const cached = await stretchRenderCacheStore.getCachedStretchedClip(
+        clip,
+        timelineStore.tempo,
+        audioContext,
+      );
+
+      if (cached) {
+        // Buffer déjà dans le domaine CIBLE (déjà étiré) : le scrub se
+        // calcule en simple proportion, pas besoin de compenser un
+        // playbackRate comme dans le chemin live ci-dessous.
+        const fraction = playbackOffsetColumns / clip.w;
+        const scrubOffset = fraction * cached.duration;
+        engine.playClip(
+          clip.id,
+          cached,
+          scrubOffset,
+          cached.duration - scrubOffset,
+        );
+      } else {
+        await engine.playStretchedClip(
+          clip.id,
+          buffer,
+          params.offsetSeconds,
+          params.durationSeconds,
+          params.playbackRate,
+          params.detuneCents,
+        );
+        // Fire-and-forget : rend disponible un cache chaud pour la prochaine
+        // lecture, sans jamais bloquer celle-ci.
+        stretchRenderCacheStore.ensureStretchedClipCached(
+          clip,
+          buffer,
+          timelineStore.tempo,
+          audioContext,
+        );
+      }
+    } else {
+      engine.playClip(
+        clip.id,
+        buffer,
+        params.offsetSeconds,
+        params.durationSeconds,
+      );
+    }
   };
 
   const stopClipOnTrack = (trackId: string, clipId: string): void => {
@@ -400,14 +447,6 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
 
   const initialize = (): void => {
     if (isInitialized.value) return;
-
-    // Restaurer les métadonnées des samples utilisés par le projet AVANT de
-    // synchroniser les pistes ci-dessous : un Sample Player résout son sample
-    // dès la création de son channel (syncTracksWithStore), donc restaurer
-    // ces métadonnées après aurait été une course perdue d'avance.
-    if (timelineStore.project.usedSamples) {
-      useAudioLibraryStore().restoreSamples(timelineStore.project.usedSamples);
-    }
 
     // Synchroniser avec les pistes existantes
     syncTracksWithStore();

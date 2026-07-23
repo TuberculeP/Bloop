@@ -6,6 +6,7 @@ import type {
   MidiNote,
   AudioClip,
   AudioSample,
+  ClipResizeMode,
   InstrumentConfig,
   InstrumentType,
   TrackColor,
@@ -28,6 +29,8 @@ import {
   LEGACY_TO_TICKS_SCALE,
   migrateLegacyProject,
 } from "../lib/audio/timeGrid";
+import { pickStretchFields } from "../lib/audio/clipStretch";
+import { createDebouncer } from "../lib/utils/debounce";
 import { useProjectStore } from "./projectStore";
 import { useUiLayoutPreference } from "../composables/useUiLayoutStorage";
 
@@ -207,6 +210,12 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   const automationExpandedMaster = ref(false);
   const isLoadingProject = ref(false); // Flag pour ignorer markAsChanged pendant le chargement
   const metronomeEnabled = useUiLayoutPreference("metronome-enabled", false);
+  // Mode de resize des clips audio ("edit" = couper, "stretch" = étirer) —
+  // volontairement NON persisté (contrairement aux autres préférences de vue
+  // ci-dessus) : le stretch est un geste ponctuel, moins fréquent que le
+  // trim classique, donc chaque session/reload repart en mode "couper" par
+  // défaut plutôt que de rester bloquée en "stretch" silencieusement.
+  const clipResizeMode = ref<ClipResizeMode>("edit");
   // Aide d'édition éphémère (non persistée) : dernière largeur donnée à une
   // note via un resize individuel, utilisée comme largeur par défaut pour la
   // prochaine note posée au clic dans le piano roll.
@@ -647,6 +656,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
       x: cutPosition,
       w: rightW,
       startOffset: rightStartOffset,
+      ...pickStretchFields(clip),
     });
 
     track.updatedAt = new Date();
@@ -975,28 +985,6 @@ export const useTimelineStore = defineStore("timelineStore", () => {
   // Persistence
   // ============================================
 
-  // Factory de debounce partagée par la sauvegarde de projet et la
-  // persistance du zoom ci-dessous : un seul setTimeout/clearTimeout à la
-  // fois par `fn`, plus un `flush` pour ne rien perdre si l'onglet se ferme
-  // juste après (voir les deux usages).
-  const createDebouncer = (fn: () => void, ms: number) => {
-    let id: ReturnType<typeof setTimeout> | null = null;
-    const schedule = (): void => {
-      if (id) clearTimeout(id);
-      id = setTimeout(() => {
-        id = null;
-        fn();
-      }, ms);
-    };
-    const flush = (): void => {
-      if (!id) return;
-      clearTimeout(id);
-      id = null;
-      fn();
-    };
-    return { schedule, flush };
-  };
-
   const saveToLocalStorage = (): void => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(project.value));
@@ -1235,6 +1223,7 @@ export const useTimelineStore = defineStore("timelineStore", () => {
     expandedTrack,
     automationExpandedMaster,
     metronomeEnabled,
+    clipResizeMode,
     lastResizedNoteWidth,
     zoomLevel,
     zoomWheelSpeed,

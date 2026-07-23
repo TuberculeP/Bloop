@@ -18,8 +18,13 @@ export interface ClipRenderData {
   id: string;
   x: number;
   w: number;
-  startOffset: number;
-  sampleDurationTicks: number;
+  // Fenêtre à afficher dans waveformData, en secondes NATIVES du sample
+  // (déjà résolue par l'appelant via computeClipPlaybackParams — tient
+  // compte du stretch BPM-synchronisé, contrairement à startOffset/w bruts
+  // qui ne représentent la fenêtre native que pour un clip non stretché).
+  waveformOffsetSeconds: number;
+  waveformDurationSeconds: number;
+  sampleDurationSeconds: number;
   waveformData: number[] | null;
   color: string;
   name: string;
@@ -28,7 +33,6 @@ export interface ClipRenderData {
   isResizing: boolean;
   previewX?: number;
   previewW?: number;
-  previewStartOffset?: number;
 }
 
 // Géométrie minimale pour le hit-testing (mousedown/mousemove) : un
@@ -182,7 +186,6 @@ export class AudioClipRenderer {
 
     const clipX = clip.previewX ?? clip.x;
     const clipW = clip.previewW ?? clip.w;
-    const clipStartOffset = clip.previewStartOffset ?? clip.startOffset;
 
     const px = clipX * config.colWidth;
     const pw = clipW * config.colWidth;
@@ -202,7 +205,7 @@ export class AudioClipRenderer {
     ctx.clip();
 
     if (clip.waveformData) {
-      this.drawClipWaveform(clip, clipStartOffset, clipW, { px, py, pw, ph });
+      this.drawClipWaveform(clip, { px, py, pw, ph });
     } else {
       this.drawLoadingPlaceholder(px, py, pw, ph);
     }
@@ -232,23 +235,38 @@ export class AudioClipRenderer {
 
   // Porte la logique de dessin de barres de l'ancien WaveformCanvas.vue :
   // moyenne d'amplitude par barre sur la portion de `waveformData` (1000
-  // points, fixe par sample) visible compte tenu de startOffset/largeur.
+  // points, fixe par sample) visible. La fenêtre (offset/durée) est déjà
+  // résolue par l'appelant en secondes NATIVES du sample (via
+  // computeClipPlaybackParams), donc correcte aussi bien pour un clip trimmé
+  // que pour un clip stretché (BPM-synchronisé) — sans ça, la waveform d'un
+  // clip stretché afficherait la mauvaise portion du sample, sans rapport
+  // avec ce qui est réellement audible.
   private drawClipWaveform(
     clip: ClipRenderData,
-    startOffset: number,
-    clipWidthTicks: number,
     rect: { px: number; py: number; pw: number; ph: number },
   ) {
-    const { ctx, config } = this;
-    const { waveformData, color, sampleDurationTicks } = clip;
+    const { ctx } = this;
+    const {
+      waveformData,
+      color,
+      sampleDurationSeconds,
+      waveformOffsetSeconds,
+      waveformDurationSeconds,
+    } = clip;
     const { px, py, pw, ph } = rect;
     if (!waveformData || waveformData.length === 0) return;
 
     const startRatio =
-      sampleDurationTicks > 0 ? startOffset / sampleDurationTicks : 0;
+      sampleDurationSeconds > 0
+        ? waveformOffsetSeconds / sampleDurationSeconds
+        : 0;
     const endRatio =
-      sampleDurationTicks > 0
-        ? Math.min(1, (startOffset + clipWidthTicks) / sampleDurationTicks)
+      sampleDurationSeconds > 0
+        ? Math.min(
+            1,
+            (waveformOffsetSeconds + waveformDurationSeconds) /
+              sampleDurationSeconds,
+          )
         : 1;
 
     const startIndex = Math.floor(startRatio * waveformData.length);
@@ -259,9 +277,20 @@ export class AudioClipRenderer {
     const midY = py + ph / 2;
     const barStep = BAR_WIDTH + BAR_GAP;
 
+    // Portion de la fenêtre demandée qui tombe réellement dans le sample —
+    // si elle dépasse la fin du fichier (ex. trim au-delà du contenu
+    // disponible), les barres s'arrêtent avant la fin de la box plutôt que
+    // d'afficher du silence comme si c'était du contenu réel.
+    const availableDurationSeconds = Math.max(
+      0,
+      Math.min(
+        waveformDurationSeconds,
+        sampleDurationSeconds - waveformOffsetSeconds,
+      ),
+    );
     const audioPixelWidth =
-      sampleDurationTicks > 0
-        ? Math.min(pw, (sampleDurationTicks - startOffset) * config.colWidth)
+      waveformDurationSeconds > 0
+        ? pw * (availableDurationSeconds / waveformDurationSeconds)
         : pw;
     const barCount = Math.max(0, Math.floor(audioPixelWidth / barStep));
     if (barCount === 0) return;
