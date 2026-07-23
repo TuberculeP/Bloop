@@ -205,8 +205,10 @@ function deriveLabelFromUrl(url: string) {
 
 .project-card {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
   padding: 3px 10px;
   border-radius: 8px;
   text-decoration: none;
@@ -217,6 +219,8 @@ function deriveLabelFromUrl(url: string) {
   font-size: 0.9em;
   cursor: pointer;
   vertical-align: middle;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
   transition:
     background 0.15s ease,
     border-color 0.15s ease;
