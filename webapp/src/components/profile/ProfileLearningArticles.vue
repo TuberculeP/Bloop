@@ -79,9 +79,8 @@ onMounted(loadArticles);
         <BaseButton
           variant="ghost"
           @click="router.push('/learning/editor/new')"
-        >
-          Créer un article
-        </BaseButton>
+          label="Créer un article"
+        />
       </template>
     </EmptyState>
 

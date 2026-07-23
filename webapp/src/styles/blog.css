@@ -133,7 +133,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   z-index: 100;
-  min-width: 180px;
+  min-width: 200px;
   overflow: hidden;
   animation: fadeIn 0.2s ease;
 }
@@ -165,7 +165,7 @@
 }
 
 .author-menu-item:hover {
-  background: var(--color-bg-secondary);
+  background: var(--color-white-pale);
 }
 
 .author-menu-item i {

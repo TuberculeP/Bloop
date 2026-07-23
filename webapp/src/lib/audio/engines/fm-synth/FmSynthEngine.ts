@@ -4,7 +4,7 @@ import type {
   NoteName,
 } from "../../../utils/types";
 import { BaseEngine } from "../BaseEngine";
-import { noteNameToMidiNote } from "../noteUtils";
+import { noteNameToMidi } from "../noteUtils";
 import type { FmSynthMessageToProcessor } from "./protocol";
 import fmSynthProcessorUrl from "./fm-synth-processor.ts?worker&url";
 
@@ -87,7 +87,7 @@ export class FmSynthEngine extends BaseEngine {
     this.postMessage({
       type: "noteOn",
       noteId,
-      note: noteNameToMidiNote(noteName),
+      note: noteNameToMidi(noteName),
       velocity: velocity / 127,
     });
   }

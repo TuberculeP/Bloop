@@ -2,10 +2,11 @@
 import { computed } from "vue";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import RangeSlider from "../../ui/RangeSlider.vue";
+import BaseSelect from "../../ui/BaseSelect.vue";
 
 const props = defineProps<{
   trackId: string; // "master" pour le bus master
-  effectId: string; // "channel" pour le fader de volume (hors pile d'effets)
+  effectId: string; // "channel" pour le fader de volume/pan (hors pile d'effets)
   paramId: string;
   label: string;
   unit?: string;
@@ -14,6 +15,13 @@ const props = defineProps<{
   step?: number;
   modelValue: number;
   displayValue?: string;
+  // Normalisé 0-1 : position canonique du premier point posé à l'activation
+  // de l'automatisation, indépendante de la valeur live du paramètre. Si
+  // absent, on reprend la valeur actuelle du paramètre.
+  defaultStart?: number;
+  // Paramètre discret (ex: rate/curve de Bloopy Pump) : rendu en `<select>`
+  // (BaseSelect) plutôt qu'en RangeSlider continu.
+  options?: { value: number; label: string }[];
 }>();
 
 const emit = defineEmits<{
@@ -44,13 +52,36 @@ const toggleAutomation = () => {
   if (automationLane.value) {
     timelineStore.removeAutomationLane(props.trackId, automationLane.value.id);
   } else {
-    timelineStore.addAutomationLane({
+    const laneId = timelineStore.addAutomationLane({
       trackId: props.trackId,
       effectId: props.effectId,
       paramId: props.paramId,
     });
+    // Point de départ plutôt qu'une lane vide sans courbe visible :
+    // defaultStart (position canonique) si fourni, sinon la valeur actuelle
+    // du paramètre.
+    if (laneId) {
+      const y =
+        props.defaultStart ??
+        (props.modelValue - props.min) / (props.max - props.min);
+      timelineStore.addAutomationPoint(props.trackId, laneId, { x: 0, y });
+    }
   }
 };
+
+// BaseSelect travaille en string (SelectOption.value: string) — les params
+// d'effet sont stockés en number (EffectInstanceConfig.params). Conversion
+// aux deux bornes seulement, le reste du composant reste en number.
+const selectValue = computed({
+  get: () => String(props.modelValue),
+  set: (v: string) => emit("update:modelValue", Number(v)),
+});
+
+const selectOptions = computed(
+  () =>
+    props.options?.map((o) => ({ value: String(o.value), label: o.label })) ??
+    [],
+);
 </script>
 
 <template>
@@ -81,7 +112,14 @@ const toggleAutomation = () => {
         </svg>
       </button>
     </label>
+    <BaseSelect
+      v-if="options"
+      v-model="selectValue"
+      :options="selectOptions"
+      :disabled="isAutomated"
+    />
     <RangeSlider
+      v-else
       :model-value="modelValue"
       :min="min"
       :max="max"

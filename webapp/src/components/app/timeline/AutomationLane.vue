@@ -15,6 +15,7 @@ import {
   type AutomationLaneActions,
 } from "../../../composables/useAutomationLane";
 import { getEffectDefinition } from "../../../lib/audio/effects";
+import { getChannelParamMeta } from "../../../lib/audio/channelParams";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useRafSchedule } from "../../../composables/useRafSchedule";
 
@@ -43,11 +44,22 @@ const timelineStore = useTimelineStore();
 const resolvedTrackId = props.trackId ?? "master";
 
 // Résout dynamiquement le libellé de la cible (pseudo-effet "channel" pour le
-// fader de volume, sinon label du paramètre déclaré par l'effet visé) plutôt
-// que de dépendre d'un enum fermé de paramètres.
+// fader volume/pan, sinon label du paramètre déclaré par l'effet visé) plutôt
+// que de dépendre d'un enum fermé de paramètres — dans les deux cas,
+// `paramId` n'est qu'une clé de lookup opaque contre un registre statique,
+// jamais une valeur comparée en dur ici.
+const channelParamMeta = computed(() => {
+  const target = props.lane.target;
+  return target.effectId === "channel"
+    ? getChannelParamMeta(target.paramId)
+    : undefined;
+});
+
 const paramLabel = computed<string>(() => {
   const target = props.lane.target;
-  if (target.effectId === "channel") return "Vol";
+  if (target.effectId === "channel") {
+    return channelParamMeta.value?.shortLabel ?? target.paramId;
+  }
 
   const effects = props.trackId
     ? (timelineStore.tracks.find((t) => t.id === props.trackId)?.effects ?? [])
@@ -58,6 +70,14 @@ const paramLabel = computed<string>(() => {
     : undefined;
   const paramMeta = definition?.params.find((p) => p.id === target.paramId);
   return paramMeta?.shortLabel ?? paramMeta?.label ?? target.paramId;
+});
+
+// Repères haut/bas de l'axe vertical de la courbe — utile pour un paramètre
+// bipolaire comme le pan, où "en haut" et "en bas" ne sont pas évidents sans
+// indication (contrairement au volume, où le haut = plus fort va de soi).
+const axisLabels = computed<{ topLabel?: string; bottomLabel?: string }>(() => {
+  const meta = channelParamMeta.value;
+  return meta ? { topLabel: meta.topLabel, bottomLabel: meta.bottomLabel } : {};
 });
 
 const actions: AutomationLaneActions = {
@@ -129,6 +149,7 @@ onMounted(() => {
       trackColor: props.trackColor,
       timeSignature: timelineStore.timeSignature,
       subdivision: timelineStore.subdivision,
+      ...axisLabels.value,
     },
     width,
     LANE_HEIGHT,
@@ -168,6 +189,7 @@ const resizeCanvas = () => {
       trackColor: props.trackColor,
       timeSignature: timelineStore.timeSignature,
       subdivision: timelineStore.subdivision,
+      ...axisLabels.value,
     },
     width,
     LANE_HEIGHT,

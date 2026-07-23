@@ -49,7 +49,7 @@ export default async function customSession() {
     saveUninitialized: false,
     rolling: true, // Renouvelle le cookie à chaque requête (session active = pas d'expiration)
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: "auto",
       maxAge: DEFAULT_TTL * 1000,
     },
     store,

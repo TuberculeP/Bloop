@@ -19,6 +19,7 @@
         <table class="users-table">
           <thead>
             <tr>
+              <th>Id</th>
               <th>Email</th>
               <th>Name</th>
               <th>Role</th>
@@ -29,6 +30,7 @@
           </thead>
           <tbody>
             <tr v-for="user in users" :key="user.id">
+              <td>{{ user.id }}</td>
               <td>{{ user.email }}</td>
               <td>{{ user.firstName }} {{ user.lastName }}</td>
               <td>

@@ -74,7 +74,7 @@ setAutomationPoints(trackId, laneId, points): boolean
 ### Types clés (`lib/utils/types.ts`)
 
 ```typescript
-InstrumentType = "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "fmSynth" | "audioTrack"
+InstrumentType = "basicSynth" | "elementarySynth" | "smplr" | "undertale" | "fmSynth" | "audioTrack" | "samplePlayer"
 
 // Discriminated unions pour type safety
 BasicSynthConfig { type: "basicSynth", oscillatorType: OscillatorType, gain? }
@@ -83,10 +83,11 @@ ElementarySynthConfig { type: "elementarySynth", preset?, gain? }
 UndertaleConfig { type: "undertale", instrument: string, gain?, attack?, decay?, sustain?, release? }
 FmSynthConfig { type: "fmSynth", patch: Dx7Patch, gain? }  // synthèse FM style DX7, voir plus bas
 AudioTrackConfig { type: "audioTrack", gain? }
-InstrumentConfig = BasicSynthConfig | SmplrConfig | ElementarySynthConfig | UndertaleConfig | FmSynthConfig | AudioTrackConfig
+SamplePlayerConfig { type: "samplePlayer", sampleId: string | null, rootNote: NoteName, mode: "normal" | "stretch", gain?, attack?, decay?, sustain?, release? }
+InstrumentConfig = BasicSynthConfig | SmplrConfig | ElementarySynthConfig | UndertaleConfig | FmSynthConfig | AudioTrackConfig | SamplePlayerConfig
 
 // Pour les updates partiels (sans discriminant)
-InstrumentConfigUpdate { oscillatorType?, soundfont?, preset?, gain?, patch? }
+InstrumentConfigUpdate { oscillatorType?, soundfont?, preset?, gain?, patch?, sampleId?, rootNote?, mode? }
 
 EQBand {
   id: string          // "sub", "bass", "mid", "presence", "brilliance"
@@ -199,6 +200,10 @@ engines/
     dsp/                    # Port du moteur DX7 de mmontag/dx7-synth-js (MIT) — pure computation, sans dépendance UI/AudioContext
     presets/rom1a.json      # 32 presets d'usine (bank ROM1A du DX7 original)
     index.ts                # Re-exports (FmSynthEngine, FM_SYNTH_PRESETS, ALGORITHMS)
+
+  sample-player/
+    SamplePlayerEngine.ts # Joue un AudioSample par note (playbackRate natif en
+                          # mode "normal", Tone.GrainPlayer en mode "stretch")
 ```
 
 `Soundfont`/`Soundfont2Sampler` (lib `smplr`) fixent leur destination audio à la
@@ -211,6 +216,14 @@ ancienne, en voice stealing si le pool est saturé) par note jouée — attack,
 decay et sustain sont réellement audibles et indépendants par voix en
 polyphonie (accords). Le `release` s'appuie sur `decayTime`, géré nativement
 par `smplr` (rampe de fondu interne au `stop()`).
+
+`SamplePlayerEngine` n'a pas ce problème (pas de destination fixée à la
+construction), donc pas besoin de `VoicePool` : chaque note crée directement
+son propre `GainNode` d'enveloppe à la volée. Il ne connaît par ailleurs jamais
+`audioLibraryStore` (aucun fichier sous `lib/audio/` n'importe un store, cf.
+`AudioClipEngine.playClip`) : c'est `trackAudioStore.ts` qui résout le
+`sampleId` en `AudioBuffer` via `audioLibraryStore.loadSample()` et l'injecte
+via `engine.setBuffer(buffer)`, hors de l'interface `InstrumentEngine`.
 
 Factory : `lib/audio/instrumentFactory.ts` - Crée les instances d'engines selon le type.
 
@@ -363,7 +376,7 @@ Voir [Système d'effets](#système-deffets-libaudioeffects) plus haut. `EffectRa
 
 ## Flow utilisateur
 
-1. **Ajouter une piste** : Bouton "+" → Menu instruments (BasicSynth, Smplr, Undertale, FM Synth, AudioTrack)
+1. **Ajouter une piste** : Bouton "+" → Menu instruments (BasicSynth, Smplr, Undertale, FM Synth, AudioTrack, Sample Player)
 2. **Éditer les notes** : Double-clic sur la timeline d'une piste → Piano roll s'expand en dessous
 3. **Ajouter une note** : Clic simple sur la grille du piano roll
 4. **Supprimer une note** : Clic droit sur la note
@@ -444,6 +457,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 - [ ] Audio tracks (pistes samples) - en cours
 - [x] Bibliothèque de samples connectée à R2/CDN
 - [x] Cache IndexedDB pour samples (500MB, LRU)
+- [x] Sample Player (sampler par note, modes normal/stretch via Tone.GrainPlayer)
 
 ## Conventions de code
 
@@ -472,4 +486,5 @@ npm run lint:webapp  # Lint du frontend
 ## Dépendances clés
 
 - `smplr` : Soundfonts pour les instruments samplés
+- `tone` : `GrainPlayer` pour le mode "stretch" du Sample Player (synthèse granulaire, durée constante quel que soit le pitch)
 - `pinia` : State management

@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from "vue";
-import type { Track, OscillatorType } from "../../../lib/utils/types";
+import type {
+  Track,
+  OscillatorType,
+  AudioSample,
+  SamplePlaybackMode,
+} from "../../../lib/utils/types";
 import { useTimelineStore } from "../../../stores/timelineStore";
 import { useTrackAudioStore } from "../../../stores/trackAudioStore";
+import { useAudioLibraryStore } from "../../../stores/audioLibraryStore";
 import { SOUNDFONT_LIST, UndertaleEngine } from "../../../lib/audio/engines";
+import { ALL_NOTES } from "../../../lib/audio/pianoRollConstants";
+import { getChannelParamMeta } from "../../../lib/audio/channelParams";
 import RangeSlider from "../../ui/RangeSlider.vue";
 import EffectParamRow from "../effects/EffectParamRow.vue";
 import EffectRack from "../effects/EffectRack.vue";
 import BaseButton from "../../ui/BaseButton.vue";
 import BaseModal from "../../ui/BaseModal.vue";
 import Dx7InstrumentPanel from "./Dx7InstrumentPanel.vue";
+import SamplePreviewButton from "../../shared/SamplePreviewButton.vue";
+import SamplePickerModal from "./SamplePickerModal.vue";
 
 // Instruments avec leur propre interface dédiée : au lieu des paramètres
 // inline habituels, le drawer affiche un bouton qui ouvre cette interface
@@ -31,6 +41,10 @@ const emit = defineEmits<{
 
 const timelineStore = useTimelineStore();
 const trackAudioStore = useTrackAudioStore();
+const audioLibraryStore = useAudioLibraryStore();
+
+const volumeMeta = getChannelParamMeta("volume")!;
+const panMeta = getChannelParamMeta("pan")!;
 
 const instrumentType = computed(() => props.track.instrument.type);
 
@@ -47,6 +61,28 @@ watch(
   () => {
     showInstrumentModal.value = false;
   },
+);
+
+const showSamplePickerModal = ref(false);
+
+const samplePlayerSample = computed(() => {
+  const sampleId =
+    props.track.instrument.type === "samplePlayer"
+      ? props.track.instrument.sampleId
+      : null;
+  return sampleId ? audioLibraryStore.getSample(sampleId) : null;
+});
+
+const samplePlayerRootNote = computed(() =>
+  props.track.instrument.type === "samplePlayer"
+    ? props.track.instrument.rootNote
+    : "C4",
+);
+
+const samplePlayerMode = computed(() =>
+  props.track.instrument.type === "samplePlayer"
+    ? props.track.instrument.mode
+    : "normal",
 );
 
 const currentOscillatorType = computed(() => {
@@ -90,12 +126,17 @@ const undertaleEngineState = computed(() => {
 const hasAdsrControls = computed(
   () =>
     props.track.instrument.type === "smplr" ||
-    props.track.instrument.type === "undertale",
+    props.track.instrument.type === "undertale" ||
+    props.track.instrument.type === "samplePlayer",
 );
 
 const adsrAttack = computed(() => {
   const instrument = props.track.instrument;
-  if (instrument.type === "smplr" || instrument.type === "undertale") {
+  if (
+    instrument.type === "smplr" ||
+    instrument.type === "undertale" ||
+    instrument.type === "samplePlayer"
+  ) {
     return instrument.attack ?? 0;
   }
   return 0;
@@ -103,7 +144,11 @@ const adsrAttack = computed(() => {
 
 const adsrDecay = computed(() => {
   const instrument = props.track.instrument;
-  if (instrument.type === "smplr" || instrument.type === "undertale") {
+  if (
+    instrument.type === "smplr" ||
+    instrument.type === "undertale" ||
+    instrument.type === "samplePlayer"
+  ) {
     return instrument.decay ?? 0;
   }
   return 0;
@@ -111,7 +156,11 @@ const adsrDecay = computed(() => {
 
 const adsrSustain = computed(() => {
   const instrument = props.track.instrument;
-  if (instrument.type === "smplr" || instrument.type === "undertale") {
+  if (
+    instrument.type === "smplr" ||
+    instrument.type === "undertale" ||
+    instrument.type === "samplePlayer"
+  ) {
     return instrument.sustain ?? 1;
   }
   return 1;
@@ -119,7 +168,11 @@ const adsrSustain = computed(() => {
 
 const adsrRelease = computed(() => {
   const instrument = props.track.instrument;
-  if (instrument.type === "smplr" || instrument.type === "undertale") {
+  if (
+    instrument.type === "smplr" ||
+    instrument.type === "undertale" ||
+    instrument.type === "samplePlayer"
+  ) {
     return instrument.release ?? 0.3;
   }
   return 0.3;
@@ -157,8 +210,38 @@ const handleADSRChange = (
   trackAudioStore.updateTrackInstrument(props.track.id, { [param]: value });
 };
 
+const handleSampleSelected = (sample: AudioSample) => {
+  timelineStore.updateTrackInstrument(props.track.id, {
+    sampleId: sample.id,
+  });
+  timelineStore.registerUsedSample(sample);
+  trackAudioStore.updateTrackInstrument(props.track.id, {
+    sampleId: sample.id,
+  });
+};
+
+const handleRootNoteChange = (rootNote: string) => {
+  timelineStore.updateTrackInstrument(props.track.id, { rootNote });
+  trackAudioStore.updateTrackInstrument(props.track.id, { rootNote });
+};
+
+const handleSamplePlaybackModeChange = (mode: SamplePlaybackMode) => {
+  timelineStore.updateTrackInstrument(props.track.id, { mode });
+  trackAudioStore.updateTrackInstrument(props.track.id, { mode });
+};
+
 const handleVolumeChange = (volume: number) => {
   timelineStore.setTrackVolume(props.track.id, volume);
+};
+
+const panDisplayValue = computed(() => {
+  const pan = props.track.pan;
+  if (pan === 0) return "C";
+  return pan < 0 ? `G${-pan}` : `D${pan}`;
+});
+
+const handlePanChange = (pan: number) => {
+  timelineStore.setTrackPan(props.track.id, pan);
 };
 
 const handleClose = () => {
@@ -182,12 +265,28 @@ const handleClose = () => {
                 :track-id="track.id"
                 effect-id="channel"
                 param-id="volume"
-                label="Volume"
-                unit="%"
-                :min="0"
-                :max="100"
+                :label="volumeMeta.label"
+                :unit="volumeMeta.unit"
+                :min="volumeMeta.min"
+                :max="volumeMeta.max"
+                :default-start="volumeMeta.defaultStart"
                 :model-value="track.volume"
                 @update:model-value="handleVolumeChange"
+              />
+            </div>
+
+            <div class="setting-group">
+              <EffectParamRow
+                :track-id="track.id"
+                effect-id="channel"
+                param-id="pan"
+                :label="panMeta.label"
+                :min="panMeta.min"
+                :max="panMeta.max"
+                :default-start="panMeta.defaultStart"
+                :model-value="track.pan"
+                :display-value="panDisplayValue"
+                @update:model-value="handlePanChange"
               />
             </div>
 
@@ -279,6 +378,68 @@ const handleClose = () => {
               <div class="setting-group">
                 <p class="coming-soon">Paramètres ADSR à venir...</p>
               </div>
+            </template>
+
+            <template v-else-if="instrumentType === 'samplePlayer'">
+              <div class="setting-group">
+                <label class="setting-label">Sample</label>
+                <div class="sample-picker-row">
+                  <template v-if="samplePlayerSample">
+                    <SamplePreviewButton :sample="samplePlayerSample" />
+                    <span class="sample-picker-name">{{
+                      samplePlayerSample.name
+                    }}</span>
+                  </template>
+                  <p v-else class="coming-soon">Aucun sample sélectionné</p>
+                </div>
+                <BaseButton
+                  label="Choisir un sample"
+                  left-icon="fas fa-folder-open"
+                  @click="showSamplePickerModal = true"
+                />
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-label">Note de référence</label>
+                <select
+                  class="soundfont-select instrument-select"
+                  :value="samplePlayerRootNote"
+                  @change="
+                    handleRootNoteChange(
+                      ($event.target as HTMLSelectElement).value,
+                    )
+                  "
+                >
+                  <option v-for="n in ALL_NOTES" :key="n" :value="n">
+                    {{ n }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-label">Mode de lecture</label>
+                <div class="waveform-selector">
+                  <button
+                    class="waveform-btn"
+                    :class="{ active: samplePlayerMode === 'normal' }"
+                    @click="handleSamplePlaybackModeChange('normal')"
+                  >
+                    Normal
+                  </button>
+                  <button
+                    class="waveform-btn"
+                    :class="{ active: samplePlayerMode === 'stretch' }"
+                    @click="handleSamplePlaybackModeChange('stretch')"
+                  >
+                    Stretch
+                  </button>
+                </div>
+              </div>
+
+              <SamplePickerModal
+                v-model="showSamplePickerModal"
+                @select="handleSampleSelected"
+              />
             </template>
 
             <template v-if="hasAdsrControls">
@@ -488,6 +649,21 @@ const handleClose = () => {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.6);
   font-style: italic;
+}
+
+.sample-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sample-picker-name {
+  font-size: 13px;
+  color: var(--color-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .loading-text {

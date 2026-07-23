@@ -10,6 +10,8 @@ import {
   keyFromR2Url,
 } from "../../services/r2.service";
 import userSamplesRouter from "./samples";
+import { Project } from "../../config/entities/Project";
+import { IsNull } from "typeorm";
 
 const userRouter = Router();
 
@@ -162,4 +164,45 @@ userRouter.patch("/", async (req, res) => {
   }
 });
 
+userRouter.get("/:id/profile", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ status: 401, message: "User not logged in" });
+      return;
+    }
+
+    const userRepository = pg.getRepository(User);
+    const user = await userRepository.findOne({
+      where: { id: req.params.id },
+      select: ["id", "firstName", "lastName", "profilePicture", "createdAt"],
+    });
+
+    if (!user) {
+      res.status(404).json({ status: 404, message: "User not found" });
+      return;
+    }
+
+    const projectRepository = pg.getRepository(Project);
+    const projects = await projectRepository.find({
+      where: { user: { id: user.id }, isPublic: true, deletedAt: IsNull() },
+      select: ["id", "name", "description", "createdAt", "updatedAt"],
+      order: { updatedAt: "DESC" },
+    });
+
+    res.status(200).json({
+      status: 200,
+      body: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.profilePicture,
+        createdAt: user.createdAt,
+        projects,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ status: 500, message: "Internal server error" });
+  }
+});
 export default userRouter;

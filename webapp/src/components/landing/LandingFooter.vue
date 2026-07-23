@@ -22,7 +22,7 @@
           </p>
           <div class="social-links">
             <BaseTooltip
-              v-for="social in socials"
+              v-for="social in landingContent.socialMedia"
               :key="social.name"
               :text="social.name"
             >
@@ -31,7 +31,7 @@
                 class="social-link"
                 :aria-label="social.name"
               >
-                <component :is="social.icon" />
+                <i :class="social.icon" />
               </a>
             </BaseTooltip>
           </div>
@@ -41,14 +41,14 @@
         <div class="footer-links">
           <div
             class="links-column"
-            v-for="(column, index) in footerLinks"
+            v-for="(column, index) in landingContent.footerLinks"
             :key="column.title"
             :style="{ '--delay': index * 0.1 + 's' }"
           >
             <h4 class="column-title">{{ column.title }}</h4>
             <ul class="column-links">
               <li v-for="link in column.links" :key="link.label">
-                <a :href="link.href" class="footer-link">
+                <a :href="link.link" class="footer-link">
                   <span class="link-text">{{ link.label }}</span>
                   <svg
                     class="link-arrow"
@@ -128,163 +128,38 @@
           <a
             :href="link.link"
             class="legal-link"
-            v-for="link in legalLinks"
+            v-for="link in landingContent.footerLegalLinks"
             :key="link.id"
-            >{{ link.title }}</a
           >
+            {{ link.title }}
+          </a>
         </div>
       </div>
     </div>
 
     <!-- Back to top button -->
-    <button
+    <BaseButton
+      color="accent"
+      size="large"
       class="back-to-top"
-      :class="{ visible: showBackToTop }"
       @click="scrollToTop"
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <line x1="12" y1="19" x2="12" y2="5"></line>
-        <polyline points="5 12 12 5 19 12"></polyline>
-      </svg>
-    </button>
+      left-icon="fas fa-arrow-up"
+    />
   </footer>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, h, inject } from "vue";
+import { ref, onMounted, onUnmounted, inject } from "vue";
 import BaseTooltip from "../ui/BaseTooltip.vue";
 import BaseButton from "../ui/BaseButton.vue";
+import landingContent from "../../assets/data/landingContent.json";
 
 const footerRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
-const showBackToTop = ref(false);
 const email = ref("");
 const isSubscribing = ref(false);
 
 const currentYear = new Date().getFullYear();
-
-// Social icons
-const TwitterIcon = () =>
-  h(
-    "svg",
-    { width: 18, height: 18, viewBox: "0 0 24 24", fill: "currentColor" },
-    [
-      h("path", {
-        d: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",
-      }),
-    ],
-  );
-
-const DiscordIcon = () =>
-  h(
-    "svg",
-    { width: 18, height: 18, viewBox: "0 0 24 24", fill: "currentColor" },
-    [
-      h("path", {
-        d: "M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z",
-      }),
-    ],
-  );
-
-const InstagramIcon = () =>
-  h(
-    "svg",
-    {
-      width: 18,
-      height: 18,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    },
-    [
-      h("rect", { x: 2, y: 2, width: 20, height: 20, rx: 5, ry: 5 }),
-      h("path", { d: "M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" }),
-      h("line", { x1: 17.5, y1: 6.5, x2: 17.51, y2: 6.5 }),
-    ],
-  );
-
-const YoutubeIcon = () =>
-  h(
-    "svg",
-    { width: 18, height: 18, viewBox: "0 0 24 24", fill: "currentColor" },
-    [
-      h("path", {
-        d: "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z",
-      }),
-    ],
-  );
-
-const socials = [
-  { name: "Twitter", icon: TwitterIcon, link: "/" },
-  { name: "Discord", icon: DiscordIcon, link: "/" },
-  {
-    name: "Instagram",
-    icon: InstagramIcon,
-    link: "https://www.instagram.com/bloop_music/",
-  },
-  { name: "YouTube", icon: YoutubeIcon, link: "/" },
-];
-
-const footerLinks = [
-  {
-    title: "Produit",
-    links: [
-      { label: "Fonctionnalités", href: "#features" },
-      { label: "Tarifs", href: "#about" },
-      { label: "Roadmap", href: "#" },
-      { label: "Changelog", href: "#" },
-    ],
-  },
-  {
-    title: "Ressources",
-    links: [
-      { label: "Documentation", href: "#" },
-      { label: "Tutoriels", href: "#" },
-      { label: "Blog", href: "/blog" },
-      { label: "API", href: "#" },
-    ],
-  },
-  {
-    title: "Support",
-    links: [
-      { label: "Centre d'aide", href: "#" },
-      { label: "Communauté", href: "#" },
-      { label: "Contact", href: "#" },
-      { label: "Status", href: "#" },
-    ],
-  },
-];
-
-const legalLinks = [
-  {
-    id: 1,
-    title: "Confidentialité",
-    link: "#",
-  },
-  {
-    id: 2,
-    title: "CGU",
-    link: "/cgu",
-  },
-  {
-    id: 3,
-    title: "CGV",
-    link: "/cgv",
-  },
-];
-
-// Scroll handler
-const handleScroll = () => {
-  showBackToTop.value = window.scrollY > 500;
-};
 
 // Scroll to top
 const scrollToTop = () => {
@@ -331,13 +206,10 @@ onMounted(() => {
   if (footerRef.value) {
     observer.observe(footerRef.value);
   }
-
-  window.addEventListener("scroll", handleScroll, { passive: true });
 });
 
 onUnmounted(() => {
   if (observer) observer.disconnect();
-  window.removeEventListener("scroll", handleScroll);
 });
 </script>
 
@@ -345,7 +217,7 @@ onUnmounted(() => {
 .footer {
   position: relative;
   color: var(--color-white);
-  padding-top: 4rem;
+  padding-top: 3rem;
   overflow: hidden;
 }
 
@@ -386,15 +258,14 @@ onUnmounted(() => {
   padding: 0 2rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.75rem;
 }
 
 /* Main footer grid */
 .footer-main {
-  min-height: 250px;
   display: grid;
   grid-template-columns: 1.5fr 2fr;
-  gap: 4rem;
+  gap: 3rem;
   opacity: 0;
   transform: translateY(30px);
   transition: all 0.8s ease;
@@ -409,6 +280,7 @@ onUnmounted(() => {
 .footer-brand {
   max-width: 300px;
   display: flex;
+  gap: 24px;
   flex-direction: column;
   justify-content: space-between;
 }
@@ -455,7 +327,7 @@ onUnmounted(() => {
 .footer-links {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .links-column {
@@ -464,20 +336,15 @@ onUnmounted(() => {
   gap: 12px;
   opacity: 0;
   transform: translateY(20px);
-  animation: fadeInUp 0.6s ease forwards;
-  animation-delay: var(--delay);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+  transition-delay: var(--delay);
 }
 
 .footer-main.visible .links-column {
   opacity: 1;
   transform: translateY(0);
-}
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .column-title {
@@ -506,7 +373,7 @@ onUnmounted(() => {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .footer-link {
@@ -544,7 +411,7 @@ onUnmounted(() => {
   );
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 2.5rem;
+  padding: 2rem 2.5rem;
   overflow: hidden;
   opacity: 0;
   transform: translateY(20px);
@@ -617,35 +484,6 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.newsletter-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
-  );
-  border: none;
-  border-radius: 10px;
-  color: var(--color-black);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.newsletter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 210, 105, 0.3);
-}
-
-.newsletter-btn.loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
 .newsletter-decoration {
   position: absolute;
   top: 0;
@@ -677,7 +515,7 @@ onUnmounted(() => {
 
 /* Footer bottom */
 .footer-bottom {
-  padding: 2rem 0;
+  padding: 1.5rem 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -695,16 +533,6 @@ onUnmounted(() => {
 .copyright {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
-}
-
-@keyframes heartbeat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
 }
 
 .bottom-right {
@@ -738,16 +566,18 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   color: var(--color-black);
   cursor: pointer;
-  transform: translateY(20px);
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   z-index: 100;
-
-  &:hover {
-    box-shadow: 0 0 30px rgba(255, 210, 105, 0.4);
-  }
 }
 
-/* Responsive */
+.back-to-top:hover {
+  box-shadow: 0 0 30px rgba(255, 210, 105, 0.4);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+/* Tablette : la marque et les colonnes de liens passent en une
+   seule colonne, contenu centré. */
 @media (max-width: 1024px) {
   .footer-main {
     grid-template-columns: 1fr;
@@ -764,10 +594,6 @@ onUnmounted(() => {
     justify-content: center;
   }
 
-  .footer-links {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .newsletter-content {
     flex-direction: column;
     text-align: center;
@@ -782,6 +608,7 @@ onUnmounted(() => {
   }
 }
 
+/* Mobile */
 @media (max-width: 768px) {
   .footer {
     padding: 3rem 0 1.5rem;
@@ -789,11 +616,16 @@ onUnmounted(() => {
 
   .footer-content {
     padding: 0 1.5rem;
+    gap: 2.5rem;
   }
 
   .footer-links {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+    gap: 1.5rem 1rem;
+  }
+
+  .newsletter-section {
+    padding: 2rem 1.5rem;
   }
 
   .newsletter-form {
@@ -805,7 +637,9 @@ onUnmounted(() => {
     width: 100%;
   }
 
-  .newsletter-btn {
+  /* Le vrai bouton est rendu par BaseButton : on cible son bouton
+     interne pour qu'il prenne toute la largeur, comme le champ email. */
+  .newsletter-form :deep(button) {
     width: 100%;
     justify-content: center;
   }
@@ -814,6 +648,7 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+    padding: 1.5rem 0;
   }
 
   .bottom-right {
@@ -821,11 +656,20 @@ onUnmounted(() => {
     justify-content: center;
     gap: 1rem;
   }
+
+  .back-to-top {
+    width: 44px;
+    height: 44px;
+    bottom: 1.25rem;
+    right: 1rem;
+  }
 }
 
+/* Petit mobile */
 @media (max-width: 480px) {
   .footer-links {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
     text-align: center;
   }
 
@@ -834,11 +678,17 @@ onUnmounted(() => {
     transform: translateX(-50%);
   }
 
+  /* Les cercles décoratifs débordent sur les très petits écrans une
+     fois le contenu de la newsletter empilé : on les masque. */
+  .newsletter-decoration {
+    display: none;
+  }
+
   .back-to-top {
-    bottom: 1rem;
-    right: 1rem;
     width: 40px;
     height: 40px;
+    bottom: 1rem;
+    right: 1rem;
   }
 }
 </style>

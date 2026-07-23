@@ -3,6 +3,15 @@
     <Transition name="fade">
       <div v-if="!isComplete" class="daw-loading-overlay">
         <div class="loading-card">
+          <div class="mascot-section">
+            <img
+              src="../../assets/stan_waiting.svg"
+              class="mascot-img"
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+
           <div class="logo-section">
             <span class="logo-text">bloop</span>
           </div>
@@ -113,6 +122,17 @@ function statusIcon(status: string): string {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.mascot-section {
+  display: flex;
+  justify-content: center;
+}
+
+.mascot-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
 }
 
 .logo-section {

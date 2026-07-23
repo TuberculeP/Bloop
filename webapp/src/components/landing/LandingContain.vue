@@ -605,6 +605,9 @@ const scrollToFeatures = () => {
 
 // GSAP Animations
 const initHeroAnimations = () => {
+  // Pas d'animation sur mobile : le contenu reste visible directement.
+  if (isMobile.value) return;
+
   const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
   // Filter out null values before setting initial states
@@ -679,16 +682,18 @@ const initHeroAnimations = () => {
 };
 
 const initFeaturesAnimations = () => {
+  // Pas d'animation sur mobile : les cartes restent visibles directement.
+  if (isMobile.value) return;
   if (!featuresGridRef.value) return;
 
   featureCardRefs.value.forEach((card) => {
     if (!card) return;
 
     gsap.from(card, {
-      y: isMobile.value ? 40 : 80,
+      y: 80,
       opacity: 0,
       scale: 0.95,
-      duration: isMobile.value ? 0.45 : 0.7,
+      duration: 0.7,
       ease: "power2.out",
       scrollTrigger: {
         trigger: card,
@@ -698,9 +703,9 @@ const initFeaturesAnimations = () => {
       },
     });
 
-    // Icon rotation on scroll — purely decorative, skip on mobile
+    // Icon rotation on scroll — purely decorative
     const icon = card.querySelector(".feature-icon");
-    if (icon && !isMobile.value) {
+    if (icon) {
       gsap.to(icon, {
         rotation: 360,
         scale: 1.1,
@@ -716,6 +721,8 @@ const initFeaturesAnimations = () => {
 };
 
 const initStepsAnimations = () => {
+  // Pas d'animation sur mobile : étapes et ligne restent visibles telles quelles.
+  if (isMobile.value) return;
   if (!stepsContainerRef.value || !lineProgressRef.value) return;
 
   // Self-drawing line (decorative, keep scrub but lighter)
@@ -742,9 +749,9 @@ const initStepsAnimations = () => {
 
     gsap.from(step, {
       opacity: 0,
-      x: isMobile.value ? 0 : idx % 2 === 0 ? -50 : 50,
-      y: isMobile.value ? 30 : 0,
-      duration: isMobile.value ? 0.45 : 0.7,
+      x: idx % 2 === 0 ? -50 : 50,
+      y: 0,
+      duration: 0.7,
       ease: "power2.out",
       scrollTrigger: {
         trigger: step,
@@ -771,6 +778,8 @@ const initStepsAnimations = () => {
 };
 
 const initPricingAnimations = () => {
+  // Pas d'animation sur mobile : les cartes restent visibles directement.
+  if (isMobile.value) return;
   if (!pricingGridRef.value) return;
 
   pricingCardRefs.value.forEach((card) => {
@@ -778,12 +787,12 @@ const initPricingAnimations = () => {
 
     // Cards emerge from depth
     gsap.from(card, {
-      z: isMobile.value ? 0 : -300,
+      z: -300,
       opacity: 0,
-      rotateY: isMobile.value ? 0 : 30,
-      y: isMobile.value ? 30 : 0,
+      rotateY: 30,
+      y: 0,
       scale: 0.9,
-      duration: isMobile.value ? 0.45 : 0.7,
+      duration: 0.7,
       ease: "power2.out",
       scrollTrigger: {
         trigger: card,
@@ -796,15 +805,17 @@ const initPricingAnimations = () => {
 };
 
 const initCtaAnimations = () => {
+  // Pas d'animation sur mobile : le contenu du CTA reste visible directement.
+  if (isMobile.value) return;
   if (!ctaContentRef.value) return;
 
   // CTA content dramatic reveal
   const title = ctaContentRef.value.querySelector(".cta-title");
   if (title) {
     gsap.from(title, {
-      scale: isMobile.value ? 1.15 : 2,
+      scale: 2,
       opacity: 0,
-      filter: isMobile.value ? "blur(6px)" : "blur(20px)",
+      filter: "blur(20px)",
       duration: 0.6,
       ease: "power2.out",
       scrollTrigger: {
@@ -857,11 +868,16 @@ onMounted(() => {
 
   // Delay to ensure DOM is ready
   setTimeout(() => {
-    initHeroAnimations();
-    initFeaturesAnimations();
-    initStepsAnimations();
-    initPricingAnimations();
-    initCtaAnimations();
+    // Sur mobile, on ne lance aucune animation d'entrée/scroll : le
+    // contenu doit être visible immédiatement. Seules les animations
+    // CSS de fond et du mockup BLOOP Studio restent actives (voir <style>).
+    if (!isMobile.value) {
+      initHeroAnimations();
+      initFeaturesAnimations();
+      initStepsAnimations();
+      initPricingAnimations();
+      initCtaAnimations();
+    }
 
     requestAnimationFrame(() => ScrollTrigger.refresh());
   }, 100);
@@ -1921,6 +1937,9 @@ onUnmounted(() => {
     width: 60px;
     height: 60px;
     font-size: 1.25rem;
+    background: var(--color-secondary);
+    color: var(--color-black);
+    box-shadow: 0 0 20px rgba(255, 210, 105, 0.3);
   }
 }
 
@@ -1945,6 +1964,16 @@ onUnmounted(() => {
   .hero-actions {
     flex-direction: column;
     align-items: center;
+    width: 100%;
+  }
+
+  .hero-actions > * {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .hero-actions :deep(button) {
+    width: 100%;
   }
 
   .features,
@@ -2000,6 +2029,46 @@ onUnmounted(() => {
 
   .cta-trust {
     flex-direction: column;
+  }
+}
+
+/* Toutes les animations CSS en boucle (fond + BLOOP Studio) restent
+   actives sur mobile — seules les animations d'entrée/scroll pilotées
+   par GSAP sont désactivées (voir le script : isMobile.value). */
+
+/* Filet de sécurité : sur mobile, on force l'affichage du contenu
+   texte/cartes/CTA même si une animation (GSAP ou le composant
+   SplitText) l'a laissé en opacity:0 / transform / blur. Le mockup
+   "BLOOP Studio" (studio-mockup) et ses animations internes ne sont
+   pas concernés, ils continuent d'animer normalement. */
+@media (max-width: 768px) {
+  .hero-title,
+  .hero-title *,
+  .hero-description,
+  .hero-stats,
+  .hero-actions,
+  .section-title,
+  .section-title *,
+  .feature-card,
+  .feature-icon,
+  .step-item,
+  .step-number,
+  .pricing-card,
+  .cta-title,
+  .cta-title *,
+  .cta-description,
+  .cta-trust,
+  .trust-avatar {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  /* Le trait qui se dessine dans "Comment ça marche" doit être
+     visible d'un coup, pas figé à mi-tracé. */
+  .line-progress {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
   }
 }
 </style>

@@ -11,56 +11,33 @@ withDefaults(defineProps<SpinnerProps>(), {
 </script>
 
 <template>
-  <span
+  <img
+    src="../../assets/stan_waiting.svg"
     class="base-spinner"
-    :class="[`base-spinner--${size}`, `base-spinner--${color}`]"
+    :class="`base-spinner--${size}`"
+    alt=""
+    aria-hidden="true"
   />
 </template>
 
 <style scoped>
 .base-spinner {
   display: inline-block;
-  border-radius: var(--radius-full);
-  border: 2px solid transparent;
-  border-top-color: currentColor;
-  animation: base-spinner-spin 0.8s linear infinite;
+  object-fit: contain;
 }
 
 .base-spinner--small {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
 }
 
 .base-spinner--normal {
-  width: 22px;
-  height: 22px;
+  width: 32px;
+  height: 32px;
 }
 
 .base-spinner--large {
-  width: 32px;
-  height: 32px;
-  border-width: 3px;
-}
-
-.base-spinner--primary {
-  color: var(--color-primary-hover);
-}
-
-.base-spinner--white {
-  color: var(--color-white);
-}
-
-.base-spinner--accent2 {
-  color: var(--color-accent2);
-}
-
-.base-spinner--accent3 {
-  color: var(--color-accent3-hover);
-}
-
-@keyframes base-spinner-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  width: 48px;
+  height: 48px;
 }
 </style>

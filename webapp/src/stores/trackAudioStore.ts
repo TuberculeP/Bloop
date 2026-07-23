@@ -7,11 +7,14 @@ import type {
   AudioClip,
   AutomationTarget,
   InstrumentConfig,
+  InstrumentConfigUpdate,
   NoteName,
+  TimeSignature,
   Track,
 } from "../lib/utils/types";
 import { useAudioLibraryStore } from "./audioLibraryStore";
 import { AudioClipEngine } from "../lib/audio/engines/audio-clip";
+import { SamplePlayerEngine } from "../lib/audio/engines/sample-player";
 import { createInstrumentEngine } from "../lib/audio/instrumentFactory";
 import { EffectChain } from "../lib/audio/effects";
 import { applyAutomationToChannel } from "../lib/audio/automation";
@@ -20,6 +23,7 @@ import { ticksPerSecond } from "../lib/audio/timeGrid";
 interface TrackChannel {
   trackId: string;
   gainNode: GainNode;
+  panNode: StereoPannerNode;
   effectsChain: EffectChain;
   engine: InstrumentEngine;
   unsubscribeState: () => void;
@@ -46,9 +50,15 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const gainNode = markRaw(audioContext.createGain());
     gainNode.gain.value = isPlayable ? track.volume / 100 : 0.001;
 
-    // Pile d'effets réordonnable (EQ, reverb, etc.) : gainNode -> effets -> inputBus
+    // Pan — fader de channel strip au même titre que le volume, hors de la
+    // pile d'effets. -127..127 (convention musicale) -> -1..1 (StereoPannerNode).
+    const panNode = markRaw(audioContext.createStereoPanner());
+    panNode.pan.value = track.pan / 127;
+    gainNode.connect(panNode);
+
+    // Pile d'effets réordonnable (EQ, reverb, etc.) : gainNode -> pan -> effets -> inputBus
     const effectsChain = markRaw(
-      new EffectChain(audioContext, gainNode, inputBus),
+      new EffectChain(audioContext, panNode, inputBus),
     );
     effectsChain.rebuild(track.effects);
 
@@ -65,6 +75,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const channel: TrackChannel = {
       trackId: track.id,
       gainNode,
+      panNode,
       effectsChain,
       engine,
       unsubscribeState,
@@ -74,7 +85,41 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
 
     engine.preload();
 
+    if (
+      engine instanceof SamplePlayerEngine &&
+      track.instrument.type === "samplePlayer"
+    ) {
+      resolveSamplePlayerBuffer(track.id, track.instrument.sampleId);
+    }
+
     return channel;
+  };
+
+  // Résout un sampleId en AudioBuffer via audioLibraryStore (fetch CDN +
+  // cache IndexedDB + décodage, cf. audioLibraryStore.loadSample) et
+  // l'injecte dans l'engine — c'est le seul pont entre le monde "store"
+  // et le SamplePlayerEngine, qui ne connaît jamais audioLibraryStore.
+  const resolveSamplePlayerBuffer = async (
+    trackId: string,
+    sampleId: string | null,
+  ): Promise<void> => {
+    const channel = trackChannels.value.get(trackId);
+    if (!channel || !(channel.engine instanceof SamplePlayerEngine)) return;
+    const engine = channel.engine;
+
+    if (!sampleId) {
+      engine.setBuffer(null);
+      return;
+    }
+
+    engine.setLoading();
+    const audioLibraryStore = useAudioLibraryStore();
+    const buffer = await audioLibraryStore.loadSample(sampleId);
+
+    // La piste/l'engine a pu être supprimé(e) ou le sample re-changé entre-temps
+    const currentChannel = trackChannels.value.get(trackId);
+    if (currentChannel?.engine !== engine) return;
+    engine.setBuffer(buffer);
   };
 
   const removeTrackChannel = (trackId: string): void => {
@@ -84,6 +129,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
       channel.engine.dispose();
       channel.effectsChain.dispose();
       channel.gainNode.disconnect();
+      channel.panNode.disconnect();
       trackChannels.value.delete(trackId);
       trackEngineStates.value.delete(trackId);
     }
@@ -236,6 +282,16 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
   };
 
+  const updateTrackPan = (trackId: string, pan: number): void => {
+    const channel = trackChannels.value.get(trackId);
+    if (channel) {
+      channel.panNode.pan.linearRampToValueAtTime(
+        pan / 127,
+        audioContext.currentTime + 0.05,
+      );
+    }
+  };
+
   // Rebuild complet de la pile d'effets (ajout/suppression/réordre/bypass) —
   // rare comparé aux mises à jour de valeurs de param, cf. les deux watchers
   // séparés dans `initialize()`.
@@ -276,6 +332,13 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
       channel.engine.updateConfig(config);
+      const sampleId = (config as InstrumentConfigUpdate).sampleId;
+      if (
+        channel.engine instanceof SamplePlayerEngine &&
+        sampleId !== undefined
+      ) {
+        resolveSamplePlayerBuffer(trackId, sampleId);
+      }
     }
   };
 
@@ -287,6 +350,17 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
       applyAutomationToChannel(target, normalizedValue, channel, audioContext);
+    }
+  };
+
+  const notifyTrackEffectsBeatBoundary = (
+    tick: number,
+    timeSignature: TimeSignature,
+    tempo: number,
+  ): void => {
+    for (const track of timelineStore.getPlayableTracks()) {
+      const channel = trackChannels.value.get(track.id);
+      channel?.effectsChain.notifyBeatBoundary(tick, timeSignature, tempo);
     }
   };
 
@@ -327,6 +401,14 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
   const initialize = (): void => {
     if (isInitialized.value) return;
 
+    // Restaurer les métadonnées des samples utilisés par le projet AVANT de
+    // synchroniser les pistes ci-dessous : un Sample Player résout son sample
+    // dès la création de son channel (syncTracksWithStore), donc restaurer
+    // ces métadonnées après aurait été une course perdue d'avance.
+    if (timelineStore.project.usedSamples) {
+      useAudioLibraryStore().restoreSamples(timelineStore.project.usedSamples);
+    }
+
     // Synchroniser avec les pistes existantes
     syncTracksWithStore();
 
@@ -362,6 +444,20 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
           );
           for (const t of timelineStore.tracks) {
             updateTrackVolume(t.id, t.volume, playableIds.has(t.id));
+          }
+        },
+        { deep: true },
+      ),
+    );
+
+    // Watcher pan : séparé du watcher volume+mute+solo ci-dessus, le pan
+    // n'a pas d'impact sur l'état "playable" des autres pistes.
+    watcherStopHandles.push(
+      watch(
+        () => timelineStore.tracks.map((t) => ({ id: t.id, pan: t.pan })),
+        (tracksPan) => {
+          for (const { id, pan } of tracksPan) {
+            updateTrackPan(id, pan);
           }
         },
         { deep: true },
@@ -441,10 +537,12 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     stopAllClips,
 
     updateTrackVolume,
+    updateTrackPan,
     updateTrackEffects,
     updateTrackEffectParam,
     updateTrackInstrument,
     applyAutomation,
+    notifyTrackEffectsBeatBoundary,
 
     getTrackEngineState,
     getEngine,

@@ -2,6 +2,28 @@ interface PooledSampler {
   disconnect(): void;
 }
 
+// Rend la main au navigateur entre deux voix — construire les 8 voix d'un
+// coup (Promise.all) bloque le thread principal sans interruption pendant
+// tout le chargement, ce qui gèle l'UI (barre de progression comprise).
+// requestAnimationFrame (plutôt que setTimeout) aligne le yield sur le
+// prochain paint, sans dépendre du clampage des timers imbriqués du navigateur.
+function yieldToBrowser(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+// Exécute `action` sur chaque item, en rendant la main au navigateur entre
+// deux items (jamais après le dernier) — factorisé car `load()` et
+// `forEachSampler()` ont toutes deux besoin de ce même découpage.
+async function withYieldBetween<T>(
+  items: T[],
+  action: (item: T) => Promise<void>,
+): Promise<void> {
+  for (let i = 0; i < items.length; i++) {
+    await action(items[i]);
+    if (i < items.length - 1) await yieldToBrowser();
+  }
+}
+
 interface Voice<TSampler extends PooledSampler> {
   sampler: TSampler;
   envelopeGain: GainNode;
@@ -30,15 +52,15 @@ export class VoicePool<TSampler extends PooledSampler> {
     createSampler: (envelopeGain: GainNode) => Promise<TSampler>,
   ): Promise<void> {
     this.dispose();
-    this.voices = await Promise.all(
-      Array.from({ length: size }, async () => {
-        const envelopeGain = audioContext.createGain();
-        envelopeGain.gain.value = 0;
-        envelopeGain.connect(destination);
-        const sampler = await createSampler(envelopeGain);
-        return { sampler, envelopeGain, noteId: null, stopFn: null };
-      }),
-    );
+    const voices: Voice<TSampler>[] = [];
+    await withYieldBetween(Array.from({ length: size }), async () => {
+      const envelopeGain = audioContext.createGain();
+      envelopeGain.gain.value = 0;
+      envelopeGain.connect(destination);
+      const sampler = await createSampler(envelopeGain);
+      voices.push({ sampler, envelopeGain, noteId: null, stopFn: null });
+    });
+    this.voices = voices;
   }
 
   get first(): TSampler | null {
@@ -48,7 +70,9 @@ export class VoicePool<TSampler extends PooledSampler> {
   async forEachSampler(
     fn: (sampler: TSampler) => Promise<void> | void,
   ): Promise<void> {
-    await Promise.all(this.voices.map((voice) => fn(voice.sampler)));
+    await withYieldBetween(this.voices, async (voice) => {
+      await fn(voice.sampler);
+    });
   }
 
   play(

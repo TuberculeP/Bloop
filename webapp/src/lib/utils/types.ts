@@ -112,7 +112,8 @@ export type InstrumentType =
   | "smplr"
   | "undertale"
   | "fmSynth"
-  | "audioTrack";
+  | "audioTrack"
+  | "samplePlayer";
 
 export type OscillatorType = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -190,13 +191,28 @@ export interface FmSynthConfig {
   gain?: number;
 }
 
+export type SamplePlaybackMode = "normal" | "stretch";
+
+export interface SamplePlayerConfig {
+  type: "samplePlayer";
+  sampleId: string | null;
+  rootNote: NoteName;
+  mode: SamplePlaybackMode;
+  gain?: number;
+  attack?: number;
+  decay?: number;
+  sustain?: number;
+  release?: number;
+}
+
 export type InstrumentConfig =
   | BasicSynthConfig
   | SmplrConfig
   | ElementarySynthConfig
   | UndertaleConfig
   | FmSynthConfig
-  | AudioTrackConfig;
+  | AudioTrackConfig
+  | SamplePlayerConfig;
 
 export interface InstrumentConfigUpdate {
   oscillatorType?: OscillatorType;
@@ -209,6 +225,9 @@ export interface InstrumentConfigUpdate {
   sustain?: number;
   release?: number;
   patch?: Dx7Patch;
+  sampleId?: string | null;
+  rootNote?: NoteName;
+  mode?: SamplePlaybackMode;
 }
 
 export interface AudioClip {
@@ -257,12 +276,12 @@ export interface EffectInstanceConfig {
 }
 
 // Cible d'un paramètre automatisable : une piste (ou "master") + un effet de
-// sa pile (ou la sentinelle "channel" pour le fader de volume, qui n'est pas
-// dans la pile d'effets) + un paramètre de cet effet.
+// sa pile (ou la sentinelle "channel" pour le fader de volume/pan, qui n'est
+// pas dans la pile d'effets) + un paramètre de cet effet.
 export interface AutomationTarget {
   trackId: string | "master";
-  effectId: string; // EffectInstanceConfig.id, ou "channel" (fader volume)
-  paramId: string; // paramId de l'effet, ou "volume" si effectId === "channel"
+  effectId: string; // EffectInstanceConfig.id, ou "channel" (fader volume/pan)
+  paramId: string; // paramId de l'effet, ou "volume"/"pan" si effectId === "channel"
 }
 
 export interface AutomationPoint {
@@ -283,6 +302,7 @@ export interface Track {
   instrument: InstrumentConfig;
   color: string;
   volume: number; // 0-100
+  pan: number; // -127 (gauche) à 127 (droite), 0 = centré (convention musicale)
   effects: EffectInstanceConfig[]; // pile d'effets réordonnable (EQ, reverb, etc.)
   muted: boolean;
   solo: boolean;

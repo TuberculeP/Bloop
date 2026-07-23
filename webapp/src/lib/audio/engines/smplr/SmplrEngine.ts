@@ -3,17 +3,61 @@ import type {
   InstrumentConfigUpdate,
   NoteName,
 } from "../../../utils/types";
-import { Soundfont, CacheStorage as SmplrCacheStorage } from "smplr";
+import {
+  Soundfont,
+  CacheStorage as SmplrCacheStorage,
+  type Storage,
+  type StorageResponse,
+} from "smplr";
 import { BaseEngine } from "../BaseEngine";
 import { VoicePool } from "../voicePool";
 
 const VOICE_POOL_SIZE = 8;
 
+// Coalesce les fetch vers la même URL : `Soundfont` ne cache le résultat
+// qu'après coup (cache.put), donc les 8 voix du VoicePool — voire plusieurs
+// tracks partageant le même instrument — retéléchargeraient chacune le
+// fichier. `resolved` mémoïse le résultat définitivement (pas seulement le
+// temps du fetch en vol) : le VoicePool charge maintenant ses voix
+// séquentiellement (cf. voicePool.ts), donc la voix 2 arrive après que la
+// voix 1 a déjà fini — sans ce cache permanent, chacune referait son propre
+// aller-retour Cache Storage au lieu de réutiliser le buffer déjà en mémoire.
+// Un seul `Storage` partagé par toutes les instances de SmplrEngine (pas un
+// par piste) pour dédupliquer aussi entre tracks.
+class DedupingSmplrStorage implements Storage {
+  private cache = new SmplrCacheStorage("bloop-smplr-soundfonts");
+  private inflight = new Map<string, Promise<ArrayBuffer>>();
+  private resolved = new Map<string, ArrayBuffer>();
+
+  async fetch(url: string): Promise<StorageResponse> {
+    let buffer = this.resolved.get(url);
+    if (!buffer) {
+      let promise = this.inflight.get(url);
+      if (!promise) {
+        promise = this.cache.fetch(url).then((res) => res.arrayBuffer());
+        promise.finally(() => this.inflight.delete(url));
+        this.inflight.set(url, promise);
+      }
+      buffer = await promise;
+      this.resolved.set(url, buffer);
+    }
+
+    const bufferCopy = buffer.slice(0);
+    return {
+      status: 200,
+      arrayBuffer: async () => bufferCopy,
+      json: async () => JSON.parse(new TextDecoder().decode(bufferCopy)),
+      text: async () => new TextDecoder().decode(bufferCopy),
+    };
+  }
+}
+
+const sharedStorage: Storage = new DedupingSmplrStorage();
+
 export class SmplrEngine extends BaseEngine {
   readonly type = "smplr";
 
   private voicePool = new VoicePool<Soundfont>();
-  private storage = new SmplrCacheStorage("bloop-smplr-soundfonts");
   private currentSoundfontName: string;
   private loadPromise: Promise<void> | null = null;
 
@@ -69,7 +113,7 @@ export class SmplrEngine extends BaseEngine {
           async (envelopeGain) => {
             const sf = new Soundfont(this.audioContext, {
               instrument: instrumentName,
-              storage: this.storage,
+              storage: sharedStorage,
               destination: envelopeGain,
             });
             await sf.load;

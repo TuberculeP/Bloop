@@ -6,7 +6,7 @@ defineProps({
 
 <template>
   <div class="loading-card">
-    <img src="../../assets/stan_dance.gif" alt="" aria-hidden="true" />
+    <img src="../../assets/stan_waiting.svg" alt="" aria-hidden="true" />
     <p class="loading-message">{{ message }}</p>
     <div class="loading-dots"><span></span><span></span><span></span></div>
   </div>

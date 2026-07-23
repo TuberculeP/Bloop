@@ -13,7 +13,7 @@ const NOTE_OFFSETS: Record<string, number> = {
 const A4_MIDI_NOTE = 69;
 const A4_FREQUENCY = 440;
 
-export function noteNameToMidiNote(noteName: NoteName): number {
+export function noteNameToMidi(noteName: NoteName): number {
   const noteRegex = /^([A-G])(#?)(\d+)$/;
   const match = noteName.match(noteRegex);
 
@@ -33,6 +33,6 @@ export function noteNameToMidiNote(noteName: NoteName): number {
 }
 
 export function noteNameToFrequency(noteName: NoteName): number {
-  const midiNote = noteNameToMidiNote(noteName);
+  const midiNote = noteNameToMidi(noteName);
   return A4_FREQUENCY * Math.pow(2, (midiNote - A4_MIDI_NOTE) / 12);
 }

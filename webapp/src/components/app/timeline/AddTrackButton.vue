@@ -51,6 +51,12 @@ const instruments = [
     icon: "💀",
     description: "Soundfont Undertale (plusieurs presets)",
   },
+  {
+    type: "samplePlayer" as InstrumentType,
+    name: "Sample Player",
+    icon: "fas fa-compact-disc",
+    description: "Charge un sample (pack ou perso) et le joue note par note",
+  },
 ];
 
 const handleSelect = (type: InstrumentType) => {
@@ -78,7 +84,10 @@ const handleSelect = (type: InstrumentType) => {
           class="instrument-option"
           @click="handleSelect(inst.type)"
         >
-          <span class="inst-icon">{{ inst.icon }}</span>
+          <span class="inst-icon">
+            <i v-if="inst.icon.startsWith('fas ')" :class="inst.icon" />
+            <template v-else>{{ inst.icon }}</template>
+          </span>
           <div class="inst-info">
             <span class="inst-name">{{ inst.name }}</span>
             <span class="inst-desc">{{ inst.description }}</span>

@@ -13,13 +13,12 @@ defineEmits<{
 <template>
   <div class="welcome-gate">
     <div class="gate-card">
-      <div class="waveform-anim">
-        <span
-          v-for="n in 16"
-          :key="n"
-          :style="{ animationDelay: `${n * 0.08}s` }"
-        />
-      </div>
+      <img
+        src="../../assets/stan_standing.svg"
+        class="gate-mascot"
+        alt=""
+        aria-hidden="true"
+      />
 
       <div class="gate-meta" v-if="ownerName">
         <span class="gate-label">Projet partagé par</span>
@@ -68,38 +67,11 @@ defineEmits<{
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
 
-.waveform-anim {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 48px;
+.gate-mascot {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
   margin-bottom: 8px;
-
-  span {
-    display: block;
-    width: 5px;
-    background: var(--color-accent3);
-    border-radius: var(--radius-sm);
-    animation: wave 1.4s ease-in-out infinite;
-    opacity: 0.7;
-
-    &:nth-child(odd) {
-      height: 60%;
-    }
-    &:nth-child(even) {
-      height: 90%;
-    }
-  }
-}
-
-@keyframes wave {
-  0%,
-  100% {
-    transform: scaleY(0.25);
-  }
-  50% {
-    transform: scaleY(1);
-  }
 }
 
 .gate-meta {
@@ -124,7 +96,6 @@ defineEmits<{
 
 .gate-title {
   font-size: 2rem;
-  font-weight: 800;
   color: var(--color-white);
   line-height: 1.15;
   letter-spacing: -0.5px;

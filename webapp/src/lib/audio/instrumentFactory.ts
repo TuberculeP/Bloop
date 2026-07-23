@@ -4,6 +4,7 @@ import {
   BasicSynthEngine,
   FM_SYNTH_PRESETS,
   FmSynthEngine,
+  SamplePlayerEngine,
   SmplrEngine,
   UndertaleEngine,
   type InstrumentEngine,
@@ -39,6 +40,9 @@ export function createInstrumentEngine(
 
     case "audioTrack":
       return new AudioClipEngine(audioContext, destination, config);
+
+    case "samplePlayer":
+      return new SamplePlayerEngine(audioContext, destination, config);
 
     default:
       throw new Error(`Unknown instrument type: ${(config as any).type}`);
@@ -96,6 +100,19 @@ export function getDefaultConfigForType(
       return {
         type: "audioTrack",
         gain: 1,
+      };
+
+    case "samplePlayer":
+      return {
+        type: "samplePlayer",
+        sampleId: null,
+        rootNote: "C4",
+        mode: "normal",
+        gain: 1,
+        attack: 0,
+        decay: 0,
+        sustain: 1,
+        release: 0.05,
       };
 
     default:
