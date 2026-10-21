@@ -107,7 +107,6 @@ const main = async () => {
   const shutdown = () => {
     if (shuttingDown) return;
     shuttingDown = true;
-    // Filet de sécurité : si une connexion traîne, on force la sortie.
     setTimeout(() => process.exit(0), 2000).unref();
     vite.close().catch(() => {});
     wss.close();
