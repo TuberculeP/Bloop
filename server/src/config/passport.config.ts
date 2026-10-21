@@ -98,7 +98,18 @@ export default function initializePassport() {
       if (!user) {
         return done(new Error("User not found"), false);
       }
-      done(null, _.omit(user, "password"));
+      done(
+        null,
+        _.pick(user, [
+          "id",
+          "firstName",
+          "lastName",
+          "role",
+          "profilePicture",
+          "createdAt",
+          "storageUsedBytes",
+        ]) as User,
+      );
     } catch (err) {
       done(err, false);
     }
