@@ -77,7 +77,7 @@ const routes = [
     component: ResetPasswordView,
     name: "app-reset-password",
   },
-  // Blog et messagerie retirés : on redirige les anciens liens
+  // Legacy URLs
   { path: "/blog/:pathMatch(.*)*", redirect: "/" },
   { path: "/messages", redirect: "/" },
   { path: "/learning", component: LearningApp, name: "learning-list" },

@@ -1,9 +1,6 @@
 import type { MigrationInterface, QueryRunner } from "typeorm";
 
-// Retrait de la messagerie et du Blog (fil social).
-// migration:generate ne produit jamais de DROP TABLE pour une entité supprimée
-// (TypeORM ignore les tables qu'il ne connaît pas), d'où cette migration manuelle.
-// Ordre : tables de jointure / enfants d'abord.
+// Drops the messaging and blog tables, join/child tables first
 const TABLES = [
   "message_like",
   "direct_message",
@@ -24,6 +21,6 @@ export class RemoveMessagingAndBlog1792585978995 implements MigrationInterface {
   }
 
   public async down(): Promise<void> {
-    // Irréversible : restaurer depuis un backup si besoin.
+    // Irreversible: restore from a backup if needed
   }
 }
