@@ -103,13 +103,20 @@ const main = async () => {
     console.log("> Ready on http://localhost:3000");
   });
 
+  let shuttingDown = false;
   const shutdown = () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    // Filet de sécurité : si une connexion traîne, on force la sortie.
+    setTimeout(() => process.exit(0), 2000).unref();
+    vite.close().catch(() => {});
     wss.close();
     server.closeAllConnections?.();
     server.close(() => process.exit(0));
   };
-  process.once("SIGTERM", shutdown);
-  process.once("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+  process.on("SIGHUP", shutdown);
 };
 
 // start typeorm migration and server
