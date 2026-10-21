@@ -12,7 +12,6 @@ import type {
   TrashedProjectListItem,
 } from "../../lib/utils/types";
 import TabBar, { type TabItem } from "../shared/TabBar.vue";
-import VpnBanner from "../ad/VpnBanner.vue";
 
 type Tab = "mine" | "favorites" | "discover" | "trash";
 
@@ -603,9 +602,6 @@ onMounted(() => loadProjects());
       />
     </template>
   </BaseModal>
-  <div class="vpn-banner-full">
-    <VpnBanner :dismissible="false" />
-  </div>
 </template>
 
 <style scoped>
@@ -882,12 +878,5 @@ onMounted(() => loadProjects());
   .projects-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.vpn-banner-full {
-  width: 100vw;
-  margin-top: 80px;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
 }
 </style>
