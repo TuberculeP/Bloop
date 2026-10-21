@@ -116,8 +116,6 @@ Ne jamais désactiver une règle "parce que c'est plus simple" — seulement qua
 
 Convention : `@media (max-width: 768px)` (tablette) et `@media (max-width: 480px)` (mobile), en dur dans chaque fichier — **pas** de token CSS pour ça : les tokens `--breakpoint-*` du bloc Tailwind `@theme` ne sont utilisables que via des classes Tailwind, pas dans un `@media` CSS classique (`var()` non supporté dans une condition de media query).
 
-La zone Blog (`BlogContain.vue`, `styles/blog.css`, `BlogTopLikedUsers.vue`, `BlogPosts.vue`) a une cascade volontaire à 4 paliers (1200/1024/768/640px, commentée dans le code) pour un layout 3 colonnes qui se replie progressivement — ne pas la "simplifier" vers 2 paliers, ce n'est pas une incohérence.
-
 ## Composants avec palette JS dédiée (hors design system, normal)
 
 `lib/audio/config.ts` (`EQ_BAND_COLORS`) et `lib/utils/types.ts` (`TRACK_COLORS`) définissent leurs propres palettes hex, volontairement indépendantes de la charte de marque (couleurs par bande EQ / par piste). Ne pas essayer de les faire correspondre aux tokens `colors.css`.

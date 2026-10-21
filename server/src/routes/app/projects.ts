@@ -203,40 +203,6 @@ projectsRouter.get("/:id", async (req, res) => {
   }
 });
 
-// Aperçu léger d'un projet pour l'enrichissement des liens dans le blog.
-// Volontairement limité aux projets publics : un projet privé ou introuvable
-// renvoie 404, peu importe qui fait la requête.
-projectsRouter.get("/:id/link-preview", async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) {
-      res.status(401).json({ error: "Authentication required" });
-      return;
-    }
-
-    const project = await findPublicProject(req.params.id);
-
-    if (!project) {
-      res.status(404).json({ error: "Project not found" });
-      return;
-    }
-
-    res.json({
-      body: {
-        id: project.id,
-        name: project.name,
-        createdAt: project.createdAt,
-        owner: {
-          firstName: project.user.firstName,
-          lastName: project.user.lastName,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching project link preview:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
 projectsRouter.post("/", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {

@@ -10,7 +10,6 @@ import { youtubeEmbedPlugin } from "./lib/markdown/youtubeEmbedPlugin";
 import "./styles/reset.css";
 import "./styles/colors.css";
 import "./styles/base.css";
-import "./styles/blog.css";
 import "./styles/learning.css";
 import "./styles/tailwind.css";
 

@@ -45,18 +45,14 @@ async function adminGuard(to: any, from: any, next: any) {
 
   next();
 }
-import BlogApp from "./views/blog/BlogApp.vue";
-import BlogSearchResults from "./views/blog/BlogSearchResults.vue";
-import BlogPostDetail from "./views/blog/BlogPostDetail.vue";
 import LearningApp from "./views/learning/LearningApp.vue";
 import LearningArticleDetail from "./views/learning/LearningArticleDetail.vue";
 import ProfileView from "./views/profile/ProfileView.vue";
-import MessagesView from "./views/messages/MessagesView.vue";
 import LandingCgu from "./views/landing/LandingCgu.vue";
 import LandingCgv from "./views/landing/LandingCgv.vue";
 import LandingAbout from "./views/landing/LandingAbout.vue";
 import LandingSupport from "./views/landing/LandingSupport.vue";
-import ButtonView from "./views/messages/ButtonView.vue";
+import ButtonView from "./views/admin/ButtonView.vue";
 import LandingContact from "./views/landing/LandingContact.vue";
 import PublicProfileView from "./views/profile/PublicProfileView.vue";
 
@@ -81,17 +77,9 @@ const routes = [
     component: ResetPasswordView,
     name: "app-reset-password",
   },
-  { path: "/blog", component: BlogApp, name: "app-blog" },
-  {
-    path: "/blog/search",
-    component: BlogSearchResults,
-    name: "blog-search-results",
-  },
-  {
-    path: "/blog/post/:id",
-    component: BlogPostDetail,
-    name: "blog-post-detail",
-  },
+  // Blog et messagerie retirés : on redirige les anciens liens
+  { path: "/blog/:pathMatch(.*)*", redirect: "/" },
+  { path: "/messages", redirect: "/" },
   { path: "/learning", component: LearningApp, name: "learning-list" },
   {
     path: "/learning/editor/new",
@@ -111,7 +99,6 @@ const routes = [
     name: "learning-detail",
   },
   { path: "/profile", component: ProfileView, name: "profile" },
-  { path: "/messages", component: MessagesView, name: "messages" },
   {
     path: "/public-profile/:slug",
     component: PublicProfileView,
@@ -173,14 +160,7 @@ const routes = [
 ];
 
 const getGuardedRoutes = () => {
-  const guardedMatches = [
-    "app",
-    "blog",
-    "settings",
-    "profile",
-    "messages",
-    "learning",
-  ];
+  const guardedMatches = ["app", "settings", "profile", "learning"];
   return routes.map((route: any) => {
     if (route.meta?.requiresAdmin) {
       return {

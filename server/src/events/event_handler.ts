@@ -1,6 +1,5 @@
 import type { Server, Socket } from "socket.io";
 import testEvents from "./test.event";
-import messagesEvents, { handleDisconnect } from "./messages.event";
 
 export type SubEventFunction = (params: {
   event: string;
@@ -13,7 +12,6 @@ export type EventGroup = Record<string, SubEventFunction>;
 const eventGroupList: Record<string, EventGroup> = {
   // Register your event groups here
   test: testEvents,
-  messages: messagesEvents,
 };
 
 export function registerWebsocketListeners(wss: Server) {
@@ -33,10 +31,5 @@ export function registerWebsocketListeners(wss: Server) {
         });
       }
     }
-
-    // Gérer la déconnexion
-    ws.on("disconnect", () => {
-      handleDisconnect(ws);
-    });
   });
 }

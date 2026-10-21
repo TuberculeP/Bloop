@@ -160,7 +160,6 @@ const authStore = useAuthStore();
 // Navigation links
 const navLinks = [
   { name: "Application", href: "/app" },
-  { name: "Blog", href: "/blog" },
   { name: "À propos", href: "/about" },
   { name: "Support", href: "/support" },
 ];

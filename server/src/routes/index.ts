@@ -2,9 +2,6 @@ import { Router } from "express";
 import pg from "../config/db.config";
 import { Foo } from "../config/entities/Foo";
 import authRouter from "./auth";
-import postsRouter from "./network/posts";
-import tagsRouter from "./network/tags";
-import messagesRouter from "./network/messages";
 import appRouter from "./app";
 import samplesRouter from "./samples";
 import adminRouter from "./admin";
@@ -30,9 +27,6 @@ router.get("/", (_, res) => {
 });
 
 router.use("/auth", authRouter);
-router.use("/posts", postsRouter);
-router.use("/tags", tagsRouter);
-router.use("/messages", messagesRouter);
 router.use("/app", appRouter);
 router.use("/samples", samplesRouter);
 router.use("/admin", adminRouter);

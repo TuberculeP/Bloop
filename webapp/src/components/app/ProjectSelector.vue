@@ -744,6 +744,8 @@ onMounted(() => loadProjects());
 }
 
 .date {
+  font-size: 0.8em;
+  font-weight: normal;
   color: var(--color-white-light);
 }
 

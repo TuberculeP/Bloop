@@ -364,7 +364,6 @@ const {
   isTogglingVisibility,
   setVisibility,
   copyShareLink,
-  shareToBlog,
 } = useTimelineProjectMeta();
 
 useStretchRecompute();
@@ -999,9 +998,6 @@ defineExpose({
               <template v-if="isPublic">
                 <button class="share-menu-option" @click="copyShareLink">
                   <i class="fas fa-link"></i> Copier le lien
-                </button>
-                <button class="share-menu-option" @click="shareToBlog">
-                  <i class="fas fa-newspaper"></i> Partager sur le blog
                 </button>
               </template>
             </div>

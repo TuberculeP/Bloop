@@ -156,18 +156,6 @@ export function useTimelineProjectMeta() {
     closeShareMenu();
   };
 
-  const shareToBlog = () => {
-    if (!projectStore.currentProjectId) return;
-
-    closeShareMenu();
-    router.push({
-      name: "app-blog",
-      query: {
-        shareText: `Découvrez ma nouvelle musique : ${getShareLink()}`,
-      },
-    });
-  };
-
   return {
     isCloning,
     isSaving,
@@ -188,6 +176,5 @@ export function useTimelineProjectMeta() {
     isTogglingVisibility,
     setVisibility,
     copyShareLink,
-    shareToBlog,
   };
 }

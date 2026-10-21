@@ -146,8 +146,7 @@
     {
       "title": "Ressources",
       "links": [
-        { "label": "Apprentissage", "link": "/learning" },
-        { "label": "Blog", "link": "/blog" }
+        { "label": "Apprentissage", "link": "/learning" }
       ]
     },
     {

@@ -62,18 +62,11 @@ const menuItems = computed(() =>
   [
     { id: "home", icon: "fas fa-home", name: "Accueil", route: "/" },
     { id: "app", icon: "fas fa-th-large", name: "Application", route: "/app" },
-    { id: "blog", icon: "fas fa-newspaper", name: "Blog", route: "/blog" },
     {
       id: "learning",
       icon: "fas fa-graduation-cap",
       name: "Learning",
       route: "/learning",
-    },
-    {
-      id: "messages",
-      icon: "fas fa-envelope",
-      name: "Messagerie",
-      route: "/messages",
     },
     { id: "profile", icon: "fas fa-user", name: "Profil", route: "/profile" },
     {

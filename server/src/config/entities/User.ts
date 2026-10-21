@@ -6,12 +6,8 @@ import {
   ManyToMany,
   OneToOne,
   CreateDateColumn,
-  JoinTable,
 } from "typeorm";
-import { Post } from "./Post";
 import { Subscription } from "./Subscription";
-import { DirectMessage } from "./DirectMessage";
-import { MessageLike } from "./MessageLike";
 import { UserSample } from "./UserSample";
 
 @Entity()
@@ -49,25 +45,9 @@ export class User {
   @ManyToMany(() => User, (user) => user.following)
   followers: User[];
 
-  @OneToMany(() => Post, (post) => post.author)
-  posts: Post[];
-
-  @ManyToMany(() => Post, (post) => post.likedBy)
-  @JoinTable()
-  likedPosts: Post[];
-
   // Subscription
   @OneToOne(() => Subscription, (subscription) => subscription.users)
   subscription: Subscription;
-
-  @OneToMany(() => DirectMessage, (directMessage) => directMessage.sender)
-  sentMessages: DirectMessage[];
-
-  @OneToMany(() => DirectMessage, (directMessage) => directMessage.receiver)
-  receivedMessages: DirectMessage[];
-
-  @OneToMany(() => MessageLike, (like) => like.user)
-  messageLikes: MessageLike[];
 
   @OneToMany(() => UserSample, (sample) => sample.user)
   samples: UserSample[];
