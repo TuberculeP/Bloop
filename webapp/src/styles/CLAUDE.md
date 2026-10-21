@@ -80,6 +80,7 @@ Toujours vérifier ici avant de recoder un bouton/modal/badge/etc. en local.
 | `FormField` | `label`, `htmlFor`, `error` — wrap un champ | Label + erreur autour d'un input/select/textarea |
 | `BaseInput` | `type`, `placeholder`, `required`, `disabled`, `id`, `v-model` (string/number) | Champs texte |
 | `BaseSelect` | `options: {value,label}[]`, `disabled`, `id`, `v-model` | Selects |
+| `SearchableSelect` | `options: {value,label}[]`, `placeholder`, `searchPlaceholder`, `emptyText`, `disabled`, `v-model` | Select avec barre de recherche (longues listes : presets soundfont smplr/Undertale). Recherche insensible casse/accents/`_`, navigation clavier ↑↓/Entrée/Échap |
 | `RangeSlider` | `modelValue`, `min`, `max`, `step`, `unit`, `displayValue`, `thumbSize` | Sliders (volume, EQ, etc.) |
 | `BaseTooltip` | `text`, `position` (top/bottom) — wrap un élément via slot | Tooltips au survol |
 | `BasePagination` | `page`, `pages` — émet `update:page` | Pagination Previous/Next (listes admin paginées) |

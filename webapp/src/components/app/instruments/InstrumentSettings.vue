@@ -17,6 +17,7 @@ import EffectParamRow from "../effects/EffectParamRow.vue";
 import EffectRack from "../effects/EffectRack.vue";
 import BaseButton from "../../ui/BaseButton.vue";
 import BaseModal from "../../ui/BaseModal.vue";
+import SearchableSelect from "../../ui/SearchableSelect.vue";
 import Dx7InstrumentPanel from "./Dx7InstrumentPanel.vue";
 import SamplePreviewButton from "../../shared/SamplePreviewButton.vue";
 import SamplePickerModal from "./SamplePickerModal.vue";
@@ -99,6 +100,11 @@ const currentSoundfont = computed(() => {
   return "";
 });
 
+const soundfontOptions = SOUNDFONT_LIST.map((sf) => ({
+  value: sf,
+  label: sf.replace(/_/g, " "),
+}));
+
 const undertaleEngine = computed(() => {
   if (props.track.instrument.type !== "undertale") return null;
   const engine = trackAudioStore.getEngine(props.track.id);
@@ -111,6 +117,10 @@ const undertaleEngine = computed(() => {
 const undertaleInstruments = computed(() => {
   return undertaleEngine.value?.instrumentNames ?? [];
 });
+
+const undertaleOptions = computed(() =>
+  undertaleInstruments.value.map((inst) => ({ value: inst, label: inst })),
+);
 
 const currentUndertaleInstrument = computed(() => {
   if (props.track.instrument.type === "undertale") {
@@ -317,19 +327,14 @@ const handleClose = () => {
             <template v-else-if="instrumentType === 'smplr'">
               <div class="setting-group">
                 <label class="setting-label">Instrument</label>
-                <select
-                  class="soundfont-select instrument-select"
-                  :value="currentSoundfont"
-                  @change="
-                    handleSoundfontChange(
-                      ($event.target as HTMLSelectElement).value,
-                    )
+                <SearchableSelect
+                  :model-value="currentSoundfont"
+                  :options="soundfontOptions"
+                  search-placeholder="Rechercher un instrument..."
+                  @update:model-value="
+                    (value) => value && handleSoundfontChange(value)
                   "
-                >
-                  <option v-for="sf in SOUNDFONT_LIST" :key="sf" :value="sf">
-                    {{ sf.replace(/_/g, " ") }}
-                  </option>
-                </select>
+                />
               </div>
             </template>
 
@@ -340,23 +345,14 @@ const handleClose = () => {
                   <p class="loading-text">Chargement du soundfont...</p>
                 </template>
                 <template v-else-if="undertaleInstruments.length > 0">
-                  <select
-                    class="soundfont-select instrument-select"
-                    :value="currentUndertaleInstrument"
-                    @change="
-                      handleUndertaleInstrumentChange(
-                        ($event.target as HTMLSelectElement).value,
-                      )
+                  <SearchableSelect
+                    :model-value="currentUndertaleInstrument"
+                    :options="undertaleOptions"
+                    search-placeholder="Rechercher un preset..."
+                    @update:model-value="
+                      (value) => value && handleUndertaleInstrumentChange(value)
                     "
-                  >
-                    <option
-                      v-for="inst in undertaleInstruments"
-                      :key="inst"
-                      :value="inst"
-                    >
-                      {{ inst }}
-                    </option>
-                  </select>
+                  />
                 </template>
                 <template v-else>
                   <p class="coming-soon">Aucun preset disponible</p>
