@@ -118,10 +118,10 @@ const main = async () => {
   process.on("SIGHUP", shutdown);
 };
 
-// start typeorm migration and server
+// Les migrations ne tournent pas ici : elles sont lancées au déploiement
+// (`npm run migration:run:prod`, voir server/src/config/migrations/README.md).
 (async () => {
   await pg.initialize();
-  await pg.runMigrations();
   await seedDefaultAdmin();
   await main();
 

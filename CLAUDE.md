@@ -52,7 +52,14 @@ npm run lint         # ESLint
 # Depuis /server
 npm run dev          # Express avec nodemon
 npm run build        # TypeScript compile
+
+# Migrations DB (depuis racine) — voir server/src/config/migrations/README.md
+npm run migration:db:start                                        # Postgres jetable (port 5433)
+npm run migration:generate -- server/src/config/migrations/<Nom>  # Diff entités -> migration
+npm run migration:run:prod                                        # Exécutée au déploiement (Coolify)
 ```
+
+**Schéma DB** : en Postgres (staging/prod), `synchronize` est désactivé — toute modification d'entité doit être accompagnée d'une migration générée. En dev local sur SQLite, le schéma reste synchronisé automatiquement.
 
 ## Variables d'environnement
 

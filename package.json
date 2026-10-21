@@ -12,6 +12,14 @@
     "lint:server": "eslint server",
     "lint:css": "stylelint 'webapp/src/**/*.{vue,css}'",
     "e2e:smoke": "tsx e2e/smoke.ts",
+    "typeorm": "ts-node -P server/tsconfig.json ./node_modules/typeorm/cli.js",
+    "migration:db:start": "docker run -d --rm --name bloop-migrations-pg -e POSTGRES_PASSWORD=postgres -p 5433:5432 postgres:15",
+    "migration:db:stop": "docker rm -f bloop-migrations-pg",
+    "migration:run": "npm run typeorm -- migration:run -d server/src/config/migration.local.datasource.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d server/src/config/migration.local.datasource.ts",
+    "migration:generate": "npm run migration:run && npm run typeorm -- migration:generate -p -d server/src/config/migration.local.datasource.ts",
+    "migration:create": "npm run typeorm -- migration:create",
+    "migration:run:prod": "typeorm migration:run -d dist/config/migration.datasource.js",
     "dockerize": "docker compose -f docker-compose.yml -f docker-compose.local.yml up --build --force-recreate -d"
   },
   "dependencies": {
