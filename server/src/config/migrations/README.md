@@ -1,42 +1,41 @@
-# Migrations TypeORM
+# TypeORM migrations
 
-En Postgres (staging/prod), `synchronize` est désactivé : le schéma n'évolue que par les migrations de ce dossier.
-En dev local sur SQLite (pas de `POSTGRES_URL`), le schéma reste synchronisé depuis les entités, sans migrations.
+On Postgres (staging, prod), the schema is managed only by the migrations in this folder (`synchronize: false`).
+In local dev on SQLite (no `POSTGRES_URL`), the schema is synced from the entities and migrations are not used.
 
-## Workflow quand on modifie une entité
+## After changing an entity
 
 ```bash
-npm run migration:db:start                                          # Postgres jetable sur localhost:5433
-npm run migration:generate -- server/src/config/migrations/AddFooToUser
+npm run migration:db:start                                        # throwaway Postgres on localhost:5433
+npm run migration:generate -- server/src/config/migrations/<Name> # e.g. AddBioToUser
 npm run migration:db:stop
 ```
 
-`migration:generate` applique d'abord les migrations existantes sur le Postgres jetable, puis compare les entités au schéma obtenu. Il écrit uniquement le diff dans un nouveau fichier. **Relire la migration générée** avant de la commiter.
+`migration:generate` applies the existing migrations to the throwaway database, then writes the diff between that schema and the entities to a new file. Review the generated migration before committing it.
 
-Les commandes de dev (`migration:run`, `migration:generate`, `migration:revert`) passent par `migration.local.datasource.ts`. Elles ciblent **toujours** le Postgres jetable et ignorent `POSTGRES_URL` : impossible de toucher staging ou la prod depuis ton poste. Seul `migration:run:prod` (au déploiement) utilise `POSTGRES_URL`, via `migration.datasource.ts`.
+Local commands (`migration:run`, `migration:generate`, `migration:revert`) use `migration.local.datasource.ts`. They always target the throwaway database and ignore `POSTGRES_URL`.
 
-On ne génère jamais une migration depuis une base réelle (staging, prod) : les migrations suivent le code dans Git, et chaque environnement applique celles qu'il n'a pas encore exécutées. Une prod en retard sur staging rejoue donc exactement les mêmes scripts au merge vers `main`. Une migration déjà appliquée quelque part ne se modifie plus : on en crée une nouvelle.
+Rules:
 
-### Limites de `migration:generate`
+- Migrations are never generated from a real database (staging, prod). They live in Git with the code, and each environment applies the ones it has not run yet.
+- A migration that has run anywhere is never edited. Create a new one instead.
 
-- **Suppression d'entité** : TypeORM ignore les tables qu'il ne connaît pas et ne génère jamais de `DROP TABLE`. Il faut écrire une migration à la main (`npm run migration:create -- server/src/config/migrations/<Nom>`) qui appelle `queryRunner.dropTable(nom, true, true, true)`, en supprimant les tables de jointure avant les tables parentes.
-- **Renommage de colonne** : TypeORM le voit comme une suppression suivie d'un ajout, et les données de la colonne sont perdues. Remplacer à la main par un `ALTER TABLE ... RENAME COLUMN`.
+### What `migration:generate` cannot do
 
-## Déploiement
+- **Removed entity**: TypeORM ignores tables it does not know, so it never generates `DROP TABLE`. Write the migration by hand (`npm run migration:create -- server/src/config/migrations/<Name>`) using `queryRunner.dropTable(name, true, true, true)`, dropping join tables before parent tables.
+- **Renamed column**: generated as drop + add, which loses data. Replace it with `ALTER TABLE ... RENAME COLUMN`.
 
-Les migrations ne tournent pas dans le code de l'app. C'est le `CMD` du `Dockerfile` qui les lance au démarrage du nouveau conteneur, avant l'app :
+## Deployment
 
-```bash
-npm run migration:run:prod && npm start
-```
+The Dockerfile `CMD` runs `npm run migration:run:prod && npm start`:
 
-- Chaque migration exécutée est enregistrée dans `migration_table`, donc une migration ne s'exécute qu'une seule fois.
-- En cas d'échec, la transaction est annulée, le conteneur s'arrête et Coolify garde l'ancienne version.
-- On n'utilise pas la « Pre-deployment command » de Coolify : elle tourne dans le conteneur encore en ligne (l'ancienne image), qui ne contient pas les nouvelles migrations.
-- Pendant le rolling update, l'ancienne version tourne brièvement sur le nouveau schéma. Il faut donc écrire des migrations rétrocompatibles : ajouter une colonne nullable, puis la supprimer dans un déploiement suivant plutôt que de la renommer.
+- `migration:run:prod` uses `migration.datasource.ts` (compiled to `dist/`) and the environment's `POSTGRES_URL`.
+- Executed migrations are recorded in `migration_table`, so each one runs once per database.
+- A failing migration is rolled back and the container exits before the app starts, so Coolify keeps the previous version running.
+- During the rolling update, the previous version briefly runs against the new schema. Keep migrations backward compatible: add nullable columns, and drop old ones in a later release.
 
-`npm run migration:revert` annule la dernière migration (dev uniquement).
+Coolify's pre-deployment command is not used: it runs in the currently deployed container, which does not contain the new migrations.
 
 ## Baseline
 
-`*-InitialSchema.ts` contient le schéma complet au moment de la bascule depuis `synchronize`. Sur une base existante (table `user` présente), elle ne fait rien et est simplement marquée comme exécutée. Sur une base vide, elle crée tout.
+`*-InitialSchema.ts` creates the full schema on an empty database. It is a no-op when the `user` table already exists.

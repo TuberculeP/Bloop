@@ -52,14 +52,18 @@ npm run lint         # ESLint
 # Depuis /server
 npm run dev          # Express avec nodemon
 npm run build        # TypeScript compile
-
-# Migrations DB (depuis racine) — voir server/src/config/migrations/README.md
-npm run migration:db:start                                        # Postgres jetable (port 5433)
-npm run migration:generate -- server/src/config/migrations/<Nom>  # Diff entités -> migration
-npm run migration:run:prod                                        # Exécutée au déploiement (Coolify)
 ```
 
-**Schéma DB** : en Postgres (staging/prod), `synchronize` est désactivé — toute modification d'entité doit être accompagnée d'une migration générée. En dev local sur SQLite, le schéma reste synchronisé automatiquement.
+## Migrations DB
+
+Référence : @server/src/config/migrations/README.md
+
+En staging et en prod, le schéma Postgres est géré uniquement par les migrations. Dès qu'une modification touche une entité TypeORM (`server/src/config/entities/`) — ajout, suppression ou renommage d'entité, de colonne ou de relation — **rappeler systématiquement à l'utilisateur** de générer la migration correspondante avant de commiter, avec les commandes dans cet ordre :
+
+1. `npm run migration:db:start`
+2. `npm run migration:generate -- server/src/config/migrations/<Nom>`
+3. relire la migration générée (cas non gérés : suppression d'entité, renommage de colonne, voir le README)
+4. `npm run migration:db:stop`
 
 ## Variables d'environnement
 

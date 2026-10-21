@@ -9,11 +9,10 @@ const { POSTGRES_URL } = process.env;
 let pg: DataSource;
 
 if (POSTGRES_URL) {
-  // Postgres (staging/prod) : le schéma est géré uniquement par les migrations,
-  // exécutées au déploiement (voir server/src/config/migrations/README.md).
+  // Schema managed by migrations (see migrations/README.md)
   pg = new DataSource(postgresOptions(POSTGRES_URL));
 } else {
-  // SQLite (dev local) : schéma synchronisé depuis les entités, sans migrations.
+  // Local dev: schema synced from entities
   console.warn("POSTGRES_URL not provided. Falling back to SQLite.");
   pg = new DataSource({
     type: "sqlite",

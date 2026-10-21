@@ -118,8 +118,7 @@ const main = async () => {
   process.on("SIGHUP", shutdown);
 };
 
-// Les migrations ne tournent pas ici : elles sont lancées au déploiement
-// (`npm run migration:run:prod`, voir server/src/config/migrations/README.md).
+// Migrations are applied before startup by `migration:run:prod` (see Dockerfile)
 (async () => {
   await pg.initialize();
   await seedDefaultAdmin();

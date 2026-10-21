@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-// Baseline : schéma complet au moment du passage de `synchronize` aux migrations.
-// Staging et prod ont déjà ce schéma (créé par synchronize) : on ne fait rien
-// et la migration est simplement marquée comme exécutée.
+// Baseline: full schema. Skipped on databases that already have it (created by `synchronize`).
 export class InitialSchema1792585978994 implements MigrationInterface {
   name = "InitialSchema1792585978994";
 

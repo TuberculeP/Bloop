@@ -2,9 +2,8 @@ import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { postgresOptions } from "./db.options";
 
-// DataSource de développement : cible toujours le Postgres jetable lancé par
-// `npm run migration:db:start`, jamais POSTGRES_URL. Ainsi, générer une migration
-// ne peut pas toucher staging ou la prod, même si POSTGRES_URL est défini localement.
+// Always the throwaway Postgres from `migration:db:start`, never POSTGRES_URL,
+// so local migration commands cannot reach staging or prod.
 export default new DataSource(
   postgresOptions("postgres://postgres:postgres@localhost:5433/postgres"),
 );
