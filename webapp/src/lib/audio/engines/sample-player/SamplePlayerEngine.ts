@@ -5,6 +5,7 @@ import type {
 } from "../../../utils/types";
 import { BaseEngine } from "../BaseEngine";
 import { noteNameToMidi } from "../noteUtils";
+import { envelopeLevelAt, holdParamAt } from "../scheduling";
 import {
   createStretchVoice,
   ensureStretchEngineReady,
@@ -12,9 +13,17 @@ import {
   type StretchVoice,
 } from "../stretchEngine";
 
-type ActiveVoice =
-  | { kind: "normal"; source: AudioBufferSourceNode; envelopeNode: GainNode }
-  | { kind: "stretch"; voice: StretchVoice; envelopeNode: GainNode };
+type ActiveVoice = (
+  | { kind: "normal"; source: AudioBufferSourceNode }
+  | { kind: "stretch"; voice: StretchVoice }
+) & {
+  envelopeNode: GainNode;
+  startTime: number;
+  peakGain: number;
+  // Scheduled stop time (Infinity while held). The entry stays until the
+  // source has ended, so a stop can still be moved earlier.
+  stopAt: number;
+};
 
 export class SamplePlayerEngine extends BaseEngine {
   readonly type = "samplePlayer";
@@ -72,13 +81,16 @@ export class SamplePlayerEngine extends BaseEngine {
     this.setState("loading");
   }
 
-  playNote(noteName: NoteName, noteId: string, velocity: number = 100): void {
+  playNote(
+    noteName: NoteName,
+    noteId: string,
+    velocity: number = 100,
+    when?: number,
+  ): void {
     if (!this.buffer) return;
-    if (this.activeVoices.has(noteId)) {
-      this.stopNote(noteId);
-    }
+    const now = this.resolveTime(when);
+    this.stopNote(noteId, now);
 
-    const now = this.audioContext.currentTime;
     const envelopeNode = this.audioContext.createGain();
     envelopeNode.connect(this.destination);
 
@@ -114,11 +126,18 @@ export class SamplePlayerEngine extends BaseEngine {
         const active = this.activeVoices.get(noteId);
         if (active?.kind === "stretch" && active.voice === voice) {
           this.activeVoices.delete(noteId);
-          envelopeNode.disconnect();
         }
+        envelopeNode.disconnect();
       };
       voice.start(now, 0, this.buffer.duration);
-      this.activeVoices.set(noteId, { kind: "stretch", voice, envelopeNode });
+      this.activeVoices.set(noteId, {
+        kind: "stretch",
+        voice,
+        envelopeNode,
+        startTime: now,
+        peakGain,
+        stopAt: Infinity,
+      });
     } else {
       const source = this.audioContext.createBufferSource();
       source.buffer = this.buffer;
@@ -128,56 +147,59 @@ export class SamplePlayerEngine extends BaseEngine {
         const voice = this.activeVoices.get(noteId);
         if (voice?.kind === "normal" && voice.source === source) {
           this.activeVoices.delete(noteId);
-          envelopeNode.disconnect();
         }
+        source.disconnect();
+        envelopeNode.disconnect();
       };
       source.start(now);
-      this.activeVoices.set(noteId, { kind: "normal", source, envelopeNode });
+      this.activeVoices.set(noteId, {
+        kind: "normal",
+        source,
+        envelopeNode,
+        startTime: now,
+        peakGain,
+        stopAt: Infinity,
+      });
     }
   }
 
-  stopNote(noteId: string): void {
+  // Release ramp then source stop, both scheduled on the audio clock;
+  // disconnection happens in onended. Stopping before the scheduled start
+  // means the voice never sounds.
+  stopNote(noteId: string, when?: number): void {
     const voice = this.activeVoices.get(noteId);
     if (!voice) return;
+    const stopTime = this.resolveTime(when);
+    if (stopTime >= voice.stopAt) return;
+    voice.stopAt = stopTime;
 
-    const now = this.audioContext.currentTime;
     const releaseTime = Math.max(this.release, 0.005);
+    const gain = voice.envelopeNode.gain;
+    const fallback =
+      stopTime <= this.audioContext.currentTime
+        ? gain.value
+        : envelopeLevelAt(
+            stopTime - voice.startTime,
+            voice.peakGain,
+            this.attack,
+            this.decay,
+            this.sustain,
+          );
     try {
-      voice.envelopeNode.gain.cancelScheduledValues(now);
-      voice.envelopeNode.gain.setValueAtTime(
-        voice.envelopeNode.gain.value,
-        now,
-      );
-      voice.envelopeNode.gain.exponentialRampToValueAtTime(
-        0.0001,
-        now + releaseTime,
-      );
+      holdParamAt(gain, stopTime, Math.max(fallback, 0.0001));
+      gain.exponentialRampToValueAtTime(0.0001, stopTime + releaseTime);
+      if (voice.kind === "normal") {
+        voice.source.stop(stopTime + releaseTime + 0.01);
+      } else {
+        voice.voice.stop(stopTime + releaseTime + 0.01);
+      }
     } catch {
-      // Ignore errors
+      // Already stopped
     }
-
-    setTimeout(
-      () => {
-        try {
-          if (voice.kind === "normal") {
-            voice.source.stop();
-            voice.source.disconnect();
-          } else {
-            voice.voice.stop();
-          }
-          voice.envelopeNode.disconnect();
-        } catch {
-          // Ignore errors
-        }
-      },
-      releaseTime * 1000 + 50,
-    );
-
-    this.activeVoices.delete(noteId);
   }
 
   stopAllNotes(): void {
-    for (const noteId of this.activeVoices.keys()) {
+    for (const noteId of [...this.activeVoices.keys()]) {
       this.stopNote(noteId);
     }
   }

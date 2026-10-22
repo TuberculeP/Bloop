@@ -126,17 +126,18 @@ export class EffectChain {
   }
 
   // Franchissement de croche (résolution la plus fine utile aux effets
-  // synchronisés au tempo, ex: Bloopy Pump) — voir
-  // maybeTriggerBloopyPumpEffects dans useTimelinePlaybackEngine.ts. Un effet
-  // bypassé ne doit pas se retrigger silencieusement en coulisses.
+  // synchronisés au tempo, ex: Bloopy Pump) — voir scheduleRange dans
+  // useTimelinePlaybackEngine.ts. Un effet bypassé ne doit pas se
+  // retrigger silencieusement en coulisses.
   notifyBeatBoundary(
     tick: number,
     timeSignature: TimeSignature,
     tempo: number,
+    when?: number,
   ): void {
     for (const slot of this.slots) {
       if (!slot.config.enabled) continue;
-      slot.instance.onBeatBoundary?.(tick, timeSignature, tempo);
+      slot.instance.onBeatBoundary?.(tick, timeSignature, tempo, when);
     }
   }
 

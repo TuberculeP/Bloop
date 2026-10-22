@@ -97,11 +97,12 @@ function createBloopyPump(
     tick: number,
     timeSignature: TimeSignature,
     tempo: number,
+    when?: number,
   ): void => {
     const ticksPerTrigger = ticksPerTriggerForRate(state.rate, timeSignature);
     if (ticksPerTrigger <= 0 || tick % ticksPerTrigger !== 0) return;
     const durationSec = (ticksPerTrigger / TICKS_PER_BEAT) * (60 / tempo);
-    triggerEnvelope(audioContext.currentTime, durationSec);
+    triggerEnvelope(Math.max(when ?? 0, audioContext.currentTime), durationSec);
   };
 
   const params: EffectParamDescriptor[] = BLOOPY_PUMP_PARAMS_META.map(

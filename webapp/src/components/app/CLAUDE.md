@@ -181,6 +181,7 @@ engines/
   BaseEngine.ts         # Classe abstraite avec state management
   noteUtils.ts          # noteNameToFrequency() partagé
   voicePool.ts          # VoicePool<TSampler> - pool de voix pour ADSR polyphonique (smplr/undertale)
+  scheduling.ts         # holdParamAt / envelopeLevelAt : release programmée à un instant futur
   index.ts              # Re-exports publics
 
   basic-synth/
@@ -332,13 +333,20 @@ Pour ajouter un nouvel effet : créer `lib/audio/effects/monEffet.ts` exportant 
 | `AddTrackButton.vue` | Menu de sélection d'instrument                     |
 
 **Composables** (`composables/timelineView/`) — même principe que `composables/pianoGrid/*` :
-- `useTimelinePlaybackEngine` - boucle rAF, déclenchement notes/clips, métronome, automation
+- `useTimelinePlaybackEngine` - scheduler sur l'horloge audio (notes/clips, métronome, automation, Bloopy Pump), curseur en rAF (voir ci-dessous)
 - `useTimelineExport` - export WAV/MP3 (modal, capture PCM, progress)
 - `useTimelineVoiceRecording` - enregistrement voix (device picker, décodage, upload sample, création clip)
 - `useTimelineFileDrop` - drag & drop de fichiers audio sur la timeline
 - `useTimelineProjectMeta` - nom de projet, sauvegarde, clonage, rechargement (route + lecture seule)
 
-Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre (l'export doit interrompre la boucle, arrêter la lecture doit finaliser un enregistrement en cours) : `TimelineView.vue` casse ce cycle avec deux callbacks (`onLoopEnd`, `onStop`) câblés une fois les 3 composables construits.
+Le playback engine, l'export et l'enregistrement voix dépendent l'un de l'autre (l'export doit s'arrêter en fin de boucle, arrêter la lecture doit finaliser un enregistrement en cours) : `TimelineView.vue` casse ce cycle avec `loopEnd` (`{ shouldStop, onReached }`) et `onStop`, câblés une fois les 3 composables construits.
+
+**Scheduling (« A Tale of Two Clocks »)** : une horloge (`lib/audio/schedulerClock.ts`, timer dans un Worker pour ne pas être ralentie en arrière-plan) réveille le scheduler toutes les 25 ms ; il programme tous les événements des 100 ms suivantes avec leur temps exact sur `audioContext.currentTime`. Le timing ne dépend donc ni du framerate ni des à-coups du thread principal. rAF ne fait qu'afficher le curseur, calé sur ce qui sort des enceintes (`getOutputTimestamp`, latence de sortie compensée).
+- La lecture est découpée en segments à tempo constant (`{ startTime, startTick, ticksPerSec }`) : un nouveau segment à chaque boucle et à chaque changement de tempo.
+- Tous les engines acceptent un `when` optionnel (temps AudioContext) sur `playNote`/`stopNote` (et `playClip`/`stopClip`) ; sans `when` = maintenant (jeu live inchangé). Un arrêt peut être avancé mais jamais reculé, et un arrêt avant le départ annule la note : c'est ce qui permet à Stop/seek d'annuler les notes déjà programmées.
+- FM synth : les messages `noteOn`/`noteOff` portent un `time`, appliqué à l'échantillon près dans le worklet (`currentFrame`).
+- Automation : échantillonnée toutes les 20 ms et programmée à l'avance (`setTargetAtTime` à `when`), `EffectParamDescriptor.setValue` reçoit aussi `when`.
+- Clips audio : si le décodage arrive après l'instant prévu, `AudioClipEngine` démarre tout de suite en sautant la partie écoulée pour rester synchro.
 
 #### Piano Roll (`components/app/timeline/PianoRoll/`)
 
@@ -470,7 +478,7 @@ cloneEQBands()                // Clone profond des bandes EQ
 
 1. Créer un dossier `engines/mon-engine/`
 2. Créer `MonEngine.ts` qui `extends BaseEngine`
-3. Implémenter les méthodes abstraites : `preload()`, `playNote()`, `stopNote()`, `stopAllNotes()`, `updateConfig()`, `dispose()`
+3. Implémenter les méthodes abstraites : `preload()`, `playNote()`, `stopNote()`, `stopAllNotes()`, `updateConfig()`, `dispose()` — `playNote`/`stopNote` doivent respecter le `when` (voir « Scheduling »), `resolveTime(when)` de `BaseEngine` le borne à maintenant
 4. Créer `index.ts` pour re-exporter
 5. Ajouter les re-exports dans `engines/index.ts`
 6. Ajouter le case dans `instrumentFactory.ts`

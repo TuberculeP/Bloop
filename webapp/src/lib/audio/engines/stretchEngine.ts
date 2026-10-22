@@ -39,7 +39,7 @@ export interface StretchVoiceOptions {
 export interface StretchVoice {
   connect(destination: AudioNode): void;
   start(when: number, offsetSeconds: number, durationSeconds: number): void;
-  stop(): void;
+  stop(when?: number): void;
   onended: (() => void) | null;
 }
 
@@ -139,9 +139,9 @@ export function createStretchVoice(options: StretchVoiceOptions): StretchVoice {
     connect: (destination) => stNode.connect(destination),
     start: (when, offsetSeconds, durationSeconds) =>
       source.start(when, offsetSeconds, durationSeconds),
-    stop: () => {
+    stop: (when) => {
       try {
-        source.stop();
+        source.stop(when);
       } catch {
         // déjà arrêté
       }

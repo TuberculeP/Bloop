@@ -10,7 +10,13 @@ import { noteNameToFrequency } from "../noteUtils";
 interface ActiveOscillator {
   oscillator: OscillatorNode;
   gainNode: GainNode;
+  level: number;
+  // Scheduled stop time (Infinity while held). The entry stays until the
+  // oscillator has ended, so a stop can still be moved earlier.
+  stopAt: number;
 }
+
+const RELEASE_SECONDS = 0.02;
 
 export class BasicSynthEngine extends BaseEngine {
   readonly type = "basicSynth";
@@ -36,61 +42,65 @@ export class BasicSynthEngine extends BaseEngine {
     // No-op: BasicSynth is always ready
   }
 
-  playNote(noteName: NoteName, noteId: string, velocity: number = 100): void {
-    if (this.activeOscillators.has(noteId)) {
-      this.stopNote(noteId);
-    }
-
-    const frequency = noteNameToFrequency(noteName);
+  playNote(
+    noteName: NoteName,
+    noteId: string,
+    velocity: number = 100,
+    when?: number,
+  ): void {
+    const startTime = this.resolveTime(when);
+    this.stopNote(noteId, startTime);
 
     const oscillator = this.audioContext.createOscillator();
     oscillator.type = this.oscillatorType;
     oscillator.frequency.setValueAtTime(
-      frequency,
-      this.audioContext.currentTime,
+      noteNameToFrequency(noteName),
+      startTime,
     );
 
     const gainNode = this.audioContext.createGain();
-    const normalizedVelocity = (velocity / 127) * this.gain;
-    gainNode.gain.setValueAtTime(
-      normalizedVelocity,
-      this.audioContext.currentTime,
-    );
+    const level = (velocity / 127) * this.gain;
+    gainNode.gain.setValueAtTime(level, startTime);
 
     oscillator.connect(gainNode);
     gainNode.connect(this.destination);
 
-    oscillator.start();
+    const entry = { oscillator, gainNode, level, stopAt: Infinity };
+    oscillator.onended = () => {
+      oscillator.disconnect();
+      gainNode.disconnect();
+      if (this.activeOscillators.get(noteId) === entry) {
+        this.activeOscillators.delete(noteId);
+      }
+    };
 
-    this.activeOscillators.set(noteId, { oscillator, gainNode });
+    oscillator.start(startTime);
+
+    this.activeOscillators.set(noteId, entry);
   }
 
-  stopNote(noteId: string): void {
+  // Short fade then stop, both scheduled on the audio clock. Stopping before
+  // the scheduled start means the oscillator never sounds.
+  stopNote(noteId: string, when?: number): void {
     const active = this.activeOscillators.get(noteId);
-    if (active) {
-      try {
-        active.gainNode.gain.exponentialRampToValueAtTime(
-          0.001,
-          this.audioContext.currentTime + 0.02,
-        );
-        setTimeout(() => {
-          try {
-            active.oscillator.stop();
-            active.oscillator.disconnect();
-            active.gainNode.disconnect();
-          } catch {
-            // Ignore if already stopped
-          }
-        }, 30);
-      } catch {
-        // Ignore errors
-      }
-      this.activeOscillators.delete(noteId);
+    if (!active) return;
+    const stopTime = this.resolveTime(when);
+    if (stopTime >= active.stopAt) return;
+    active.stopAt = stopTime;
+
+    const gain = active.gainNode.gain;
+    gain.cancelScheduledValues(stopTime);
+    gain.setValueAtTime(active.level, stopTime);
+    gain.exponentialRampToValueAtTime(0.001, stopTime + RELEASE_SECONDS);
+    try {
+      active.oscillator.stop(stopTime + RELEASE_SECONDS + 0.01);
+    } catch {
+      // Already stopped
     }
   }
 
   stopAllNotes(): void {
-    for (const noteId of this.activeOscillators.keys()) {
+    for (const noteId of [...this.activeOscillators.keys()]) {
       this.stopNote(noteId);
     }
   }

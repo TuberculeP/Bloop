@@ -10,9 +10,17 @@ import {
   type StretchVoice,
 } from "../stretchEngine";
 
-type ActiveSource =
-  | { kind: "buffer"; source: AudioBufferSourceNode; gainNode: GainNode }
-  | { kind: "stretch"; voice: StretchVoice; gainNode: GainNode };
+const RELEASE_SECONDS = 0.02;
+
+type ActiveSource = (
+  | { kind: "buffer"; source: AudioBufferSourceNode }
+  | { kind: "stretch"; voice: StretchVoice }
+) & {
+  gainNode: GainNode;
+  // Scheduled stop time (Infinity while playing). The entry stays until the
+  // source has ended, so a stop can still be moved earlier.
+  stopAt: number;
+};
 
 export class AudioClipEngine extends BaseEngine {
   readonly type = "audioTrack";
@@ -49,37 +57,45 @@ export class AudioClipEngine extends BaseEngine {
     this.stopAllClips();
   }
 
-  // Audio clip methods
+  // Audio clip methods. `when` is an AudioContext time (omitted = now). A
+  // clip whose start time already passed (sample decoded late) starts now,
+  // skipping the elapsed part so it stays in sync with the timeline.
   playClip(
     clipId: string,
     buffer: AudioBuffer,
     offsetSeconds: number = 0,
     durationSeconds?: number,
+    when?: number,
   ): void {
-    if (this.activeSources.has(clipId)) {
-      this.stopClip(clipId);
-    }
+    const { startTime, lateBy } = this.resolveStart(when);
+    this.stopClip(clipId, startTime);
 
     const source = this.audioContext.createBufferSource();
     source.buffer = buffer;
 
     const gainNode = this.audioContext.createGain();
-    gainNode.gain.setValueAtTime(this.gain, this.audioContext.currentTime);
+    gainNode.gain.setValueAtTime(this.gain, startTime);
 
     source.connect(gainNode);
     gainNode.connect(this.destination);
 
-    const actualOffset = Math.max(0, Math.min(offsetSeconds, buffer.duration));
+    const actualOffset = Math.max(
+      0,
+      Math.min(offsetSeconds + lateBy, buffer.duration),
+    );
     const remainingDuration = buffer.duration - actualOffset;
     const actualDuration =
       durationSeconds !== undefined
-        ? Math.min(durationSeconds, remainingDuration)
+        ? Math.min(durationSeconds - lateBy, remainingDuration)
         : remainingDuration;
+    if (actualDuration <= 0) return;
 
-    source.start(0, actualOffset, actualDuration);
+    source.start(startTime, actualOffset, actualDuration);
 
     source.onended = () => {
-      this.activeSources.delete(clipId);
+      if (this.activeSources.get(clipId)?.gainNode === gainNode) {
+        this.activeSources.delete(clipId);
+      }
       try {
         source.disconnect();
         gainNode.disconnect();
@@ -88,7 +104,12 @@ export class AudioClipEngine extends BaseEngine {
       }
     };
 
-    this.activeSources.set(clipId, { kind: "buffer", source, gainNode });
+    this.activeSources.set(clipId, {
+      kind: "buffer",
+      source,
+      gainNode,
+      stopAt: Infinity,
+    });
   }
 
   // Clip stretché (BPM-synchronisé) et/ou tuné : passe par le moteur de
@@ -103,12 +124,15 @@ export class AudioClipEngine extends BaseEngine {
     durationSeconds: number,
     playbackRate: number,
     detuneCents: number,
+    when?: number,
   ): Promise<void> {
-    if (this.activeSources.has(clipId)) {
-      this.stopClip(clipId);
-    }
-
     await ensureStretchEngineReady(this.audioContext);
+
+    const { startTime, lateBy } = this.resolveStart(when);
+    this.stopClip(clipId, startTime);
+    // Offset and duration are in source time: lateness scales by the rate.
+    const skipped = lateBy * playbackRate;
+    if (durationSeconds - skipped <= 0) return;
 
     const voice = createStretchVoice({
       context: this.audioContext,
@@ -118,58 +142,66 @@ export class AudioClipEngine extends BaseEngine {
     });
 
     const gainNode = this.audioContext.createGain();
-    gainNode.gain.setValueAtTime(this.gain, this.audioContext.currentTime);
+    gainNode.gain.setValueAtTime(this.gain, startTime);
 
     voice.connect(gainNode);
     gainNode.connect(this.destination);
 
     voice.onended = () => {
-      const active = this.activeSources.get(clipId);
-      if (active?.kind === "stretch" && active.voice === voice) {
+      if (this.activeSources.get(clipId)?.gainNode === gainNode) {
         this.activeSources.delete(clipId);
-        try {
-          gainNode.disconnect();
-        } catch {
-          // Ignore if already disconnected
-        }
+      }
+      try {
+        gainNode.disconnect();
+      } catch {
+        // Ignore if already disconnected
       }
     };
 
-    voice.start(0, offsetSeconds, durationSeconds);
+    voice.start(startTime, offsetSeconds + skipped, durationSeconds - skipped);
 
-    this.activeSources.set(clipId, { kind: "stretch", voice, gainNode });
+    this.activeSources.set(clipId, {
+      kind: "stretch",
+      voice,
+      gainNode,
+      stopAt: Infinity,
+    });
   }
 
-  stopClip(clipId: string): void {
+  // Short fade then stop, both scheduled on the audio clock. Stopping before
+  // the scheduled start means the clip never sounds.
+  stopClip(clipId: string, when?: number): void {
     const active = this.activeSources.get(clipId);
-    if (active) {
-      try {
-        active.gainNode.gain.exponentialRampToValueAtTime(
-          0.001,
-          this.audioContext.currentTime + 0.02,
-        );
-        setTimeout(() => {
-          try {
-            if (active.kind === "buffer") {
-              active.source.stop();
-              active.source.disconnect();
-            } else {
-              active.voice.stop();
-            }
-            active.gainNode.disconnect();
-          } catch {
-            // Ignore if already stopped
-          }
-        }, 30);
-      } catch {
-        // Ignore errors
+    if (!active) return;
+    const stopTime = this.resolveTime(when);
+    if (stopTime >= active.stopAt) return;
+    active.stopAt = stopTime;
+
+    const gain = active.gainNode.gain;
+    try {
+      gain.cancelScheduledValues(stopTime);
+      gain.setValueAtTime(this.gain, stopTime);
+      gain.exponentialRampToValueAtTime(0.001, stopTime + RELEASE_SECONDS);
+      if (active.kind === "buffer") {
+        active.source.stop(stopTime + RELEASE_SECONDS + 0.01);
+      } else {
+        active.voice.stop(stopTime + RELEASE_SECONDS + 0.01);
       }
-      this.activeSources.delete(clipId);
+    } catch {
+      // Already stopped
     }
   }
 
+  private resolveStart(when?: number): { startTime: number; lateBy: number } {
+    const now = this.audioContext.currentTime;
+    if (when === undefined || when >= now) {
+      return { startTime: when ?? now, lateBy: 0 };
+    }
+    return { startTime: now, lateBy: now - when };
+  }
+
   stopAllClips(): void {
-    for (const clipId of this.activeSources.keys()) {
+    for (const clipId of [...this.activeSources.keys()]) {
       this.stopClip(clipId);
     }
   }

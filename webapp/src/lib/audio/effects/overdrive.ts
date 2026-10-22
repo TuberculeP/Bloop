@@ -98,24 +98,24 @@ function createOverdrive(
     shaper.curve = makeDriveCurve(value);
   };
 
-  const applyTone = (value: number, ctx?: AudioContext) => {
+  const applyTone = (value: number, ctx?: AudioContext, when?: number) => {
     tone = value;
     const freq = toneToFrequency(value);
     if (!ctx) {
       toneFilter.frequency.value = freq;
       return;
     }
-    toneFilter.frequency.setTargetAtTime(freq, ctx.currentTime, 0.01);
+    toneFilter.frequency.setTargetAtTime(freq, when ?? ctx.currentTime, 0.01);
   };
 
-  const applyGain = (value: number, ctx?: AudioContext) => {
+  const applyGain = (value: number, ctx?: AudioContext, when?: number) => {
     gain = value;
     const linear = dbToLinear(value);
     if (!ctx) {
       outputGain.gain.value = linear;
       return;
     }
-    outputGain.gain.setTargetAtTime(linear, ctx.currentTime, 0.01);
+    outputGain.gain.setTargetAtTime(linear, when ?? ctx.currentTime, 0.01);
   };
 
   const params: EffectParamDescriptor[] = [
@@ -126,12 +126,12 @@ function createOverdrive(
     },
     {
       ...OVERDRIVE_PARAMS_META[1],
-      setValue: (value, ctx) => applyTone(value, ctx),
+      setValue: (value, ctx, when) => applyTone(value, ctx, when),
       getValue: () => tone,
     },
     {
       ...OVERDRIVE_PARAMS_META[2],
-      setValue: (value, ctx) => applyGain(value, ctx),
+      setValue: (value, ctx, when) => applyGain(value, ctx, when),
       getValue: () => gain,
     },
   ];

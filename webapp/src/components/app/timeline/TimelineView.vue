@@ -179,12 +179,10 @@ let exportFeature!: ReturnType<typeof useTimelineExport>;
 let voiceRecording!: ReturnType<typeof useTimelineVoiceRecording>;
 let midiRecording!: ReturnType<typeof useTimelineMidiRecording>;
 
-const onLoopEnd = () => {
-  if (props.exportMode || exportFeature.isManualExport.value) {
-    exportFeature.finishExport();
-    return true;
-  }
-  return false;
+// The export stops at the loop end instead of looping.
+const loopEnd = {
+  shouldStop: () => !!props.exportMode || exportFeature.isManualExport.value,
+  onReached: () => exportFeature.finishExport(),
 };
 
 const onStop = () => {
@@ -198,7 +196,7 @@ const playback = useTimelinePlaybackEngine(
   emit,
   () => colWidth.value,
   TRACK_HEADER_WIDTH,
-  onLoopEnd,
+  loopEnd,
   onStop,
 );
 const {

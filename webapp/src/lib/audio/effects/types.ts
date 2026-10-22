@@ -33,8 +33,9 @@ export interface EffectParamMeta {
 export interface EffectParamDescriptor extends EffectParamMeta {
   /** Cas simple : AudioParam natif piloté directement (setTargetAtTime). */
   audioParam?: AudioParam;
-  /** Cas non-AudioParam (ex: un seul "amount" pilotant dryGain+wetGain couplés). */
-  setValue?: (value: number, audioCtx: AudioContext) => void;
+  /** Cas non-AudioParam (ex: un seul "amount" pilotant dryGain+wetGain couplés).
+   * `when` is an AudioContext time (omitted = now), used by automation. */
+  setValue?: (value: number, audioCtx: AudioContext, when?: number) => void;
   /** Lecture de la valeur réelle courante (init UI, affichage badge). */
   getValue: () => number;
 }
@@ -54,5 +55,6 @@ export interface EffectInstance {
     tick: number,
     timeSignature: TimeSignature,
     tempo: number,
+    when?: number,
   ): void;
 }

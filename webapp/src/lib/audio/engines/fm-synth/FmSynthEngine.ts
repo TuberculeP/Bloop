@@ -68,32 +68,39 @@ export class FmSynthEngine extends BaseEngine {
     this.workletNode?.port.postMessage(message);
   }
 
-  playNote(noteName: NoteName, noteId: string, velocity: number = 100): void {
+  playNote(
+    noteName: NoteName,
+    noteId: string,
+    velocity: number = 100,
+    when?: number,
+  ): void {
     if (this._state !== "ready") {
       this.preload().then(() => {
         if (this._state === "ready")
-          this.playNoteInternal(noteName, noteId, velocity);
+          this.playNoteInternal(noteName, noteId, velocity, when);
       });
       return;
     }
-    this.playNoteInternal(noteName, noteId, velocity);
+    this.playNoteInternal(noteName, noteId, velocity, when);
   }
 
   private playNoteInternal(
     noteName: NoteName,
     noteId: string,
     velocity: number,
+    when?: number,
   ): void {
     this.postMessage({
       type: "noteOn",
       noteId,
       note: noteNameToMidi(noteName),
       velocity: velocity / 127,
+      time: this.resolveTime(when),
     });
   }
 
-  stopNote(noteId: string): void {
-    this.postMessage({ type: "noteOff", noteId });
+  stopNote(noteId: string, when?: number): void {
+    this.postMessage({ type: "noteOff", noteId, time: this.resolveTime(when) });
   }
 
   stopAllNotes(): void {

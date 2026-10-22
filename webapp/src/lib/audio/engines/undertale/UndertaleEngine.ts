@@ -168,20 +168,29 @@ export class UndertaleEngine extends BaseEngine {
     }
   }
 
-  playNote(noteName: NoteName, noteId: string, _velocity: number = 100): void {
+  playNote(
+    noteName: NoteName,
+    noteId: string,
+    _velocity: number = 100,
+    when?: number,
+  ): void {
     if (this._state !== "ready") {
       this.preload().then(() => {
         if (this._state === "ready") {
-          this.playNoteInternal(noteName, noteId);
+          this.playNoteInternal(noteName, noteId, when);
         }
       });
       return;
     }
 
-    this.playNoteInternal(noteName, noteId);
+    this.playNoteInternal(noteName, noteId, when);
   }
 
-  private playNoteInternal(noteName: NoteName, noteId: string): void {
+  private playNoteInternal(
+    noteName: NoteName,
+    noteId: string,
+    when?: number,
+  ): void {
     try {
       this.voicePool.play(
         noteId,
@@ -189,15 +198,22 @@ export class UndertaleEngine extends BaseEngine {
         this.attack,
         this.decay,
         this.sustain,
-        (sampler) => sampler.start({ note: noteName, decayTime: this.release }),
+        (sampler, time) =>
+          sampler.start({ note: noteName, time, decayTime: this.release }),
+        this.resolveTime(when),
       );
     } catch (error) {
       console.error("[UndertaleEngine] Failed to play note:", error);
     }
   }
 
-  stopNote(noteId: string): void {
-    this.voicePool.stop(noteId, this.audioContext, this.release);
+  stopNote(noteId: string, when?: number): void {
+    this.voicePool.stop(
+      noteId,
+      this.audioContext,
+      this.release,
+      this.resolveTime(when),
+    );
   }
 
   stopAllNotes(): void {

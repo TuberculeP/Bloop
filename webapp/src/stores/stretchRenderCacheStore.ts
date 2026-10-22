@@ -234,8 +234,8 @@ export const useStretchRenderCacheStore = defineStore("stretchRenderCache", {
       decodedBuffers.set(key, buffer);
 
       // Rafraîchit le timestamp LRU en fond, sans jamais retarder le retour
-      // du buffer : ce `get` est sur le chemin chaud du play (déclenché
-      // just-in-time, sans lookahead — cf. useTimelinePlaybackEngine), une
+      // du buffer : ce `get` est sur le chemin chaud du play (lookahead de
+      // ~100 ms seulement — cf. useTimelinePlaybackEngine), une
       // écriture IndexedDB bloquante ici réintroduirait la latence qu'on a
       // justement construit ce cache pour éliminer.
       cached.cachedAt = Date.now();

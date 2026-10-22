@@ -47,9 +47,16 @@ export abstract class BaseEngine implements InstrumentEngine {
     noteName: NoteName,
     noteId: string,
     velocity?: number,
+    when?: number,
   ): void;
-  abstract stopNote(noteId: string): void;
+  abstract stopNote(noteId: string, when?: number): void;
   abstract stopAllNotes(): void;
   abstract updateConfig(config: Partial<InstrumentConfig>): void;
   abstract dispose(): void;
+
+  /** Resolves an optional scheduled time, never earlier than now. */
+  protected resolveTime(when?: number): number {
+    const now = this.audioContext.currentTime;
+    return when === undefined ? now : Math.max(when, now);
+  }
 }

@@ -1,3 +1,5 @@
+import { envelopeLevelAt, holdParamAt } from "./scheduling";
+
 interface PooledSampler {
   disconnect(): void;
 }
@@ -29,6 +31,15 @@ interface Voice<TSampler extends PooledSampler> {
   envelopeGain: GainNode;
   noteId: string | null;
   stopFn: ((time?: number) => void) | null;
+  // Scheduled release time of the current note (Infinity while held). The
+  // voice is free for any note starting at or after it.
+  stopAt: number;
+  // Envelope of the current note, to estimate its level at a future release
+  // time (see holdParamAt).
+  startTime: number;
+  attack: number;
+  decay: number;
+  sustain: number;
 }
 
 /**
@@ -39,6 +50,10 @@ interface Voice<TSampler extends PooledSampler> {
  * instances de sampler, chacune reliée à son propre GainNode d'enveloppe, et
  * on alloue une voix libre (ou la plus ancienne, en voice stealing) par note
  * jouée, pour un ADSR réellement indépendant par voix en polyphonie.
+ *
+ * Start and stop take an AudioContext time, so notes can be scheduled ahead.
+ * A stop can be moved earlier (e.g. playback stopped before a scheduled
+ * release), never later.
  */
 export class VoicePool<TSampler extends PooledSampler> {
   private voices: Voice<TSampler>[] = [];
@@ -58,7 +73,17 @@ export class VoicePool<TSampler extends PooledSampler> {
       envelopeGain.gain.value = 0;
       envelopeGain.connect(destination);
       const sampler = await createSampler(envelopeGain);
-      voices.push({ sampler, envelopeGain, noteId: null, stopFn: null });
+      voices.push({
+        sampler,
+        envelopeGain,
+        noteId: null,
+        stopFn: null,
+        stopAt: 0,
+        startTime: 0,
+        attack: 0,
+        decay: 0,
+        sustain: 1,
+      });
     });
     this.voices = voices;
   }
@@ -81,49 +106,78 @@ export class VoicePool<TSampler extends PooledSampler> {
     attack: number,
     decay: number,
     sustain: number,
-    startSample: (sampler: TSampler) => (time?: number) => void,
+    startSample: (sampler: TSampler, time: number) => (time?: number) => void,
+    when: number = audioContext.currentTime,
   ): void {
     if (this.voices.length === 0) return;
 
-    this.hardStopByNoteId(noteId);
+    // Retrigger of a note still held: cut it where the new one starts.
+    const held = this.voiceByNoteId.get(noteId);
+    if (held && held.noteId === noteId && held.stopAt > when) {
+      this.hardStop(held, when);
+    }
 
-    const voice = this.allocateVoice();
+    const voice = this.allocateVoice(when);
+    if (
+      voice.noteId !== null &&
+      this.voiceByNoteId.get(voice.noteId) === voice
+    ) {
+      this.voiceByNoteId.delete(voice.noteId);
+    }
     voice.noteId = noteId;
+    voice.stopAt = Infinity;
+    voice.startTime = when;
+    voice.attack = attack;
+    voice.decay = decay;
+    voice.sustain = sustain;
     this.voiceByNoteId.set(noteId, voice);
 
-    const now = audioContext.currentTime;
     const gain = voice.envelopeGain.gain;
-    gain.cancelScheduledValues(now);
-    gain.setValueAtTime(0, now);
+    gain.cancelScheduledValues(when);
+    gain.setValueAtTime(0, when);
     if (attack > 0) {
-      gain.linearRampToValueAtTime(1, now + attack);
+      gain.linearRampToValueAtTime(1, when + attack);
     } else {
-      gain.setValueAtTime(1, now);
+      gain.setValueAtTime(1, when);
     }
     if (decay > 0 && sustain < 1) {
-      gain.linearRampToValueAtTime(sustain, now + attack + decay);
+      gain.linearRampToValueAtTime(sustain, when + attack + decay);
     }
 
-    voice.stopFn = startSample(voice.sampler);
+    voice.stopFn = startSample(voice.sampler, when);
   }
 
-  stop(noteId: string, audioContext: AudioContext, release: number): void {
+  stop(
+    noteId: string,
+    audioContext: AudioContext,
+    release: number,
+    when: number = audioContext.currentTime,
+  ): void {
     const voice = this.voiceByNoteId.get(noteId);
-    if (!voice) return;
+    if (!voice || voice.noteId !== noteId || when >= voice.stopAt) return;
+    voice.stopAt = when;
 
-    voice.stopFn?.();
-    const now = audioContext.currentTime;
-    voice.envelopeGain.gain.cancelScheduledValues(now);
-    voice.envelopeGain.gain.setValueAtTime(voice.envelopeGain.gain.value, now);
-    voice.envelopeGain.gain.linearRampToValueAtTime(0, now + release);
-
-    voice.noteId = null;
-    this.voiceByNoteId.delete(noteId);
+    voice.stopFn?.(when);
+    const gain = voice.envelopeGain.gain;
+    const fallback =
+      when <= audioContext.currentTime
+        ? gain.value
+        : envelopeLevelAt(
+            when - voice.startTime,
+            1,
+            voice.attack,
+            voice.decay,
+            voice.sustain,
+          );
+    holdParamAt(gain, when, fallback);
+    gain.linearRampToValueAtTime(0, when + release);
   }
 
   stopAll(audioContext: AudioContext, release: number): void {
-    for (const noteId of [...this.voiceByNoteId.keys()]) {
-      this.stop(noteId, audioContext, release);
+    for (const voice of this.voices) {
+      if (voice.noteId !== null) {
+        this.stop(voice.noteId, audioContext, release);
+      }
     }
   }
 
@@ -138,27 +192,23 @@ export class VoicePool<TSampler extends PooledSampler> {
     this.nextVoiceIndex = 0;
   }
 
-  private allocateVoice(): Voice<TSampler> {
-    const free = this.voices.find((voice) => voice.noteId === null);
+  private allocateVoice(when: number): Voice<TSampler> {
+    const free = this.voices.find((voice) => voice.stopAt <= when);
     if (free) return free;
 
     const voice = this.voices[this.nextVoiceIndex];
     this.nextVoiceIndex = (this.nextVoiceIndex + 1) % this.voices.length;
-    this.hardStop(voice);
+    this.hardStop(voice, when);
     return voice;
   }
 
-  private hardStopByNoteId(noteId: string): void {
-    const voice = this.voiceByNoteId.get(noteId);
-    if (voice) this.hardStop(voice);
-  }
-
-  private hardStop(voice: Voice<TSampler>): void {
-    if (voice.noteId !== null) this.voiceByNoteId.delete(voice.noteId);
-    voice.stopFn?.();
+  // Cuts the voice at `when` (the start of the note that takes it over), so
+  // a voice stolen ahead of time keeps sounding until then.
+  private hardStop(voice: Voice<TSampler>, when: number): void {
+    voice.stopFn?.(when);
     voice.stopFn = null;
-    voice.noteId = null;
-    voice.envelopeGain.gain.cancelScheduledValues(0);
-    voice.envelopeGain.gain.value = 0;
+    voice.stopAt = Math.min(voice.stopAt, when);
+    voice.envelopeGain.gain.cancelScheduledValues(when);
+    voice.envelopeGain.gain.setValueAtTime(0, when);
   }
 }

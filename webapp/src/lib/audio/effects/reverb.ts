@@ -57,7 +57,7 @@ function createReverb(
 
   let amount = initialParams.amount ?? 0;
 
-  const applyAmount = (value: number, ctx?: AudioContext) => {
+  const applyAmount = (value: number, ctx?: AudioContext, when?: number) => {
     amount = value;
     const reverbAmount = value / 100;
     const dryValue = Math.max(0.001, 1 - reverbAmount * 0.5);
@@ -66,7 +66,7 @@ function createReverb(
       wetGain.gain.value = reverbAmount;
       return;
     }
-    const now = ctx.currentTime;
+    const now = when ?? ctx.currentTime;
     dryGain.gain.setTargetAtTime(dryValue, now, 0.01);
     if (reverbAmount < 0.001) {
       wetGain.gain.setValueAtTime(0, now);
@@ -80,7 +80,7 @@ function createReverb(
   const params: EffectParamDescriptor[] = [
     {
       ...REVERB_PARAMS_META[0],
-      setValue: (value, ctx) => applyAmount(value, ctx),
+      setValue: (value, ctx, when) => applyAmount(value, ctx, when),
       getValue: () => amount,
     },
   ];

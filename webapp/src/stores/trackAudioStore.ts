@@ -149,6 +149,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     noteName: NoteName,
     noteId: string,
     velocity: number = 100,
+    when?: number,
   ): void => {
     ensureAudioContextResumed();
 
@@ -165,13 +166,17 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     }
 
     const channel = getOrCreateChannel(track);
-    channel.engine.playNote(noteName, noteId, velocity);
+    channel.engine.playNote(noteName, noteId, velocity, when);
   };
 
-  const stopNoteOnTrack = (trackId: string, noteId: string): void => {
+  const stopNoteOnTrack = (
+    trackId: string,
+    noteId: string,
+    when?: number,
+  ): void => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
-      channel.engine.stopNote(noteId);
+      channel.engine.stopNote(noteId, when);
     }
   };
 
@@ -192,10 +197,14 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
   // Audio Clip Methods
   // ============================================
 
+  // `when` is the AudioContext time the clip (from `playbackOffsetColumns`)
+  // must be heard at. If loading takes longer, the engine skips the elapsed
+  // part to stay in sync.
   const playClipOnTrack = async (
     trackId: string,
     clip: AudioClip,
     playbackOffsetColumns: number = 0,
+    when?: number,
   ): Promise<void> => {
     await ensureAudioContextResumed();
 
@@ -256,6 +265,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
           cached,
           scrubOffset,
           cached.duration - scrubOffset,
+          when,
         );
       } else {
         await engine.playStretchedClip(
@@ -265,6 +275,7 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
           params.durationSeconds,
           params.playbackRate,
           params.detuneCents,
+          when,
         );
         // Fire-and-forget : rend disponible un cache chaud pour la prochaine
         // lecture, sans jamais bloquer celle-ci.
@@ -281,14 +292,19 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
         buffer,
         params.offsetSeconds,
         params.durationSeconds,
+        when,
       );
     }
   };
 
-  const stopClipOnTrack = (trackId: string, clipId: string): void => {
+  const stopClipOnTrack = (
+    trackId: string,
+    clipId: string,
+    when?: number,
+  ): void => {
     const channel = trackChannels.value.get(trackId);
     if (channel && channel.engine instanceof AudioClipEngine) {
-      channel.engine.stopClip(clipId);
+      channel.engine.stopClip(clipId, when);
     }
   };
 
@@ -393,10 +409,17 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     trackId: string,
     target: AutomationTarget,
     normalizedValue: number,
+    when?: number,
   ): void => {
     const channel = trackChannels.value.get(trackId);
     if (channel) {
-      applyAutomationToChannel(target, normalizedValue, channel, audioContext);
+      applyAutomationToChannel(
+        target,
+        normalizedValue,
+        channel,
+        audioContext,
+        when,
+      );
     }
   };
 
@@ -404,10 +427,16 @@ export const useTrackAudioStore = defineStore("trackAudioStore", () => {
     tick: number,
     timeSignature: TimeSignature,
     tempo: number,
+    when?: number,
   ): void => {
     for (const track of timelineStore.getPlayableTracks()) {
       const channel = trackChannels.value.get(track.id);
-      channel?.effectsChain.notifyBeatBoundary(tick, timeSignature, tempo);
+      channel?.effectsChain.notifyBeatBoundary(
+        tick,
+        timeSignature,
+        tempo,
+        when,
+      );
     }
   };
 

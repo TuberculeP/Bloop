@@ -30,8 +30,19 @@ export interface InstrumentEngine {
 
   preload(): Promise<void>;
 
-  playNote(noteName: NoteName, noteId: string, velocity?: number): void;
-  stopNote(noteId: string): void;
+  /**
+   * `when` is an AudioContext time. Omitted = now (live playing). The
+   * playback scheduler passes a time slightly in the future so notes land
+   * exactly on the grid regardless of main-thread jitter.
+   */
+  playNote(
+    noteName: NoteName,
+    noteId: string,
+    velocity?: number,
+    when?: number,
+  ): void;
+  /** Stopping before the scheduled start cancels the note. */
+  stopNote(noteId: string, when?: number): void;
   stopAllNotes(): void;
 
   updateConfig(config: InstrumentConfigUpdate): void;

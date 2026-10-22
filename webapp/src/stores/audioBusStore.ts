@@ -178,16 +178,18 @@ export const useAudioBusStore = defineStore("audioBusStore", () => {
   const applyMasterAutomation = (
     target: AutomationTarget,
     value: number,
+    when?: number,
   ): void => {
-    applyAutomationToChannel(target, value, masterChannel, audioContext);
+    applyAutomationToChannel(target, value, masterChannel, audioContext, when);
   };
 
   const notifyMasterEffectsBeatBoundary = (
     tick: number,
     timeSignature: TimeSignature,
     tempo: number,
+    when?: number,
   ): void => {
-    effectsChain.notifyBeatBoundary(tick, timeSignature, tempo);
+    effectsChain.notifyBeatBoundary(tick, timeSignature, tempo, when);
   };
 
   return {

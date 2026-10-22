@@ -5,6 +5,7 @@ export {};
 
 declare global {
   const sampleRate: number;
+  const currentFrame: number;
 
   class AudioWorkletProcessor {
     readonly port: MessagePort;

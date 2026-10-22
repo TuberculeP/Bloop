@@ -55,8 +55,9 @@ export function applyAutomationToChannel(
   normalizedValue: number,
   channel: TrackChannel,
   audioCtx: AudioContext,
+  when?: number,
 ): void {
-  const now = audioCtx.currentTime;
+  const now = Math.max(when ?? 0, audioCtx.currentTime);
   const smoothTime = 0.01;
 
   if (target.effectId === "channel") {
@@ -83,6 +84,6 @@ export function applyAutomationToChannel(
   if (descriptor.audioParam) {
     descriptor.audioParam.setTargetAtTime(value, now, smoothTime);
   } else {
-    descriptor.setValue?.(value, audioCtx);
+    descriptor.setValue?.(value, audioCtx, now);
   }
 }
